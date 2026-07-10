@@ -1,0 +1,97 @@
+default_template: deep_report
+
+templates:
+  # Deep research report -- full workflow with review + human confirmation
+  deep_report:
+    description: "Deep Research Report -- full pipeline with review and human confirmation"
+    nodes:
+      - intent_classifier
+      - research_planner
+      - data_collector
+      - data_processor
+      - data_analyst
+      - writer
+      - editor
+      - reviewer
+      - human_review
+      - publisher
+    edges:
+      # Linear chain with conditional routing at reviewer
+      linear:
+        - [intent_classifier, research_planner]
+        - [research_planner, data_collector]
+        - [data_collector, data_processor]
+        - [data_processor, data_analyst]
+        - [data_analyst, writer]
+        - [writer, editor]
+        - [editor, reviewer]
+      # Conditional edges from reviewer
+      conditional:
+        - from: reviewer
+          routes:
+            approved: publisher
+            needs_human: human_review
+            rejected:
+              condition: "retry_count < 3"
+              true_dest: writer
+              false_dest: human_review
+      # Final edges
+      final:
+        - [human_review, publisher]
+    entry_point: intent_classifier
+    finish_point: publisher
+
+  # Flash news -- no review, direct publish
+  flash_news:
+    description: "Flash News Brief -- skip review, fast publish"
+    nodes:
+      - intent_classifier
+      - research_planner
+      - data_collector
+      - writer
+      - editor
+      - publisher
+    edges:
+      linear:
+        - [intent_classifier, research_planner]
+        - [research_planner, data_collector]
+        - [data_collector, writer]
+        - [writer, editor]
+        - [editor, publisher]
+    entry_point: intent_classifier
+    finish_point: publisher
+
+  # Earnings analysis -- with financial expert review
+  earnings_analysis:
+    description: "Earnings Analysis -- requires financial expert review"
+    nodes:
+      - intent_classifier
+      - research_planner
+      - data_collector
+      - data_analyst
+      - writer
+      - editor
+      - reviewer
+      - human_review
+      - publisher
+    edges:
+      linear:
+        - [intent_classifier, research_planner]
+        - [research_planner, data_collector]
+        - [data_collector, data_analyst]
+        - [data_analyst, writer]
+        - [writer, editor]
+        - [editor, reviewer]
+      conditional:
+        - from: reviewer
+          routes:
+            approved: publisher
+            needs_human: human_review
+            rejected:
+              condition: "retry_count < 3"
+              true_dest: writer
+              false_dest: human_review
+      final:
+        - [human_review, publisher]
+    entry_point: intent_classifier
+    finish_point: publisher

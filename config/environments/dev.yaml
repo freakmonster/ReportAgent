@@ -1,0 +1,66 @@
+# Development environment configuration
+# All services run locally with relaxed limits for rapid iteration.
+
+app_name: "智能研报生成系统"
+app_version: "0.1.0"
+debug: true
+environment: "dev"
+
+host: "0.0.0.0"
+port: 8000
+
+# PostgreSQL — local dev instance
+pg_host: "localhost"
+pg_port: 5432
+pg_user: "postgres"
+pg_password: "postgres"
+pg_database: "research_agent"
+
+# Redis — local dev instance
+redis_host: "localhost"
+redis_port: 6379
+redis_db: 0
+redis_password: null
+
+# Qdrant — local dev instance
+qdrant_host: "localhost"
+qdrant_port: 6333
+qdrant_api_key: null
+
+# DeepSeek — expects DEEPSEEK_API_KEY in env
+deepseek_base_url: "https://api.deepseek.com"
+deepseek_model: "deepseek-v3"
+
+# Qwen — expects QWEN_API_KEY in env
+qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+qwen_model: "qwen-max"
+qwen_light_model: "qwen3-1.8b"
+qwen_medium_model: "qwen3-7b"
+
+# MCP Sidecar endpoints — local dev
+mcp_search_url: "http://localhost:8001"
+mcp_database_url: "http://localhost:8002"
+mcp_chart_url: "http://localhost:8003"
+mcp_email_url: "http://localhost:8004"
+
+# Circuit breaker — relaxed for dev
+cb_failure_threshold: 5
+cb_timeout: 60
+
+# Rate limit — generous for dev
+rate_limit_requests: 1000
+rate_limit_window: 60
+
+# Security — dev defaults (override in env for real keys)
+jwt_secret_key: "dev-secret-key-change-in-production"
+api_key_header: "X-API-Key"
+
+# Embedding
+embedding_model: "bge-m3"
+
+# Logging
+log_level: "DEBUG"
+
+# LangSmith (optional)
+langsmith_api_key: null
+langsmith_project: null

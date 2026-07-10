@@ -1,0 +1,22 @@
+# Harness governance handler chain -- order matters!
+# Handlers execute sequentially. If any returns FAIL or REJECT, the chain short-circuits.
+# AuditHandler should always be last to guarantee logging regardless of prior results.
+
+handler_chain:
+  - input_safety_handler    # Layer 1: Regex-based input safety (ms-level, no LLM)
+  - permission_handler      # Role-tool permission matrix check
+  - structural_handler      # Output schema validation + style + safety
+  - fact_stage1_handler     # Stage 1: Regex extract data entities, mark unsourced claims
+  - fact_stage2_handler     # Stage 2: LLM/MCP verify only high-risk claims (contains Stage 1.5 Relation Extractor)
+  - hallucination_handler   # Detect unsupported statements
+  - audit_handler           # MUST be last: full-chain audit logging (async, non-blocking)
+
+# Per-workflow-type overrides (optional -- if not specified, use the default chain above)
+workflow_overrides:
+  flash_news:
+    # Flash news skips fact checking
+    handler_chain:
+      - input_safety_handler
+      - permission_handler
+      - structural_handler
+      - audit_handler

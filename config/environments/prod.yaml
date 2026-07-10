@@ -1,0 +1,67 @@
+# Production environment configuration
+# All sensitive values are placeholders — MUST be injected via environment variables.
+# This file serves as documentation of the expected configuration shape.
+
+app_name: "智能研报生成系统"
+app_version: "0.1.0"
+debug: false
+environment: "prod"
+
+host: "0.0.0.0"
+port: 8000
+
+# PostgreSQL — production instance (override via env)
+pg_host: "postgres.internal"
+pg_port: 5432
+pg_user: "research_agent"
+pg_password: ""  # MUST set PG_PASSWORD in env
+pg_database: "research_agent"
+
+# Redis — production instance (override via env)
+redis_host: "redis.internal"
+redis_port: 6379
+redis_db: 0
+redis_password: ""  # MUST set REDIS_PASSWORD in env
+
+# Qdrant — production instance
+qdrant_host: "qdrant.internal"
+qdrant_port: 6333
+qdrant_api_key: ""  # MUST set QDRANT_API_KEY in env
+
+# DeepSeek — production (override via env)
+deepseek_base_url: "https://api.deepseek.com"
+deepseek_model: "deepseek-v3"
+
+# Qwen — production (override via env)
+qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+qwen_model: "qwen-max"
+qwen_light_model: "qwen3-1.8b"
+qwen_medium_model: "qwen3-7b"
+
+# MCP Sidecar endpoints — production
+mcp_search_url: "http://mcp-search:8001"
+mcp_database_url: "http://mcp-database:8002"
+mcp_chart_url: "http://mcp-chart:8003"
+mcp_email_url: "http://mcp-email:8004"
+
+# Circuit breaker — strict limits for prod
+cb_failure_threshold: 3
+cb_timeout: 30
+
+# Rate limit — strict production limits
+rate_limit_requests: 60
+rate_limit_window: 60
+
+# Security — MUST override via env
+jwt_secret_key: ""  # MUST set JWT_SECRET_KEY in env
+api_key_header: "X-API-Key"
+
+# Embedding
+embedding_model: "bge-m3"
+
+# Logging — info level for production
+log_level: "INFO"
+
+# LangSmith — enable in production for tracing
+langsmith_api_key: null
+langsmith_project: "research-agent-prod"
