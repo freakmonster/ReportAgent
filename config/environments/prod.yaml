@@ -28,9 +28,12 @@ qdrant_host: "qdrant.internal"
 qdrant_port: 6333
 qdrant_api_key: ""  # MUST set QDRANT_API_KEY in env
 
+# Tavily — search backend for MCP Search (override via env)
+tavily_api_key: ""  # MUST set TAVILY_API_KEY in env
+
 # DeepSeek — production (override via env)
 deepseek_base_url: "https://api.deepseek.com"
-deepseek_model: "deepseek-v3"
+deepseek_model: "deepseek-v4-pro"
 
 # Qwen — production (override via env)
 qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -55,6 +58,10 @@ rate_limit_window: 60
 # Security — MUST override via env
 jwt_secret_key: ""  # MUST set JWT_SECRET_KEY in env
 api_key_header: "X-API-Key"
+
+# Reranker — disabled by default, toggle to true to enable cross-encoder
+reranker_enabled: false
+reranker_model: "BAAI/bge-reranker-v2-m3"
 
 # Embedding
 embedding_model: "bge-m3"

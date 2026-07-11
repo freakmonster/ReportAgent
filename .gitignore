@@ -38,6 +38,7 @@ htmlcov/
 AGENTS.md
 ProjectDesignMarkdown.md
 ProjectStandard.md
+ProjectExternalReliance.md
 
 .trae\
 *.md

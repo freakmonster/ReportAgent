@@ -38,6 +38,7 @@ lxml>=5.2.0
 sentence-transformers>=3.0.0
 
 # Governance
+jieba>=0.42.1
 # fasttext>=0.9.3  # Requires MSVC build tools on Windows; use pure Python regex fallback instead
 spacy>=3.7.0
 

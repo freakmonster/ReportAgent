@@ -106,7 +106,7 @@ class PromptManager:
         self._content_cache.clear()
         self._hash_cache.clear()
         self._preload()
-        logger.info("prompt_manager.reloaded", template_count=len(self._content_cache))
+        logger.info("prompt_manager.reloaded: templates=%d", len(self._content_cache))
 
     def list_templates(self) -> list[str]:
         """List all available template names.

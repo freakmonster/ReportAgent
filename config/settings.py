@@ -61,6 +61,7 @@ _ENV_VAR_MAP: dict[str, str] = {
     "qdrant_host": "QDRANT_HOST",
     "qdrant_port": "QDRANT_PORT",
     "qdrant_api_key": "QDRANT_API_KEY",
+    "tavily_api_key": "TAVILY_API_KEY",
     "deepseek_api_key": "DEEPSEEK_API_KEY",
     "deepseek_base_url": "DEEPSEEK_BASE_URL",
     "deepseek_model": "DEEPSEEK_MODEL",
@@ -80,6 +81,8 @@ _ENV_VAR_MAP: dict[str, str] = {
     "jwt_secret_key": "JWT_SECRET_KEY",
     "api_key_header": "API_KEY_HEADER",
     "embedding_model": "EMBEDDING_MODEL",
+    "reranker_enabled": "RERANKER_ENABLED",
+    "reranker_model": "RERANKER_MODEL",
     "log_level": "LOG_LEVEL",
     "langsmith_api_key": "LANGSMITH_API_KEY",
     "langsmith_project": "LANGSMITH_PROJECT",
@@ -188,6 +191,9 @@ class Settings(BaseSettings):
     qdrant_port: int = Field(default=6333)
     qdrant_api_key: Optional[str] = Field(default=None)
 
+    # ── Tavily ────────────────────────────────────────────────────────
+    tavily_api_key: str = Field(default="")
+
     # ── DeepSeek ─────────────────────────────────────────────────────
     deepseek_api_key: str = Field(default="")
     deepseek_base_url: str = Field(default="https://api.deepseek.com")
@@ -222,6 +228,10 @@ class Settings(BaseSettings):
 
     # ── Embedding ────────────────────────────────────────────────────
     embedding_model: str = Field(default="bge-m3")
+
+    # ── Reranker ──────────────────────────────────────────────────────
+    reranker_enabled: bool = Field(default=False)
+    reranker_model: str = Field(default="BAAI/bge-reranker-v2-m3")
 
     # ── Logging ──────────────────────────────────────────────────────
     log_level: str = Field(default="INFO")

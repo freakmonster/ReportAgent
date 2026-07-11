@@ -35,7 +35,7 @@ async def test_chat_success(
 
         mock_client.chat.completions.create.assert_called_once()
         call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-        assert call_kwargs["model"] == "deepseek-v3"
+        assert call_kwargs["model"] == "deepseek-v4-pro"
         assert call_kwargs["messages"] == sample_messages
         assert response.choices[0].message.content == mock_openai_response.choices[0].message.content
 

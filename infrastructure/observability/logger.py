@@ -140,4 +140,20 @@ def _build_logger() -> Any:
     return structlog.get_logger("research_agent")
 
 
+def get_logger(name: str = "research_agent") -> Any:
+    """获取指定名称的结构化 logger。
+
+    当 structlog 不可用时，回退到标准库 logging.Logger。
+
+    Args:
+        name: logger 名称（通常传 __name__）。
+
+    Returns:
+        structlog.BoundLogger 或 logging.Logger。
+    """
+    if not STRUCTLOG_AVAILABLE:
+        return logging.getLogger(name)
+    return structlog.get_logger(name)
+
+
 logger = _build_logger()
