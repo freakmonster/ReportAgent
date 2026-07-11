@@ -98,19 +98,19 @@ async def test_chat_stream(
 
 
 def test_init_uses_settings() -> None:
-    """Verify the client reads configuration from settings and creates AsyncOpenAI correctly."""
+    """Verify the client reads configuration from settings (lazy init — no AsyncOpenAI yet)."""
     mock_settings = MagicMock()
     mock_settings.qwen_api_key = "sk-test-qwen-key"
     mock_settings.qwen_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
-    with patch("models.llm_providers.qwen_client.settings", mock_settings), \
-         patch("models.llm_providers.qwen_client.AsyncOpenAI") as mock_async_openai:
+    with patch("models.llm_providers.qwen_client.settings", mock_settings):
         client = QwenClient(model_size="max")
 
-        mock_async_openai.assert_called_once_with(
-            api_key="sk-test-qwen-key",
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-        )
+        # Lazy init: AsyncOpenAI is NOT created during __init__,
+        # but settings are still captured into private attributes.
+        assert client._api_key == "sk-test-qwen-key"
+        assert client._base_url == "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        assert client._model == "qwen-max"
         # model property returns the resolved model name from _MODEL_SIZE_MAP
         assert client.model == "qwen-max"
 

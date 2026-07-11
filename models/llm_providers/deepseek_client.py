@@ -39,11 +39,20 @@ class DeepSeekClient:
     """Async client for DeepSeek API (OpenAI-compatible)."""
 
     def __init__(self) -> None:
-        self._client: AsyncOpenAI = AsyncOpenAI(
-            api_key=settings.deepseek_api_key,
-            base_url=settings.deepseek_base_url,
-        )
+        from config.settings import settings
+        self._api_key: str = settings.deepseek_api_key
+        self._base_url: str = settings.deepseek_base_url
         self._model: str = settings.deepseek_model
+        self._client: AsyncOpenAI | None = None
+
+    def _get_client(self) -> AsyncOpenAI:
+        """Lazily create the AsyncOpenAI client on first use."""
+        if self._client is None:
+            self._client = AsyncOpenAI(
+                api_key=self._api_key,
+                base_url=self._base_url,
+            )
+        return self._client
 
     @retry(
         retry=retry_if_exception_type(_RETRYABLE),
@@ -63,7 +72,7 @@ class DeepSeekClient:
         Returns:
             The full chat completion response object as a dict.
         """
-        response = await self._client.chat.completions.create(
+        response = await self._get_client().chat.completions.create(
             model=self._model,
             messages=messages,  # type: ignore[arg-type]
             **kwargs,
@@ -88,7 +97,7 @@ class DeepSeekClient:
         Yields:
             Each chunk as a dict from the streaming response.
         """
-        stream = await self._client.chat.completions.create(
+        stream = await self._get_client().chat.completions.create(
             model=self._model,
             messages=messages,  # type: ignore[arg-type]
             stream=True,

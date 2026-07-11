@@ -43,11 +43,19 @@ class QwenClient:
             )
             resolved = settings.qwen_model
 
-        self._client: AsyncOpenAI = AsyncOpenAI(
-            api_key=settings.qwen_api_key,
-            base_url=settings.qwen_base_url,
-        )
+        self._api_key: str = settings.qwen_api_key
+        self._base_url: str = settings.qwen_base_url
         self._model: str = resolved
+        self._client: AsyncOpenAI | None = None
+
+    def _get_client(self) -> AsyncOpenAI:
+        """Lazily create the AsyncOpenAI client on first use."""
+        if self._client is None:
+            self._client = AsyncOpenAI(
+                api_key=self._api_key,
+                base_url=self._base_url,
+            )
+        return self._client
 
     async def chat(
         self, messages: list[dict[str, Any]], **kwargs: Any
@@ -61,7 +69,7 @@ class QwenClient:
         Returns:
             The full chat completion response object as a dict.
         """
-        response = await self._client.chat.completions.create(
+        response = await self._get_client().chat.completions.create(
             model=self._model,
             messages=messages,  # type: ignore[arg-type]
             **kwargs,
@@ -80,7 +88,7 @@ class QwenClient:
         Yields:
             Each chunk as a dict from the streaming response.
         """
-        stream = await self._client.chat.completions.create(
+        stream = await self._get_client().chat.completions.create(
             model=self._model,
             messages=messages,  # type: ignore[arg-type]
             stream=True,

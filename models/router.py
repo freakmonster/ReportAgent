@@ -34,14 +34,14 @@ class ModelRouter:
     """
 
     def __init__(self) -> None:
-        from models.llm_providers.deepseek_client import DeepSeekClient
-        from models.llm_providers.qwen_client import QwenClient
         from config.settings import settings
 
-        self._deepseek = DeepSeekClient()
-        self._qwen_light = QwenClient(model_size="1.8b")
-        self._qwen_medium = QwenClient(model_size="7b")
-        self._qwen_max = QwenClient(model_size="max")
+        # Lazy-initialized provider clients (created on first use to avoid
+        # crashing on import when API keys are not set — e.g. during tests).
+        self._deepseek: object | None = None
+        self._qwen_light: object | None = None
+        self._qwen_medium: object | None = None
+        self._qwen_max: object | None = None
 
         # Circuit breaker state
         self._circuit_state: CircuitState = CircuitState.CLOSED
@@ -55,6 +55,30 @@ class ModelRouter:
 
         # User-level fallback markers (429 errors)
         self._user_fallback: set[str] = set()
+
+    def _get_deepseek(self) -> object:
+        if self._deepseek is None:
+            from models.llm_providers.deepseek_client import DeepSeekClient
+            self._deepseek = DeepSeekClient()
+        return self._deepseek
+
+    def _get_qwen_light(self) -> object:
+        if self._qwen_light is None:
+            from models.llm_providers.qwen_client import QwenClient
+            self._qwen_light = QwenClient(model_size="1.8b")
+        return self._qwen_light
+
+    def _get_qwen_medium(self) -> object:
+        if self._qwen_medium is None:
+            from models.llm_providers.qwen_client import QwenClient
+            self._qwen_medium = QwenClient(model_size="7b")
+        return self._qwen_medium
+
+    def _get_qwen_max(self) -> object:
+        if self._qwen_max is None:
+            from models.llm_providers.qwen_client import QwenClient
+            self._qwen_max = QwenClient(model_size="max")
+        return self._qwen_max
 
     async def route(
         self, tier: ModelTier, user_id: str | None = None
@@ -72,10 +96,10 @@ class ModelRouter:
             ValueError: If an unknown tier is provided.
         """
         if tier == ModelTier.LIGHT:
-            return ("qwen3-1.8b", self._qwen_light)
+            return ("qwen3-1.8b", self._get_qwen_light())
 
         if tier == ModelTier.MEDIUM:
-            return ("qwen3-7b", self._qwen_medium)
+            return ("qwen3-7b", self._get_qwen_medium())
 
         if tier == ModelTier.HEAVY:
             # Check user-level fallback first
@@ -83,18 +107,18 @@ class ModelRouter:
                 logger.warning(
                     "User %s in fallback mode (429), routing to qwen-max", user_id
                 )
-                return ("qwen-max (user fallback)", self._qwen_max)
+                return ("qwen-max (user fallback)", self._get_qwen_max())
 
             # Check global circuit breaker
             state = self._get_circuit_state()
             if state == CircuitState.OPEN:
                 logger.warning("Circuit OPEN, routing to qwen-max")
-                return ("qwen-max (circuit open)", self._qwen_max)
+                return ("qwen-max (circuit open)", self._get_qwen_max())
 
             if state == CircuitState.HALF_OPEN:
                 logger.info("Circuit HALF_OPEN, probing deepseek-v3")
 
-            return ("deepseek-v3", self._deepseek)
+            return ("deepseek-v3", self._get_deepseek())
 
         raise ValueError(f"Unknown tier: {tier}")
 

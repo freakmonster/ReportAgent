@@ -139,12 +139,14 @@ def test_init_uses_settings() -> None:
     mock_settings.deepseek_base_url = "https://api.deepseek.com"
     mock_settings.deepseek_model = "deepseek-v3"
 
-    with patch("models.llm_providers.deepseek_client.settings", mock_settings), \
-         patch("models.llm_providers.deepseek_client.AsyncOpenAI") as mock_async_openai:
+    # DeepSeekClient.__init__ does a local ``from config.settings import settings``,
+    # so we must patch the canonical source rather than the re-exported module ref.
+    with patch("config.settings.settings", mock_settings):
         client = DeepSeekClient()
 
+        # Lazy init: AsyncOpenAI is NOT created during __init__,
+        # but settings are still captured into private attributes.
+        assert client._api_key == "sk-test-deepseek-key"
+        assert client._base_url == "https://api.deepseek.com"
+        assert client._model == "deepseek-v3"
         assert client.model == "deepseek-v3"
-        mock_async_openai.assert_called_once_with(
-            api_key="sk-test-deepseek-key",
-            base_url="https://api.deepseek.com",
-        )

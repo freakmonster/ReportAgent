@@ -39,31 +39,27 @@ _mock_qwen_max.model = "qwen-max"
 
 @pytest.fixture
 def router() -> ModelRouter:
-    """Create a ModelRouter with all internal clients and settings mocked."""
+    """Create a ModelRouter with all internal clients and settings mocked.
+
+    The router uses lazy getters that import providers on first use.
+    Module-level patches on the provider classes exit before tests call
+    route(), so we replace the getter methods directly on the instance.
+    """
     mock_settings = MagicMock()
     mock_settings.cb_timeout = 30
     mock_settings.cb_failure_threshold = 3
 
-    # QwenClient is called three times with different model_size args;
-    # return different mocks for each so the router's _qwen_light /
-    # _qwen_medium / _qwen_max are distinguishable.
-    def _qwen_factory(model_size: str) -> MagicMock:
-        return {
-            "1.8b": _mock_qwen_light,
-            "7b": _mock_qwen_medium,
-            "max": _mock_qwen_max,
-        }[model_size]
+    with patch("config.settings.settings", mock_settings):
+        r = ModelRouter()
 
-    with patch(
-        "config.settings.settings", mock_settings
-    ), patch(
-        "models.llm_providers.deepseek_client.DeepSeekClient",
-        return_value=_mock_deepseek,
-    ), patch(
-        "models.llm_providers.qwen_client.QwenClient",
-        side_effect=_qwen_factory,
-    ):
-        return ModelRouter()
+    # Replace lazy getters so they return our module-level mocks without
+    # actually importing the real provider classes.
+    r._get_deepseek = MagicMock(return_value=_mock_deepseek)       # type: ignore[method-assign]
+    r._get_qwen_light = MagicMock(return_value=_mock_qwen_light)   # type: ignore[method-assign]
+    r._get_qwen_medium = MagicMock(return_value=_mock_qwen_medium) # type: ignore[method-assign]
+    r._get_qwen_max = MagicMock(return_value=_mock_qwen_max)       # type: ignore[method-assign]
+
+    return r
 
 
 # ---------------------------------------------------------------------------
