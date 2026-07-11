@@ -122,3 +122,28 @@ class PromptManager:
     def _compute_hash(content: str) -> str:
         """Compute SHA256 hex digest of template content."""
         return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+# ── Lazily-initialized singleton (V2.3: no I/O at import time) ───────
+
+_prompt_manager: PromptManager | None = None
+
+
+def get_prompt_manager(templates_dir: Path | None = None) -> PromptManager:
+    """Return the global PromptManager singleton, lazily initialized.
+
+    No file I/O occurs until this function is first called.
+
+    Args:
+        templates_dir: Path to templates directory. Defaults to
+                       models/prompts/system_prompts/ relative to project root.
+
+    Returns:
+        The global PromptManager instance.
+    """
+    global _prompt_manager
+    if _prompt_manager is None:
+        if templates_dir is None:
+            templates_dir = Path(__file__).resolve().parent / "system_prompts"
+        _prompt_manager = PromptManager(templates_dir)
+    return _prompt_manager

@@ -35,16 +35,11 @@ except ImportError as exc:
 # ── Prompt manager ──────────────────────────────────────────────────────
 
 try:
-    from models.prompts.prompt_manager import PromptManager
+    from models.prompts.prompt_manager import PromptManager, get_prompt_manager
 except ImportError as exc:
     logger.warning("PromptManager not available: %s", exc)
     PromptManager = None  # type: ignore[misc,assignment]
-
-try:
-    from models.prompts.prompt_manager import prompt_manager  # type: ignore[attr-defined]
-except ImportError as exc:
-    logger.warning("prompt_manager singleton not available: %s", exc)
-    prompt_manager = None  # type: ignore[misc,assignment]
+    get_prompt_manager = None  # type: ignore[misc,assignment]
 
 # ── Public API ──────────────────────────────────────────────────────────
 
@@ -60,5 +55,5 @@ __all__ = [
     "RetryParser",
     "RetryExhaustedError",
     "PromptManager",
-    "prompt_manager",
+    "get_prompt_manager",
 ]

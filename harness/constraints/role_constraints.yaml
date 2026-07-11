@@ -1,0 +1,65 @@
+"""
+Role constraints — agent permission boundaries definition.
+
+Defines which tools each agent node is allowed to call and under what conditions.
+"""
+
+nodes:
+  intent_classifier:
+    allowed_tools: []
+    description: "Intent classifier has no tool access"
+
+  research_planner:
+    allowed_tools: []
+    description: "Research planner only structures tasks"
+
+  data_collector:
+    allowed_tools:
+      - web_search
+      - news_search
+      - academic_search
+      - mcp_web_search
+      - mcp_news_search
+      - mcp_db_query
+    description: "Data collector can use search and database tools"
+
+  data_processor:
+    allowed_tools: []
+    description: "Data processor only transforms data"
+
+  data_analyst:
+    allowed_tools:
+      - mcp_generate_line_chart
+      - mcp_generate_bar_chart
+      - mcp_generate_pie_chart
+    description: "Data analyst can generate charts"
+
+  writer:
+    allowed_tools: []
+    description: "Writer only generates text"
+
+  editor:
+    allowed_tools: []
+    description: "Editor only refines text"
+
+  reviewer:
+    allowed_tools:
+      - mcp_web_search
+      - mcp_news_search
+      - mcp_db_query
+    description: "Reviewer can verify facts with search and database"
+
+  human_review:
+    allowed_tools:
+      - mcp_send_email
+    description: "Human review can send notification emails"
+
+  publisher:
+    allowed_tools: []
+    description: "Publisher only formats output"
+
+  financial_reviewer:
+    allowed_tools:
+      - mcp_db_query
+      - mcp_web_search
+    description: "Financial reviewer for earnings analysis workflow"
