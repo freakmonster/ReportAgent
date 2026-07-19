@@ -15,7 +15,38 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Request models (module-level for correct FastAPI body parsing)
+# ---------------------------------------------------------------------------
+
+class LineChartReq(BaseModel):
+    """Request model for line chart generation."""
+    title: str = Field(..., description="Chart title")
+    x_label: str = Field(default="X", description="X-axis label")
+    y_label: str = Field(default="Y", description="Y-axis label")
+    data: dict[str, list[float]] = Field(..., description="Series name → values")
+    x_ticks: list[str] | None = None
+
+
+class BarChartReq(BaseModel):
+    """Request model for bar chart generation."""
+    title: str = Field(..., description="Chart title")
+    x_label: str = Field(default="Category", description="X-axis label")
+    y_label: str = Field(default="Value", description="Y-axis label")
+    data: dict[str, list[float]] = Field(..., description="Series name → values")
+    x_ticks: list[str] | None = None
+    horizontal: bool = False
+
+
+class PieChartReq(BaseModel):
+    """Request model for pie chart generation."""
+    title: str = Field(..., description="Chart title")
+    data: dict[str, float] = Field(..., description="Label → value mapping")
 
 
 # ---------------------------------------------------------------------------
@@ -31,6 +62,20 @@ class ChartGenerator:
     def __init__(self) -> None:
         self._mpl_available: bool = False
         self._check_matplotlib()
+        self._cjk_font: str = self._detect_cjk_font()
+
+    @staticmethod
+    def _detect_cjk_font() -> str:
+        """Detect a CJK-supporting font available on the system."""
+        try:
+            import matplotlib.font_manager as fm
+            for candidate in ("Microsoft YaHei", "SimHei", "SimSun", "KaiTi", "FangSong"):
+                for f in fm.fontManager.ttflist:
+                    if f.name == candidate:
+                        return candidate
+        except Exception:
+            pass
+        return ""  # fallback: use matplotlib default (no CJK)
 
     def _check_matplotlib(self) -> None:
         """Check if matplotlib is available."""
@@ -53,6 +98,11 @@ class ChartGenerator:
             plt.style.use(self.DEFAULT_STYLE)
         except Exception:
             logger.debug("Style '%s' not available, using default", self.DEFAULT_STYLE)
+
+        # Apply CJK font AFTER style (style resets font settings)
+        if self._cjk_font:
+            plt.rcParams["font.sans-serif"] = [self._cjk_font] + plt.rcParams["font.sans-serif"]
+            plt.rcParams["axes.unicode_minus"] = False
 
         fig, ax = plt.subplots(figsize=figsize)
         return fig, ax
@@ -240,31 +290,9 @@ class ChartGenerator:
 def create_chart_app() -> object:
     """Create and configure the FastAPI chart MCP server application."""
     from fastapi import FastAPI
-    from pydantic import BaseModel, Field
 
     app = FastAPI(title="MCP Chart Server", version="0.1.0")
     generator = ChartGenerator()
-
-    # ── Request models ──────────────────────────────────────────────
-
-    class LineChartRequest(BaseModel):
-        title: str = Field(..., description="Chart title")
-        x_label: str = Field(default="X", description="X-axis label")
-        y_label: str = Field(default="Y", description="Y-axis label")
-        data: dict[str, list[float]] = Field(..., description="Series name → values")
-        x_ticks: list[str] | None = None
-
-    class BarChartRequest(BaseModel):
-        title: str = Field(..., description="Chart title")
-        x_label: str = Field(default="Category", description="X-axis label")
-        y_label: str = Field(default="Value", description="Y-axis label")
-        data: dict[str, list[float]] = Field(..., description="Series name → values")
-        x_ticks: list[str] | None = None
-        horizontal: bool = False
-
-    class PieChartRequest(BaseModel):
-        title: str = Field(..., description="Chart title")
-        data: dict[str, float] = Field(..., description="Label → value mapping")
 
     # ── Health ──────────────────────────────────────────────────────
 
@@ -275,7 +303,7 @@ def create_chart_app() -> object:
     # ── Tool endpoints ──────────────────────────────────────────────
 
     @app.post("/tools/generate_line_chart")
-    async def line_chart(req: LineChartRequest) -> dict[str, Any]:
+    async def line_chart(req: LineChartReq) -> dict[str, Any]:
         return generator.generate_line_chart(
             title=req.title,
             x_label=req.x_label,
@@ -285,7 +313,7 @@ def create_chart_app() -> object:
         )
 
     @app.post("/tools/generate_bar_chart")
-    async def bar_chart(req: BarChartRequest) -> dict[str, Any]:
+    async def bar_chart(req: BarChartReq) -> dict[str, Any]:
         return generator.generate_bar_chart(
             title=req.title,
             x_label=req.x_label,
@@ -296,7 +324,7 @@ def create_chart_app() -> object:
         )
 
     @app.post("/tools/generate_pie_chart")
-    async def pie_chart(req: PieChartRequest) -> dict[str, Any]:
+    async def pie_chart(req: PieChartReq) -> dict[str, Any]:
         return generator.generate_pie_chart(
             title=req.title,
             data=req.data,
@@ -315,6 +343,7 @@ app = create_chart_app()
 def main() -> None:
     """Run the chart MCP server."""
     import uvicorn
+
     from config.settings import settings
 
     uvicorn.run(
@@ -323,3 +352,7 @@ def main() -> None:
         port=8003,
         log_level=settings.log_level.lower(),
     )
+
+
+if __name__ == "__main__":
+    main()

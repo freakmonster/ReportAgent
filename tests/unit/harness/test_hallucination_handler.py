@@ -9,9 +9,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 import pytest  # noqa: E402
 
-from harness.orchestrator.context import PostExecContext  # noqa: E402
 from harness.handlers.base import HandlerDecision  # noqa: E402
 from harness.handlers.hallucination_handler import HallucinationHandler  # noqa: E402
+from harness.orchestrator.context import PostExecContext  # noqa: E402
 
 
 class TestHallucinationHandler:

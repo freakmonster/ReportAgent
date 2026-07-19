@@ -1,0 +1,21 @@
+experiments:
+  model_comparison:
+    control:
+      model: "qwen3-8b"
+      temperature: 0.7
+    treatment:
+      model: "qwen3-32b"
+      temperature: 0.7
+    runs_per_group: 10
+  retrieval_comparison:
+    control:
+      retrieval_strategy: "semantic_only"
+    treatment:
+      retrieval_strategy: "hybrid"
+    runs_per_group: 10
+  prompt_comparison:
+    control:
+      prompt_version: "v1"
+    treatment:
+      prompt_version: "v2"
+    runs_per_group: 10

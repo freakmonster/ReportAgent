@@ -2,12 +2,14 @@
 
 Priority (highest first):
 1. Environment variables (e.g. PG_HOST=xxx)
-2. YAML configuration file values (config/environments/{ENVIRONMENT}.yaml)
-3. Default values defined in the model Fields
+2. .env file (if env_file_enabled: true in YAML)
+3. YAML configuration file values (config/environments/{ENVIRONMENT}.yaml)
+4. Default values defined in the model Fields
 """
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any, Optional
@@ -15,6 +17,66 @@ from typing import Any, Optional
 import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
+
+# ── .env file support ─────────────────────────────────────────────────
+
+
+def _parse_dotenv(dotenv_path: Path) -> dict[str, str]:
+    """Parse a .env file into a dict, skipping comments and blank lines.
+
+    Args:
+        dotenv_path: Path to the .env file.
+
+    Returns:
+        Dict of KEY=VALUE pairs.
+    """
+    result: dict[str, str] = {}
+    if not dotenv_path.is_file():
+        return result
+
+    with open(dotenv_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                result[key] = value
+    return result
+
+
+def _load_dotenv_if_enabled(yaml_data: dict[str, Any]) -> None:
+    """Load .env file into os.environ if env_file_enabled is set in YAML.
+
+    Only loads keys that are NOT already set in the environment,
+    to preserve explicit env-var overrides.
+    """
+    enabled = yaml_data.get("env_file_enabled")
+    if enabled is not True:
+        return
+
+    # Look for .env in the project root (parent of config/)
+    project_root = Path(__file__).resolve().parent.parent
+    dotenv_path = project_root / ".env"
+
+    if dotenv_path.is_file():
+        loaded_keys: list[str] = []
+        for key, value in _parse_dotenv(dotenv_path).items():
+            if key not in os.environ:
+                os.environ[key] = value
+                loaded_keys.append(key)
+        if loaded_keys:
+            print(f"[settings] .env file loaded: {len(loaded_keys)} keys ({', '.join(loaded_keys)})")
+        else:
+            print("[settings] .env file found but all keys already set in environment, skipped")
+    else:
+        print(f"[settings] .env file NOT found at {dotenv_path}, env_file_enabled=true but no .env exists")
 
 
 # ── YAML loading ────────────────────────────────────────────────────────
@@ -81,6 +143,8 @@ _ENV_VAR_MAP: dict[str, str] = {
     "jwt_secret_key": "JWT_SECRET_KEY",
     "api_key_header": "API_KEY_HEADER",
     "embedding_model": "EMBEDDING_MODEL",
+    "embedding_backend": "EMBEDDING_BACKEND",
+    "rag_enabled": "RAG_ENABLED",
     "reranker_enabled": "RERANKER_ENABLED",
     "reranker_model": "RERANKER_MODEL",
     "log_level": "LOG_LEVEL",
@@ -132,10 +196,21 @@ class Settings(BaseSettings):
 
     def __init__(self, **kwargs: Any) -> None:
         yaml_data = _load_yaml_data()
+
+        # Load .env file if enabled (before env overrides so env vars win)
+        _load_dotenv_if_enabled(yaml_data)
+
         env_overrides = _collect_env_overrides()
         yaml_data.update(env_overrides)
         yaml_data.update(kwargs)
         super().__init__(**yaml_data)
+
+        # Initialise feature flags from YAML data
+        try:
+            from config.feature_flags import init_feature_flags
+            init_feature_flags(yaml_data)
+        except Exception:
+            pass  # Feature flag init is non-critical
 
     # ── App ──────────────────────────────────────────────────────────
     app_name: str = Field(default="智能研报生成系统")
@@ -193,20 +268,29 @@ class Settings(BaseSettings):
 
     # ── Tavily ────────────────────────────────────────────────────────
     tavily_api_key: str = Field(default="")
+    search_backend: str = Field(default="tavily")  # "tavily" or "mock"
 
     # ── DeepSeek ─────────────────────────────────────────────────────
     deepseek_api_key: str = Field(default="")
     deepseek_base_url: str = Field(default="https://api.deepseek.com")
-    deepseek_model: str = Field(default="deepseek-v3")
+    deepseek_model: str = Field(default="deepseek-v4-flash")
+    deepseek_model_tier: str = Field(default="flash")  # "pro" | "flash"
+
+    # ── LLM Provider Selection ───────────────────────────────────────
+    # Controls which LLM backend the writer node uses.
+    #   "deepseek"  → DeepSeekClient (default)
+    #   "qwen"      → QwenClient(model_size="max")
+    writer_llm_provider: str = Field(default="deepseek")
 
     # ── Qwen ─────────────────────────────────────────────────────────
     qwen_api_key: str = Field(default="")
     qwen_base_url: str = Field(
         default="https://dashscope.aliyuncs.com/compatible-mode/v1"
     )
+    qwen_model_size: str = Field(default="max")  # "8b" | "32b" | "max"
     qwen_model: str = Field(default="qwen-max")
-    qwen_light_model: str = Field(default="qwen3-1.8b")
-    qwen_medium_model: str = Field(default="qwen3-7b")
+    qwen_light_model: str = Field(default="qwen3-8b")
+    qwen_medium_model: str = Field(default="qwen3-32b")
 
     # ── MCP ──────────────────────────────────────────────────────────
     mcp_search_url: str = Field(default="http://localhost:8001")
@@ -228,6 +312,8 @@ class Settings(BaseSettings):
 
     # ── Embedding ────────────────────────────────────────────────────
     embedding_model: str = Field(default="bge-m3")
+    embedding_backend: str = Field(default="sentence_transformers")
+    rag_enabled: bool = Field(default=True)
 
     # ── Reranker ──────────────────────────────────────────────────────
     reranker_enabled: bool = Field(default=False)
@@ -239,6 +325,9 @@ class Settings(BaseSettings):
     # ── LangSmith (optional) ─────────────────────────────────────────
     langsmith_api_key: Optional[str] = Field(default=None)
     langsmith_project: Optional[str] = Field(default=None)
+
+    # ── Env File ─────────────────────────────────────────────────────
+    env_file_enabled: bool = Field(default=False)
 
 
 # Singleton instance — import this throughout the application

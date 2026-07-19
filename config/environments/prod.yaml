@@ -30,6 +30,7 @@ qdrant_api_key: ""  # MUST set QDRANT_API_KEY in env
 
 # Tavily — search backend for MCP Search (override via env)
 tavily_api_key: ""  # MUST set TAVILY_API_KEY in env
+search_backend: "tavily"  # "tavily" (production) | "mock" (zero-config dev)
 
 # DeepSeek — production (override via env)
 deepseek_base_url: "https://api.deepseek.com"
@@ -38,8 +39,8 @@ deepseek_model: "deepseek-v4-pro"
 # Qwen — production (override via env)
 qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
 qwen_model: "qwen-max"
-qwen_light_model: "qwen3-1.8b"
-qwen_medium_model: "qwen3-7b"
+qwen_light_model: "qwen3-8b"
+qwen_medium_model: "qwen3-32b"
 
 # MCP Sidecar endpoints — production
 mcp_search_url: "http://mcp-search:8001"
@@ -55,6 +56,17 @@ cb_timeout: 30
 rate_limit_requests: 60
 rate_limit_window: 60
 
+# Multi-tenant rate limiting — per-tenant quotas override the global defaults above
+rate_limit:
+  tenants:
+    # Premium tenants get higher quotas; default tenants use global limits
+    enterprise:
+      max_requests: 300
+      window_seconds: 60
+    premium:
+      max_requests: 120
+      window_seconds: 60
+
 # Security — MUST override via env
 jwt_secret_key: ""  # MUST set JWT_SECRET_KEY in env
 api_key_header: "X-API-Key"
@@ -65,6 +77,18 @@ reranker_model: "BAAI/bge-reranker-v2-m3"
 
 # Embedding
 embedding_model: "bge-m3"
+rag_enabled: true
+
+# Feature Flags — runtime toggles, overridable via /admin/flags
+feature_flags:
+  reranker_enabled: false
+  rag_enabled: true
+  llm_cache_enabled: true
+  hybrid_retrieval_enabled: true
+  semantic_search_enabled: true
+  bm25_enabled: true
+  circuit_breaker_enabled: true
+  auto_rerank_enabled: false
 
 # Logging — info level for production
 log_level: "INFO"

@@ -23,10 +23,10 @@ _mock_deepseek = MagicMock()
 _mock_deepseek.model = "deepseek-v3"
 
 _mock_qwen_light = MagicMock()
-_mock_qwen_light.model = "qwen3-1.8b"
+_mock_qwen_light.model = "qwen3-8b"
 
 _mock_qwen_medium = MagicMock()
-_mock_qwen_medium.model = "qwen3-7b"
+_mock_qwen_medium.model = "qwen3-32b"
 
 _mock_qwen_max = MagicMock()
 _mock_qwen_max.model = "qwen-max"
@@ -69,17 +69,17 @@ def router() -> ModelRouter:
 
 @pytest.mark.asyncio
 async def test_route_light_tier(router: ModelRouter) -> None:
-    """Verify light tier always routes to qwen3-1.8b."""
+    """Verify light tier always routes to qwen3-8b."""
     model_name, client = await router.route(ModelTier.LIGHT, "user-1")
-    assert model_name == "qwen3-1.8b"
+    assert model_name == "qwen3-8b"
     assert client is _mock_qwen_light
 
 
 @pytest.mark.asyncio
 async def test_route_medium_tier(router: ModelRouter) -> None:
-    """Verify medium tier always routes to qwen3-7b."""
+    """Verify medium tier always routes to qwen3-32b."""
     model_name, client = await router.route(ModelTier.MEDIUM, "user-1")
-    assert model_name == "qwen3-7b"
+    assert model_name == "qwen3-32b"
     assert client is _mock_qwen_medium
 
 

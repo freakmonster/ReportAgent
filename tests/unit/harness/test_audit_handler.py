@@ -9,9 +9,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 import pytest  # noqa: E402
 
-from harness.orchestrator.context import PostExecContext, PreExecContext  # noqa: E402
-from harness.handlers.base import HandlerDecision  # noqa: E402
 from harness.handlers.audit_handler import AuditHandler  # noqa: E402
+from harness.handlers.base import HandlerDecision  # noqa: E402
+from harness.orchestrator.context import PostExecContext, PreExecContext  # noqa: E402
 
 
 class TestAuditHandler:

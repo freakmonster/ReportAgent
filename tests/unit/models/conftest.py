@@ -84,8 +84,8 @@ def mock_settings() -> MagicMock:
     settings.qwen_api_key = "sk-test-qwen-key"
     settings.qwen_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     settings.qwen_model = "qwen-max"
-    settings.qwen_light_model = "qwen3-1.8b"
-    settings.qwen_medium_model = "qwen3-7b"
+    settings.qwen_light_model = "qwen3-8b"
+    settings.qwen_medium_model = "qwen3-32b"
     settings.cb_failure_threshold = 3
     settings.cb_timeout = 30
     return settings

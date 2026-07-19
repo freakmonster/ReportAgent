@@ -3,8 +3,8 @@
 from config.settings import settings
 
 from .base import BaseReranker
-from .noop_reranker import NoOpReranker
 from .cross_encoder_reranker import CrossEncoderReranker
+from .noop_reranker import NoOpReranker
 
 
 def get_reranker() -> BaseReranker:

@@ -11,14 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 import pytest  # noqa: E402
 
 from mcp_tools.internal_tools.web_search import (  # noqa: E402
+    _parse_ddg_html,
+    academic_search,
+    news_search,
+    news_search_tool,
     web_search,
     web_search_tool,
-    news_search_tool,
-    news_search,
-    academic_search,
-    _parse_ddg_html,
 )
-
 
 # ---------------------------------------------------------------------------
 # web_search tests

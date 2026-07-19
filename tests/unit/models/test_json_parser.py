@@ -20,7 +20,6 @@ import pytest  # noqa: E402
 from models.parsers.json_parser import JSONParseError, JSONParser  # noqa: E402
 from models.parsers.retry_parser import RetryExhaustedError, RetryParser  # noqa: E402
 
-
 # ── JSONParser tests ──────────────────────────────────────────────────
 
 

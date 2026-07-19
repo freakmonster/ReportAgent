@@ -7,8 +7,8 @@ from typing import Any
 from agents.state import ReportState
 from agents.state.schemas.base import BaseContext
 from agents.state.schemas.collection import CollectionContext, Document
+from agents.state.schemas.review import ClaimMarker, ReviewContext, VerifiedClaim
 from agents.state.schemas.writing import WritingContext
-from agents.state.schemas.review import ReviewContext, ClaimMarker, VerifiedClaim
 
 
 def upgrade_v1_to_v2(old_state: dict[str, Any]) -> ReportState:
@@ -47,10 +47,13 @@ def upgrade_v1_to_v2(old_state: dict[str, Any]) -> ReportState:
     source_urls_raw: list[str] = old_state.get("source_urls", []) or []
     source_urls = [str(u) for u in source_urls_raw]
 
+    analysis: dict[str, Any] = old_state.get("analysis", {}) or {}
+
     collection = CollectionContext(
         raw_docs=raw_docs,
         compressed_summary={str(k): str(v) for k, v in compressed_raw.items()},
         source_urls=source_urls,
+        analysis=analysis,
     )
 
     # ── Writing context ───────────────────────────────────────────────

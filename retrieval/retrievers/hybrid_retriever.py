@@ -8,10 +8,10 @@ import math
 from collections import defaultdict
 from typing import Any
 
-from retrieval.embedders.embedding_model import EmbeddingModel
-from retrieval.vectorstores.qdrant_store import QdrantStore
-from retrieval.retrievers.rerankers.base import BaseReranker
 from infrastructure.observability.logger import get_logger
+from retrieval.embedders.embedding_model import EmbeddingModel
+from retrieval.retrievers.rerankers.base import BaseReranker
+from retrieval.vectorstores.qdrant_store import QdrantStore
 
 logger = get_logger(__name__)
 
@@ -216,6 +216,36 @@ class HybridRetriever:
         self._refit_bm25()
         self._pending_since_refit = 0
 
+    async def _ensure_loaded(self) -> None:
+        """从 Qdrant 加载已有文档到本地 BM25 索引（幂等）。"""
+        if self._initialized:
+            return
+        client = await self.qdrant._get_client()
+        col_name = self.qdrant._collection_name(self.collection)
+        offset = None
+        while True:
+            result, offset = await client.scroll(
+                collection_name=col_name,
+                limit=500,
+                with_payload=True,
+                with_vectors=False,
+                offset=offset,
+            )
+            if not result:
+                break
+            for pt in result:
+                text = (pt.payload or {}).get("text", "")
+                if text:
+                    self._documents.append(text)
+                    self._doc_ids.append(pt.id)
+            if offset is None:
+                break
+        for idx, did in enumerate(self._doc_ids):
+            self._id_to_idx[did] = idx
+        self._refit_bm25()
+        self._initialized = True
+        logger.info("HybridRetriever loaded from Qdrant", docs=len(self._documents))
+
     async def search(
         self,
         query: str,
@@ -243,6 +273,9 @@ class HybridRetriever:
         if self._pending_since_refit > 0:
             self._refit_bm25()
             self._pending_since_refit = 0
+
+        # 从 Qdrant 加载已有文档（首次搜索时懒加载）
+        await self._ensure_loaded()
 
         # 语义搜索
         semantic_limit = max(top_k * 3, 30)

@@ -15,7 +15,6 @@ from typing import Optional
 
 from redis.asyncio import Redis
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -74,9 +73,12 @@ class DeadLetterQueue:
         return {k: "" if v is None else str(v) for k, v in data.items()}
 
     @staticmethod
-    def _dict_to_message(data: dict[bytes, bytes]) -> DLQMessage:
+    def _dict_to_message(data: dict) -> DLQMessage:
         """Deserialize a flat dict (from XREADGROUP / XRANGE) back to a DLQMessage."""
-        decoded = {k.decode(): v.decode() for k, v in data.items()}
+        decoded = {
+            k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v
+            for k, v in data.items()
+        }
         return DLQMessage(
             collection_name=decoded.get("collection_name", ""),
             error_traceback=decoded.get("error_traceback", ""),

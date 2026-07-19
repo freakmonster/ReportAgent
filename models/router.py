@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class ModelTier(str, Enum):
-    LIGHT = "light"    # qwen3-1.8b
-    MEDIUM = "medium"  # qwen3-7b
+    LIGHT = "light"    # qwen3-8b
+    MEDIUM = "medium"  # qwen3-32b
     HEAVY = "heavy"    # deepseek-v3 (primary) -> qwen-max (fallback)
 
 
@@ -65,13 +65,13 @@ class ModelRouter:
     def _get_qwen_light(self) -> object:
         if self._qwen_light is None:
             from models.llm_providers.qwen_client import QwenClient
-            self._qwen_light = QwenClient(model_size="1.8b")
+            self._qwen_light = QwenClient(model_size="8b")
         return self._qwen_light
 
     def _get_qwen_medium(self) -> object:
         if self._qwen_medium is None:
             from models.llm_providers.qwen_client import QwenClient
-            self._qwen_medium = QwenClient(model_size="7b")
+            self._qwen_medium = QwenClient(model_size="32b")
         return self._qwen_medium
 
     def _get_qwen_max(self) -> object:
@@ -96,10 +96,10 @@ class ModelRouter:
             ValueError: If an unknown tier is provided.
         """
         if tier == ModelTier.LIGHT:
-            return ("qwen3-1.8b", self._get_qwen_light())
+            return ("qwen3-8b", self._get_qwen_light())
 
         if tier == ModelTier.MEDIUM:
-            return ("qwen3-7b", self._get_qwen_medium())
+            return ("qwen3-32b", self._get_qwen_medium())
 
         if tier == ModelTier.HEAVY:
             # Check user-level fallback first

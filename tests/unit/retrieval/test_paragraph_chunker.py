@@ -1,13 +1,12 @@
 """Unit tests for paragraph_chunker — recursive split, precise overlap, heading respect."""
 
 from retrieval.chunkers.paragraph_chunker import (
-    chunk_text,
-    chunk_documents,
-    count_tokens_estimate,
-    ChunkResult,
     Chunk,
+    ChunkResult,
+    chunk_documents,
+    chunk_text,
+    count_tokens_estimate,
 )
-
 
 _TEXT_WITH_HEADERS = """# 第一章 引言
 

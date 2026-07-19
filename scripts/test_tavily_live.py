@@ -1,5 +1,6 @@
 """Quick integration test for Tavily search server."""
 import asyncio
+
 import httpx
 
 

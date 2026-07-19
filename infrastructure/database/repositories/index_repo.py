@@ -8,39 +8,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Literal, Any
+from typing import Any, Literal, Optional
 
 from sqlalchemy import (
-    Column,
-    DateTime,
-    Integer,
-    MetaData,
-    String,
-    Table,
     func,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import select
 
+from infrastructure.database.models import index_status
+
 # ── Types ──────────────────────────────────────────────────────────────
 
 IndexStatus = Literal["ready", "building", "failed"]
-
-# ── Schema ─────────────────────────────────────────────────────────────
-
-metadata = MetaData()
-
-index_status = Table(
-    "index_status",
-    metadata,
-    Column("collection_name", String, primary_key=True),
-    Column("status", String, nullable=False, default="building"),
-    Column("error_msg", String, nullable=True),
-    Column("checksum", String, nullable=True),
-    Column("document_count", Integer, nullable=False, default=0),
-    Column("updated_at", DateTime, nullable=False, server_default=func.now()),
-)
 
 
 # ── Record ─────────────────────────────────────────────────────────────
@@ -208,3 +189,29 @@ class IndexRepository:
             )
             await session.execute(stmt)
             await session.commit()
+
+
+# ── Singleton ──────────────────────────────────────────────────────────
+
+_index_repo: IndexRepository | None = None
+
+
+def init_index_repo(session_factory: async_sessionmaker[AsyncSession]) -> None:
+    """Initialise the index repository singleton.
+
+    Must be called during app startup (after ``init_db()``).
+    """
+    global _index_repo
+    _index_repo = IndexRepository(session_factory)
+
+
+def get_index_repo() -> IndexRepository:
+    """Return the index repository singleton.
+
+    Raises ``RuntimeError`` if ``init_index_repo()`` was not called first.
+    """
+    if _index_repo is None:
+        raise RuntimeError(
+            "IndexRepository not initialised. Call init_index_repo() first."
+        )
+    return _index_repo

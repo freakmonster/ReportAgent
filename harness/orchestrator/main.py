@@ -129,29 +129,68 @@ class HarnessOrchestrator:
         """Public API to reload the handler chain (e.g., after YAML change)."""
         self._load_chain(workflow_type)
 
-    # ── Chain execution ────────────────────────────────────────────────
+    # ── Chain execution (dual-phase) ───────────────────────────────────
 
-    async def execute(
+    async def execute_pre(
         self,
         pre_ctx: PreExecContext,
+        workflow_type: str = "",
+    ) -> list[HandlerResult]:
+        """Run pre-execution handler chain (input_safety, permission).
+
+        Each handler receives ``(pre_ctx, None)``.  Post-only handlers
+        (structural, fact_stage, etc.) automatically return PASS since
+        they have no post-context to check.
+
+        Args:
+            pre_ctx: Context captured before node execution.
+            workflow_type: Optional workflow type for chain selection.
+
+        Returns:
+            List of HandlerResult.  If any decision is REJECT the node
+            should NOT execute.
+        """
+        return await self._execute_chain(pre_ctx, None, workflow_type)
+
+    async def execute_post(
+        self,
         post_ctx: PostExecContext,
         workflow_type: str = "",
     ) -> list[HandlerResult]:
-        """Execute the handler chain against the given contexts.
+        """Run post-execution handler chain (structural, fact, audit).
 
-        Each handler's ``handle()`` is called in order.  If any returns
-        ``REJECT``, the chain short-circuits immediately.  If any returns
-        ``FAIL``, the chain continues but the failure is recorded.
+        Each handler receives ``(None, post_ctx)``.  Pre-only handlers
+        automatically return PASS.
 
         Args:
-            pre_ctx: Context before node execution.
-            post_ctx: Context after node execution.
+            post_ctx: Context captured after node execution.
+            workflow_type: Optional workflow type for chain selection.
+
+        Returns:
+            List of HandlerResult.  Audit handler always returns PASS.
+        """
+        return await self._execute_chain(None, post_ctx, workflow_type)
+
+    async def _execute_chain(
+        self,
+        pre_ctx: PreExecContext | None,
+        post_ctx: PostExecContext | None,
+        workflow_type: str = "",
+    ) -> list[HandlerResult]:
+        """Internal: run the loaded handler chain.
+
+        Each handler's ``handle()`` is called in order.  If any returns
+        ``REJECT`` the chain short-circuits immediately.  If any returns
+        ``FAIL`` the chain continues but the failure is recorded.
+
+        Args:
+            pre_ctx: Pre-execution context (or None for post-only runs).
+            post_ctx: Post-execution context (or None for pre-only runs).
             workflow_type: Optional workflow type for chain selection.
 
         Returns:
             List of HandlerResult for every handler that executed.
         """
-        # Recheck chain if workflow type changed
         if workflow_type and not self._handlers:
             self._load_chain(workflow_type)
 

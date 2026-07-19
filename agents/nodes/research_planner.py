@@ -22,7 +22,6 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     """
     base: dict[str, Any] = state.get("base", {})
     template_name = base.get("template_name", "deep_report")
-    user_input = base.get("user_input", "")
 
     # Template-based chapter planning
     plans: dict[str, list[str]] = {

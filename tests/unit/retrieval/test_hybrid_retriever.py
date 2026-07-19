@@ -1,9 +1,10 @@
 """Unit tests for hybrid_retriever — BM25 + semantic + RRF fusion + rerank."""
 
 import pytest
+
 from retrieval.retrievers.hybrid_retriever import (
-    HybridRetriever,
     BM25Scorer,
+    HybridRetriever,
     rrf_fusion,
 )
 
@@ -105,6 +106,13 @@ class TestHybridRetriever:
     async def test_search_empty_index(self, mocker):
         store = mocker.AsyncMock()
         store.search = mocker.AsyncMock(return_value=[])
+
+        # Mock _get_client + scroll for _ensure_loaded() when no docs exist
+        mock_client = mocker.AsyncMock()
+        mock_client.scroll = mocker.AsyncMock(return_value=([], None))
+        store._get_client = mocker.AsyncMock(return_value=mock_client)
+        store._collection_name = mocker.MagicMock(return_value="test_documents")
+
         mock_embedder = mocker.MagicMock()
         mock_embedder.embed_single.return_value = [0.1] * 1024
 

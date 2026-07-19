@@ -16,7 +16,6 @@ from typing import Optional
 
 from redis.asyncio import Redis
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -73,9 +72,12 @@ class TaskQueue:
         return {k: "" if v is None else str(v) for k, v in data.items()}
 
     @staticmethod
-    def _dict_to_task(data: dict[bytes, bytes]) -> IndexingTask:
+    def _dict_to_task(data: dict) -> IndexingTask:
         """Deserialize a flat dict (from XREADGROUP) back to an IndexingTask."""
-        decoded = {k.decode(): v.decode() for k, v in data.items()}
+        decoded = {
+            k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v
+            for k, v in data.items()
+        }
         return IndexingTask(
             task_id=decoded.get("task_id", ""),
             file_path=decoded.get("file_path", ""),

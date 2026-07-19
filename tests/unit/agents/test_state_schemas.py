@@ -10,11 +10,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 import pytest  # noqa: E402
 
 from agents.state import ReportState, create_initial_state  # noqa: E402
+from agents.state.migrator import upgrade_v1_to_v2  # noqa: E402
 from agents.state.schemas.base import BaseContext  # noqa: E402
 from agents.state.schemas.collection import CollectionContext, Document  # noqa: E402
+from agents.state.schemas.review import ClaimMarker, ReviewContext, VerifiedClaim  # noqa: E402
 from agents.state.schemas.writing import WritingContext  # noqa: E402
-from agents.state.schemas.review import ReviewContext, ClaimMarker, VerifiedClaim  # noqa: E402
-from agents.state.migrator import upgrade_v1_to_v2  # noqa: E402
 
 
 class TestNestedState:

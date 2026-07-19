@@ -1,0 +1,39 @@
+# 忽略 Python 虚拟环境（镜像中有独立依赖）
+.venv/
+venv/
+
+# 忽略测试文件
+tests/
+.pytest_cache/
+
+# 忽略 Git
+.git/
+.gitignore
+
+# 忽略 IDE
+.vscode/
+.idea/
+
+# 忽略 Docker 目录（用不上）
+docker/
+
+# 忽略 Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 忽略文档
+*.md
+docs/
+.trae/
+
+# 忽略数据文件
+data/
+
+# 忽略环境配置（通过环境变量注入）
+.env
+.env.*
+EnvConfig.md
+
+# 忽略 macOS
+.DS_Store

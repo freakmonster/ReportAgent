@@ -7,7 +7,7 @@ debug: true
 environment: "dev"
 
 host: "0.0.0.0"
-port: 8000
+port: 8010
 
 # PostgreSQL — local dev instance
 pg_host: "localhost"
@@ -27,18 +27,27 @@ qdrant_host: "localhost"
 qdrant_port: 6333
 qdrant_api_key: null
 
-# Tavily — search backend for MCP Search (expects TAVILY_API_KEY in env)
-tavily_api_key: ""
+# Tavily — search backend for MCP Search
+tavily_api_key: "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"
+search_backend: "tavily"  # "tavily" (production) | "mock" (zero-config dev)
 
 # DeepSeek — expects DEEPSEEK_API_KEY in env
 deepseek_base_url: "https://api.deepseek.com"
-deepseek_model: "deepseek-v4-pro"
+deepseek_model_tier: "flash"  # writer node: "pro" | "flash"  writer duration_ms= 148374.4 | 18562.7
+
 
 # Qwen — expects QWEN_API_KEY in env
 qwen_base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
 qwen_model: "qwen-max"
-qwen_light_model: "qwen3-1.8b"
-qwen_medium_model: "qwen3-7b"
+qwen_light_model: "qwen3-8b"
+qwen_medium_model: "qwen3-32b"
+qwen_model_size: "max"  # writer node:  "32b" | "max"   writer duration_ms=24411.5 | 35448.6
+
+# LLM Provider — which backend the writer node uses
+#   "deepseek" (default) | "qwen"
+writer_llm_provider: "deepseek"
+
+
 
 # MCP Sidecar endpoints — local dev
 mcp_search_url: "http://localhost:8001"
@@ -54,6 +63,17 @@ cb_timeout: 60
 rate_limit_requests: 1000
 rate_limit_window: 60
 
+# Multi-tenant rate limiting — per-tenant quotas override the global defaults above
+rate_limit:
+  tenants:
+    # Example: "acme" tenant gets 500 req/min, "startup" gets 200 req/min
+    acme:
+      max_requests: 500
+      window_seconds: 60
+    startup:
+      max_requests: 200
+      window_seconds: 60
+
 # Security — dev defaults (override in env for real keys)
 jwt_secret_key: "dev-secret-key-change-in-production"
 api_key_header: "X-API-Key"
@@ -62,8 +82,30 @@ api_key_header: "X-API-Key"
 reranker_enabled: false
 reranker_model: "BAAI/bge-reranker-v2-m3"
 
-# Embedding
-embedding_model: "bge-m3"
+# Embedding — local ModelScope path (avoids HuggingFace download)
+# embedding_model: "E:/models/bge-m3" #加载速度、推理速度、检索命中率和语义区分度上bge-m3并没有优势，bge-m3 更适合大规模多语言综合场景 。当前项目以中文研报为主， GTE-base 可能是更好的选择 。
+embedding_model: "E:/models/iic--nlp_gte_sentence-embedding_chinese-base/snapshots/master"
+# embedding_backend: "sentence_transformers"  # PyTorch 后端，支持任意模型（默认）
+# embedding_backend: "fastembed"              # ONNX 后端，零 PyTorch 依赖，仅支持 fastembed 内置模型
+#   fastembed 推荐中文模型: "BAAI/bge-small-zh-v1.5" (512维) / "BAAI/bge-m3" (1024维)
+embedding_backend: "sentence_transformers"
+rag_enabled: true
+
+# .env file auto-loading — set to false to disable (e.g. for production where env vars
+# are managed by orchestration platform)
+# 开关开启时加载.env 文件，且不覆盖已有环境变量
+env_file_enabled: true
+
+# Feature Flags — runtime toggles, overridable via /admin/flags
+feature_flags:
+  reranker_enabled: false
+  rag_enabled: true
+  llm_cache_enabled: false
+  hybrid_retrieval_enabled: true
+  semantic_search_enabled: true
+  bm25_enabled: true
+  circuit_breaker_enabled: true
+  auto_rerank_enabled: false
 
 # Logging
 log_level: "DEBUG"

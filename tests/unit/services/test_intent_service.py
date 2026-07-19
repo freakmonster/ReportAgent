@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
@@ -12,8 +13,9 @@ import pytest  # noqa: E402
 from services.intent_service import (  # noqa: E402
     IntentCategory,
     IntentResult,
-    classify_intent,
     _detect_report_type,
+    classify_intent,
+    classify_intent_async,
 )
 
 
@@ -59,11 +61,10 @@ class TestClassifyIntent:
         assert result.confidence == 0.4
 
     def test_fallback_long_query_is_report(self) -> None:
-        """Long query with no keywords → REPORT fallback."""
+        """Long query with no keywords → REPORT fallback (via LLM or heuristic)."""
         result = classify_intent("这是一段比较长的文字但是不包含任何已知关键词")
         assert result.category == IntentCategory.REPORT
-        assert result.confidence == 0.3
-        assert "fallback" in result.reason.lower()
+        assert result.confidence > 0
 
     def test_matched_rules_recorded(self) -> None:
         """Matched keywords are recorded in the result."""
@@ -107,3 +108,70 @@ class TestIntentResult:
         assert r.matched_rules == []
         assert r.report_type == ""
         assert r.reason == ""
+
+
+class TestLLMFallback:
+    """Verify LLM fallback path in classify_intent_async with mocked QwenClient."""
+
+    @pytest.mark.asyncio
+    async def test_llm_returns_report(self):
+        """LLM response 'report' → REPORT with confidence 0.6."""
+        mock_chat = self._mock_client("report")
+
+        with patch(
+            "models.llm_providers.qwen_client.QwenClient", return_value=mock_chat
+        ):
+            result = await classify_intent_async("这是一段超过五个字但没有关键字的文本查询")
+            assert result.category == IntentCategory.REPORT
+            assert result.confidence == 0.6
+
+    @pytest.mark.asyncio
+    async def test_llm_returns_chat(self):
+        """LLM response 'chat' → CHAT with confidence 0.6."""
+        mock_chat = self._mock_client("chat")
+
+        with patch(
+            "models.llm_providers.qwen_client.QwenClient", return_value=mock_chat
+        ):
+            result = await classify_intent_async("我想了解一些关于深度学习的知识")
+            assert result.category == IntentCategory.CHAT
+            assert result.confidence == 0.6
+
+    @pytest.mark.asyncio
+    async def test_llm_returns_invalid(self):
+        """LLM response 'invalid' → INVALID with confidence 0.7."""
+        mock_chat = self._mock_client("invalid")
+
+        with patch(
+            "models.llm_providers.qwen_client.QwenClient", return_value=mock_chat
+        ):
+            # Query must skip all keyword layers to reach LLM
+            result = await classify_intent_async("analyze quantum phishing risks in detail please")
+            assert result.category == IntentCategory.INVALID
+            # LLM-invalid returns 0.7 confidence
+            assert result.confidence == 0.7
+
+    @pytest.mark.asyncio
+    async def test_llm_api_failure_falls_back(self):
+        """API failure → heuristic fallback (does not crash)."""
+        mock_chat = MagicMock()
+        mock_chat.chat = AsyncMock(side_effect=Exception("Network error"))
+
+        with patch(
+            "models.llm_providers.qwen_client.QwenClient", return_value=mock_chat
+        ):
+            result = await classify_intent_async("some ambiguous long text that has no clear keywords")
+            # Should not crash; returns a valid IntentResult
+            assert result.category in (
+                IntentCategory.REPORT, IntentCategory.CHAT, IntentCategory.INVALID
+            )
+            assert result.confidence > 0
+
+    @staticmethod
+    def _mock_client(response_word: str) -> MagicMock:
+        """Create a mock QwenClient that returns the given word."""
+        mock = MagicMock()
+        mock.chat = AsyncMock(return_value={
+            "choices": [{"message": {"content": response_word}}],
+        })
+        return mock

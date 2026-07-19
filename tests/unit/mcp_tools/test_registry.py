@@ -15,11 +15,10 @@ from mcp_tools.registry import (  # noqa: E402
     ToolRegistry,
     ToolSource,
     ToolStatus,
+    _register_internal_tools,
     register_mcp_tools,
     registry,
-    _register_internal_tools,
 )
-
 
 # ---------------------------------------------------------------------------
 # ToolRegistry tests

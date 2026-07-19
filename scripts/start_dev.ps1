@@ -1,0 +1,5 @@
+$env:DEEPSEEK_API_KEY = "YOUR_DEEPSEEK_API_KEY"
+$env:QWEN_API_KEY = "YOUR_QWEN_API_KEY"
+$env:TAVILY_API_KEY = "YOUR_TAVILY_API_KEY"
+
+uvicorn app:app --host 0.0.0.0 --port 8001

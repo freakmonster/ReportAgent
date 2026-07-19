@@ -8,6 +8,7 @@ attribute on EmbeddingModel to simulate a loaded state.
 
 import numpy as np
 import pytest
+
 from retrieval.embedders.embedding_model import EmbeddingModel
 
 

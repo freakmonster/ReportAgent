@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 import pytest  # noqa: E402
 
+from config.settings import settings  # noqa: E402
 from models.llm_providers.qwen_client import QwenClient  # noqa: E402
 
 
@@ -50,15 +51,15 @@ async def test_model_size_routing(
         mock_client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
         mock_async_openai.return_value = mock_client
 
-        # 1.8b client
-        client_18 = QwenClient(model_size="1.8b")
-        await client_18.chat(sample_messages)
-        assert mock_client.chat.completions.create.call_args.kwargs["model"] == "qwen3-1.8b"
+        # 8b client
+        client_8 = QwenClient(model_size="8b")
+        await client_8.chat(sample_messages)
+        assert mock_client.chat.completions.create.call_args.kwargs["model"] == settings.qwen_light_model
 
-        # 7b client
-        client_7 = QwenClient(model_size="7b")
-        await client_7.chat(sample_messages)
-        assert mock_client.chat.completions.create.call_args.kwargs["model"] == "qwen3-7b"
+        # 32b client
+        client_32 = QwenClient(model_size="32b")
+        await client_32.chat(sample_messages)
+        assert mock_client.chat.completions.create.call_args.kwargs["model"] == settings.qwen_medium_model
 
         # max client
         client_max = QwenClient(model_size="max")
@@ -86,14 +87,14 @@ async def test_chat_stream(
         mock_client.chat.completions.create = AsyncMock(return_value=_stream_iter())
         mock_async_openai.return_value = mock_client
 
-        client = QwenClient(model_size="7b")
+        client = QwenClient(model_size="8b")
         chunks: list[MagicMock] = []
         async for chunk in client.chat_stream(sample_messages):
             chunks.append(chunk)
 
         assert len(chunks) == len(mock_openai_stream)
         call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-        assert call_kwargs["model"] == "qwen3-7b"
+        assert call_kwargs["model"] == settings.qwen_light_model
         assert call_kwargs["stream"] is True
 
 

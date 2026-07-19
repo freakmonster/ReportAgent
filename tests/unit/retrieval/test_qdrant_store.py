@@ -1,6 +1,7 @@
 """Unit tests for qdrant_store — collection CRUD, upsert, search, double buffer."""
 
 import pytest
+
 from retrieval.vectorstores.qdrant_store import QdrantStore
 
 
@@ -58,14 +59,14 @@ class TestQdrantStore:
 
     async def test_search(self, mocker):
         mock_client = mocker.AsyncMock()
-        fake_result = [
-            mocker.MagicMock(
-                id="id1",
-                payload={"text": "result text"},
-                score=0.95,
-            ),
-        ]
-        mock_client.search = mocker.AsyncMock(return_value=fake_result)
+        fake_hit = mocker.MagicMock(
+            id="id1",
+            payload={"text": "result text"},
+            score=0.95,
+        )
+        mock_client.query_points = mocker.AsyncMock(
+            return_value=mocker.MagicMock(points=[fake_hit])
+        )
         mocker.patch.object(self.store, "_get_client", return_value=mock_client)
 
         mock_embedder = mocker.MagicMock()

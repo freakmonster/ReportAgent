@@ -19,8 +19,7 @@ from typing import Any
 
 import pytest
 
-from retrieval.loaders.url_loader import fetch_multiple, fetch_url, WebPage
-
+from retrieval.loaders.url_loader import WebPage, fetch_multiple, fetch_url
 
 # ---------------------------------------------------------------------------
 # Helper: find a free port
@@ -223,6 +222,7 @@ class TestFetchURLIntegration:
         subsequent timeout changes, so we force-close it first.
         """
         import httpx
+
         from retrieval.loaders.url_loader import _get_http_client, _http_client
         # Force the global client to be replaced with our short timeout
         if _http_client is not None:

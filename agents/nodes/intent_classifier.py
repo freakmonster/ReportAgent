@@ -22,14 +22,16 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     Returns:
         Partial state update.
     """
-    from services.intent_service import classify_intent
+    from services.intent_service import classify_intent_async
 
     base: dict[str, Any] = state.get("base", {})
     user_input = base.get("user_input", "")
 
-    result = classify_intent(user_input)
+    result = await classify_intent_async(user_input)
 
-    template_name = result.report_type or "deep_report"
+    # Preserve existing template_name if classifier did not detect a specific type
+    existing_template = base.get("template_name", "deep_report")
+    template_name = result.report_type or existing_template
 
     return {
         "base": {

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
+from starlette.responses import JSONResponse
 
 from config.settings import settings
 
@@ -52,15 +53,32 @@ async def auth_dependency(request: Request) -> str:
 
 
 class AuthMiddleware:
-    """FastAPI middleware wrapper for authentication."""
+    """FastAPI ASGI middleware for authentication."""
 
-    async def __call__(self, request: Request, call_next):
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope, receive=receive)
+
         # Skip auth for health check
         if request.url.path == "/health":
-            return await call_next(request)
+            await self.app(scope, receive, send)
+            return
+
         try:
             user_id = await auth_dependency(request)
             request.state.user_id = user_id
         except HTTPException:
-            return HTTPException(status_code=401, detail="Authentication required")
-        return await call_next(request)
+            response = JSONResponse(
+                status_code=401,
+                content={"detail": "Authentication required"},
+            )
+            await response(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)

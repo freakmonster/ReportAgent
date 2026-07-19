@@ -11,8 +11,11 @@ _redis_client: aioredis.Redis | None = None
 
 
 async def init_redis() -> None:
-    """Initialise the Redis async client with a connection pool."""
+    """Initialise the Redis async client with a connection pool (idempotent)."""
     global _redis_client
+
+    if _redis_client is not None:
+        return
 
     _redis_client = aioredis.Redis.from_url(
         settings.redis_url,

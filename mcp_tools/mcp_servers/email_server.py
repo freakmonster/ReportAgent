@@ -6,6 +6,13 @@ Runs as an independent HTTP (FastAPI) service on port 8004.
 
 Configuration: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
 in config YAML or environment variables.
+邮箱授权码在邮箱设置里 30 秒生成
+例如 QQ 邮箱：设置 → 账户 → POP3/SMTP → 开启 → 生成授权码。
+$env:SMTP_HOST = "smtp.qq.com"
+$env:SMTP_PORT = "587"
+$env:SMTP_USER = "你的QQ号@qq.com"
+$env:SMTP_PASSWORD = "QQ邮箱的授权码"
+$env:SMTP_FROM = "你的QQ号@qq.com"
 """
 
 from __future__ import annotations
@@ -82,8 +89,9 @@ class EmailSender:
 
         try:
             # Use aiosmtplib for async SMTP
-            import aiosmtplib
             import smtplib as _stdlib_smtplib
+
+            import aiosmtplib
 
             smtp = aiosmtplib.SMTP(
                 hostname=str(config["host"]),
@@ -198,6 +206,7 @@ app = create_email_app()
 def main() -> None:
     """Run the email MCP server."""
     import uvicorn
+
     from config.settings import settings
 
     uvicorn.run(

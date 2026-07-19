@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 from infrastructure.observability.logger import get_logger
+
 from .base import BaseReranker
 
 logger = get_logger(__name__)

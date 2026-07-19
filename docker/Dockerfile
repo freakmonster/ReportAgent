@@ -5,7 +5,7 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 COPY pyproject.toml .
 RUN pip install --no-cache-dir --user hatchling && \
-    python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies'])" > /tmp/deps.txt
+    python -c "import tomllib,sys; deps=tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']; sys.stdout.write('\n'.join(deps))" > /tmp/deps.txt
 RUN pip install --no-cache-dir --user -r /tmp/deps.txt
 
 # ▸ Stage 2: Runtime

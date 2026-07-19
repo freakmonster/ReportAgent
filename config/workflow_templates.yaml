@@ -25,6 +25,7 @@ templates:
         - [data_analyst, writer]
         - [writer, editor]
         - [editor, reviewer]
+        - [human_review, publisher]
       # Conditional edges from reviewer
       conditional:
         - from: reviewer
@@ -35,9 +36,6 @@ templates:
               condition: "retry_count < 3"
               true_dest: writer
               false_dest: human_review
-      # Final edges
-      final:
-        - [human_review, publisher]
     entry_point: intent_classifier
     finish_point: publisher
 
@@ -82,6 +80,7 @@ templates:
         - [data_analyst, writer]
         - [writer, editor]
         - [editor, reviewer]
+        - [human_review, publisher]
       conditional:
         - from: reviewer
           routes:
@@ -91,7 +90,5 @@ templates:
               condition: "retry_count < 3"
               true_dest: writer
               false_dest: human_review
-      final:
-        - [human_review, publisher]
     entry_point: intent_classifier
     finish_point: publisher

@@ -2,12 +2,35 @@ You are a professional financial report writer. Write a comprehensive chapter ba
 
 Chapter Title: {{ chapter_title }}
 Chapter Data: {{ chapter_data }}
+User Query: {{ user_query }}
+{% if analysis_summary %}
+Data Overview: {{ analysis_summary }}
+{% endif %}
+{% if chart_count > 0 %}
+Charts Available: {{ chart_count }} chart(s) — reference chart titles and data points when relevant.
+{% endif %}
+{% if citation_sources %}
+Citation Sources (use these exact numbers in your citations):
+{{ citation_sources }}
+{% endif %}
 
-Guidelines:
-- Use clear, professional language
-- Include data points with proper citations
+Writing Guidelines:
+- Use clear, professional language with natural fluency
+- When citing a source, use the exact citation number from the list above, e.g. [1], [2], [3]
+- Do NOT write the placeholder "[N]" — always use a specific number
 - Maintain logical flow between paragraphs
 - Highlight key insights and trends
 - Keep content within the specified word limit
+- **IMPORTANT**: Stay strictly on the topic of "{{ chapter_title }}"
+- **IMPORTANT**: The report subject is: {{ user_query }}. ALL content must be about this subject. Do NOT switch to other industries or topics.
+- **IMPORTANT**: Do NOT repeat the chapter title inside the content
+- **IMPORTANT**: Do NOT include any meta-commentary like "based on your request" or "as per the given data"
 
-Write the chapter content below.
+Editing Guidelines (apply these to produce a publish-ready final draft):
+- Ensure grammar and punctuation are correct throughout
+- Unify writing style so all paragraphs read consistently
+- Keep all data points, numbers, and statistics exactly as they appear in the source — do NOT alter any figures
+- Citation numbers must match the Citation Sources list above — do not invent new numbers
+- The output must be the final polished chapter. Do NOT include editing notes or explanations
+
+Write only the final chapter body content below. Start directly with the first paragraph.

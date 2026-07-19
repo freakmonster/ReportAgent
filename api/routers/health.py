@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from fastapi import APIRouter
+from fastapi.responses import Response
 
 from api.schemas.response import HealthResponse
+from infrastructure.observability.metrics import get_metrics
 
 router = APIRouter(tags=["health"])
 
@@ -20,25 +22,31 @@ async def health_check() -> HealthResponse:
 
     # PostgreSQL
     try:
-        from infrastructure.database.connection import engine
-        if engine:
-            services["postgresql"] = "connected"
-        else:
-            services["postgresql"] = "not_initialized"
+        from sqlalchemy import text
+        from infrastructure.database.connection import get_db
+        async with get_db() as session:
+            await session.execute(text("SELECT 1"))
+        services["postgresql"] = "connected"
     except Exception:
         services["postgresql"] = "unavailable"
 
     # Redis
     try:
-        from infrastructure.cache.redis_client import RedisClient
-        services["redis"] = "available"
-    except Exception:
-        services["redis"] = "unavailable"
+        from infrastructure.cache.redis_client import get_redis
+        await get_redis().ping()
+        services["redis"] = "connected"
+    except Exception as exc:
+        if "HELLO" in str(exc):
+            # Redis 5.x — RESP3 unavailable but basic commands work
+            services["redis"] = "degraded (Redis < 6.0, RESP3 unavailable)"
+        else:
+            services["redis"] = "unavailable"
 
     # Qdrant
     try:
-        from infrastructure.vector_db.qdrant_client import QdrantClient
-        services["qdrant"] = "available"
+        from infrastructure.vector_db.qdrant_client import get_qdrant
+        await get_qdrant().get_collections()
+        services["qdrant"] = "connected"
     except Exception:
         services["qdrant"] = "unavailable"
 
@@ -47,3 +55,13 @@ async def health_check() -> HealthResponse:
         services=services,
         version="0.1.0",
     )
+
+
+@router.get("/metrics", include_in_schema=False)
+async def metrics() -> Response:
+    """Prometheus metrics endpoint.
+
+    Returns text-format metrics for Prometheus scraping.
+    Requires authentication (via AuthMiddleware).
+    """
+    return Response(content=get_metrics(), media_type="text/plain")

@@ -10,7 +10,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
 # ── Chat request ──────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
@@ -21,7 +20,13 @@ class ChatRequest(BaseModel):
         pattern=r"^(deep_report|flash_news|earnings_analysis)$",
         description="Report template type",
     )
+    model: str = Field(
+        default="deepseek-flash",
+        pattern=r"^(deepseek-flash|deepseek-pro|qwen-8b|qwen-32b|qwen-max)$",
+        description="LLM model selection: deepseek-flash, deepseek-pro, qwen-8b, qwen-32b, qwen-max",
+    )
     user_id: str = Field(default="anonymous", description="User identifier for rate limiting and personalization")
+    session_id: Optional[str] = Field(default=None, description="Session identifier for short-term memory association")
     conversation_id: Optional[str] = Field(default=None, description="Optional conversation ID for multi-turn")
     reconnect_token: Optional[str] = Field(default=None, description="SSE reconnect token for zombie workflow recovery")
 

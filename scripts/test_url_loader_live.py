@@ -7,8 +7,8 @@ Usage:
 import asyncio
 
 import httpx
-from retrieval.loaders.url_loader import fetch_multiple, fetch_url, WebPage
 
+from retrieval.loaders.url_loader import WebPage, fetch_multiple, fetch_url
 
 # ── Known stable URLs for quick verification ──────────────────────────
 
@@ -85,7 +85,7 @@ async def test_search_then_fetch() -> list[WebPage]:
                 if item.get("url") and not item["url"].lower().endswith(".pdf")
             ]
     except httpx.HTTPStatusError:
-        print(f"[search] \u274c Tavily HTTP error, skipping live search")
+        print("[search] \u274c Tavily HTTP error, skipping live search")
         return []
     except Exception as exc:
         print(f"[search] \u274c Tavily request failed: {exc}")

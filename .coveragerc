@@ -1,0 +1,27 @@
+[run]
+source = .
+omit =
+    .venv/*
+    tests/*
+    migrations/*
+    scripts/*
+    docker/*
+    .trae/*
+    setup.py
+
+[report]
+exclude_also =
+    def __repr__
+    def __str__
+    if __name__ == .__main__.:
+    raise AssertionError
+    raise NotImplementedError
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+show_missing = True
+skip_covered = False
+skip_empty = True
+
+[html]
+directory = htmlcov

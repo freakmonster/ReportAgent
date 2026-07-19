@@ -10,9 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 import pytest  # noqa: E402
 
 from agents.edges.conditional_edges import (
+    make_router,
     route_by_intent,
     route_by_review,
-    make_router,
 )  # noqa: E402
 
 

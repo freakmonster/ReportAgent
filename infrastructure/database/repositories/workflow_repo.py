@@ -8,39 +8,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Any
+from typing import Any, Optional
 
 from sqlalchemy import (
-    Column,
-    DateTime,
-    Integer,
-    MetaData,
-    String,
-    Table,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, insert as pg_insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import select, update
 
-# ── Schema ─────────────────────────────────────────────────────────────
-
-metadata = MetaData()
-
-workflow_states = Table(
-    "workflow_states",
-    metadata,
-    Column("workflow_id", String, primary_key=True),
-    Column("status", String, nullable=False, default="init"),
-    Column("state_data", JSONB, nullable=False),
-    Column("user_id", String, nullable=False),
-    Column("template_name", String, nullable=False),
-    Column("retry_count", Integer, nullable=False, default=0),
-    Column("created_at", DateTime, nullable=False, server_default=func.now()),
-    Column("updated_at", DateTime, nullable=False, server_default=func.now()),
-)
-
+from infrastructure.database.models import workflow_states
 
 # ── Record ─────────────────────────────────────────────────────────────
 
@@ -165,6 +143,32 @@ class WorkflowRepository:
             )
             await session.commit()
             return result.rowcount == 1
+
+
+# ── Singleton ──────────────────────────────────────────────────────────
+
+_workflow_repo: WorkflowRepository | None = None
+
+
+def init_workflow_repo(session_factory: async_sessionmaker[AsyncSession]) -> None:
+    """Initialise the workflow repository singleton.
+
+    Must be called during app startup (after ``init_db()``).
+    """
+    global _workflow_repo
+    _workflow_repo = WorkflowRepository(session_factory)
+
+
+def get_workflow_repo() -> WorkflowRepository:
+    """Return the workflow repository singleton.
+
+    Raises ``RuntimeError`` if ``init_workflow_repo()`` was not called first.
+    """
+    if _workflow_repo is None:
+        raise RuntimeError(
+            "WorkflowRepository not initialised. Call init_workflow_repo() first."
+        )
+    return _workflow_repo
 
     async def reject_with_lock(self, workflow_id: str, reason: str) -> bool:
         """Reject a pending workflow using optimistic locking.

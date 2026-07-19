@@ -1,10 +1,11 @@
 """Unit tests for rerankers — NoOp, CrossEncoder, factory, and strategy pattern."""
 
 import pytest
-from retrieval.retrievers.rerankers.base import BaseReranker
-from retrieval.retrievers.rerankers.noop_reranker import NoOpReranker
-from retrieval.retrievers.rerankers.cross_encoder_reranker import CrossEncoderReranker
+
 from retrieval.retrievers.rerankers import get_reranker
+from retrieval.retrievers.rerankers.base import BaseReranker
+from retrieval.retrievers.rerankers.cross_encoder_reranker import CrossEncoderReranker
+from retrieval.retrievers.rerankers.noop_reranker import NoOpReranker
 
 
 class TestNoOpReranker:

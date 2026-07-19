@@ -87,6 +87,7 @@ class DatabaseClient:
         """Lazy-init SQLAlchemy async engine."""
         if self._engine is None:
             from sqlalchemy.ext.asyncio import create_async_engine
+
             from config.settings import settings
 
             self._engine = create_async_engine(

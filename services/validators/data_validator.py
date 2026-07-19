@@ -10,9 +10,8 @@ Checks:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
-
 
 # Maximum allowed data age in days
 MAX_AGE_DAYS: int = 30
@@ -109,10 +108,10 @@ def check_completeness(data: dict[str, Any]) -> tuple[float, list[str]]:
         (score, missing_fields) tuple.  score=1.0 means all fields present.
     """
     missing: list[str] = []
-    for field in _REQUIRED_DATA_FIELDS:
-        val = data.get(field)
+    for fname in _REQUIRED_DATA_FIELDS:
+        val = data.get(fname)
         if val is None or (isinstance(val, str) and not val.strip()):
-            missing.append(field)
+            missing.append(fname)
 
     if not missing:
         return 1.0, []

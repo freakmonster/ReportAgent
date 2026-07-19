@@ -19,7 +19,9 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     writing: dict[str, Any] = state.get("writing", {})
     base: dict[str, Any] = state.get("base", {})
 
-    final_content = writing.get("final_content", "")
+    # Use chapter_drafts for evaluation (final_content is set by publisher later)
+    chapters: dict[str, str] = writing.get("chapter_drafts", {})
+    final_content = "\n\n".join(chapters.values()) if chapters else writing.get("final_content", "")
 
     # ── Run evaluation suite ──────────────────────────────────────────
     try:
@@ -39,6 +41,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         decision = "needs_human"
     else:
         decision = "rejected"
+        base = {**base, "retry_count": base.get("retry_count", 0) + 1}
 
     return {
         "review": {

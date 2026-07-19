@@ -2,7 +2,8 @@
 
 import httpx
 import pytest
-from retrieval.loaders.url_loader import fetch_url, fetch_multiple, WebPage
+
+from retrieval.loaders.url_loader import WebPage, fetch_multiple, fetch_url
 
 
 @pytest.fixture

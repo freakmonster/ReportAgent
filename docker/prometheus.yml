@@ -1,0 +1,29 @@
+# Prometheus configuration — 智能研报生成系统
+# Scrapes metrics from app (port 9090) and other instrumented services.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files: []
+
+scrape_configs:
+  - job_name: "research-agent"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "app:8000"
+        labels:
+          service: "research-agent"
+          environment: "prod"
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+          - "localhost:9090"

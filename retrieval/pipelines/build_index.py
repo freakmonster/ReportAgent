@@ -11,16 +11,19 @@
 from __future__ import annotations
 
 import hashlib
+import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, AsyncIterator
 
-from retrieval.chunkers.paragraph_chunker import chunk_text, ChunkResult
+from infrastructure.database.repositories.index_repo import IndexStatusRecord, get_index_repo
+from infrastructure.message_queue.dlq import push_to_dlq
+from infrastructure.observability.logger import get_logger
+from retrieval.chunkers.paragraph_chunker import ChunkResult, chunk_text
 from retrieval.embedders.embedding_model import EmbeddingModel
 from retrieval.loaders.pdf_loader import parse_pdf
-from retrieval.loaders.url_loader import fetch_url, WebPage
+from retrieval.loaders.url_loader import WebPage, fetch_url
 from retrieval.vectorstores.qdrant_store import QdrantStore
-from infrastructure.observability.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -94,7 +97,7 @@ class IndexBuilder:
         pdf_paths: list[str | Path],
         *,
         incremental: bool = False,
-        use_buffer: bool = True,
+        use_buffer: bool = False,
     ) -> BuildResult:
         """从 PDF 文件列表构建索引。
 
@@ -151,8 +154,9 @@ class IndexBuilder:
         Returns:
             BuildResult 含构建统计。
         """
-        from retrieval.loaders.url_loader import fetch_multiple
         import asyncio
+
+        from retrieval.loaders.url_loader import fetch_multiple
 
         pages: list[WebPage] = await fetch_multiple(
             urls,
@@ -160,6 +164,7 @@ class IndexBuilder:
         )
 
         # 记录 HTTP 失败的 URL（B1）
+        errors: list[str] = []
         success_urls = {page.url for page in pages}
         failed_urls = [u for u in urls if u not in success_urls]
         if failed_urls:
@@ -190,7 +195,7 @@ class IndexBuilder:
         sources: list[str] | None = None,
         *,
         incremental: bool = False,
-        use_buffer: bool = True,
+        use_buffer: bool = False,
     ) -> BuildResult:
         """从纯文本列表构建索引。
 
@@ -253,6 +258,7 @@ class IndexBuilder:
                 self._known_hashes[doc.content_hash] = doc.source
 
         if not documents:
+            # 空结果无需记录 index_status
             return BuildResult(
                 collection_name=self.base_collection,
                 doc_count=0,
@@ -261,64 +267,109 @@ class IndexBuilder:
                 errors=errors,
             )
 
-        # 分块
-        chunk_results: list[ChunkResult] = []
-        for doc in documents:
-            result = chunk_text(
-                doc.content,
-                source=doc.source,
-                target_chunk_tokens=self.target_chunk_tokens,
-                min_chars=self.min_chars,
-                overlap_tokens=self.overlap_tokens,
+        try:
+            # 分块
+            chunk_results: list[ChunkResult] = []
+            for doc in documents:
+                result = chunk_text(
+                    doc.content,
+                    source=doc.source,
+                    target_chunk_tokens=self.target_chunk_tokens,
+                    min_chars=self.min_chars,
+                    overlap_tokens=self.overlap_tokens,
+                )
+                chunk_results.append(result)
+
+            total_chunks = sum(r.total_chunks for r in chunk_results)
+
+            # 收集所有 chunks
+            all_texts: list[str] = []
+            all_sources: list[str] = []
+            for result in chunk_results:
+                for chunk in result.chunks:
+                    all_texts.append(chunk.text)
+                    all_sources.append(result.source)
+
+            # 决定目标 collection
+            if use_buffer:
+                target_collection = await self.store.create_buffer(self.base_collection)
+            else:
+                target_collection = self.base_collection
+                await self.store.create_collection(target_collection)
+
+            # 批量 Embedding + 入库
+            await self.store.upsert(
+                collection=target_collection,
+                texts=all_texts,
+                metas=[{"source": src, "chunk_index": i} for i, src in enumerate(all_sources)],
+                embedder=self.embedder,
             )
-            chunk_results.append(result)
 
-        total_chunks = sum(r.total_chunks for r in chunk_results)
+            published = False
+            if use_buffer:
+                await self.store.promote_buffer(target_collection, self.base_collection)
+                published = True
+                logger.info("Buffer promoted successfully", buffer=target_collection, active=self.base_collection)
 
-        # 收集所有 chunks
-        all_texts: list[str] = []
-        all_sources: list[str] = []
-        for result in chunk_results:
-            for chunk in result.chunks:
-                all_texts.append(chunk.text)
-                all_sources.append(result.source)
+            result = BuildResult(
+                collection_name=self.base_collection,
+                doc_count=len(documents),
+                chunk_count=total_chunks,
+                buffer_name=target_collection if use_buffer else None,
+                published=published,
+                errors=errors,
+            )
+            logger.info(
+                "Index build completed",
+                docs=result.doc_count,
+                chunks=result.chunk_count,
+                published=result.published,
+            )
 
-        # 决定目标 collection
-        if use_buffer:
-            target_collection = await self.store.create_buffer(self.base_collection)
-        else:
-            target_collection = self.base_collection
-            await self.store.create_collection(target_collection)
+            # ── 记录构建成功到 index_status ─────────────────────────
+            try:
+                checksum = hashlib.sha256(
+                    "|".join(sorted(d.content_hash for d in documents)).encode()
+                ).hexdigest()
+                await get_index_repo().mark_ready(
+                    collection_name=self.base_collection,
+                    document_count=len(documents),
+                    checksum=checksum,
+                )
+            except Exception as repo_exc:
+                logger.warning("Failed to record index build status", error=str(repo_exc))
 
-        # 批量 Embedding + 入库
-        await self.store.upsert(
-            collection=target_collection,
-            texts=all_texts,
-            metas=[{"source": src, "chunk_index": i} for i, src in enumerate(all_sources)],
-            embedder=self.embedder,
-        )
+            return result
 
-        published = False
-        if use_buffer:
-            await self.store.promote_buffer(target_collection, self.base_collection)
-            published = True
-            logger.info("Buffer promoted successfully", buffer=target_collection, active=self.base_collection)
+        except Exception as exc:
+            logger.error("Index build failed", error=str(exc))
 
-        result = BuildResult(
-            collection_name=self.base_collection,
-            doc_count=len(documents),
-            chunk_count=total_chunks,
-            buffer_name=target_collection if use_buffer else None,
-            published=published,
-            errors=errors,
-        )
-        logger.info(
-            "Index build completed",
-            docs=result.doc_count,
-            chunks=result.chunk_count,
-            published=result.published,
-        )
-        return result
+            # ── 记录构建失败到 index_status ─────────────────────────
+            try:
+                await get_index_repo().mark_failed(
+                    collection_name=self.base_collection,
+                    error_msg=str(exc),
+                )
+            except Exception as repo_exc:
+                logger.warning("Failed to record index build failure", error=str(repo_exc))
+
+            # ── 推送失败消息到 Dead Letter Queue ────────────────────
+            try:
+                payload = {
+                    "doc_count": len(documents),
+                    "incremental": incremental,
+                    "use_buffer": use_buffer,
+                    "error_count": len(errors),
+                }
+                await push_to_dlq(
+                    collection_name=self.base_collection,
+                    error_traceback=traceback.format_exc(),
+                    payload=payload,
+                )
+            except Exception as dlq_exc:
+                logger.warning("Failed to push to DLQ", error=str(dlq_exc))
+
+            raise
 
     async def incremental_update(
         self,

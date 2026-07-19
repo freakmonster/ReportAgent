@@ -14,7 +14,6 @@ from typing import Any
 
 from harness.handlers.base import HandlerDecision, HandlerResult, HarnessHandler
 
-
 # Prediction / speculation patterns
 _PREDICTION_RE = re.compile(
     r"(?:预计|预测|将会|将达到|有望|预计将|预期)\s*(\d+\.?\d*)",

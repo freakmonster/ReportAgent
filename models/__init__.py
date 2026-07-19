@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 # ── Router (core, always available) ────────────────────────────────────
 
-from models.router import ModelRouter, ModelTier, CircuitState, router
+from models.router import CircuitState, ModelRouter, ModelTier, router
 
 # ── LLM Provider clients ───────────────────────────────────────────────
 
@@ -23,8 +23,8 @@ except ImportError as exc:
 # ── JSON parsers ────────────────────────────────────────────────────────
 
 try:
-    from models.parsers.json_parser import JSONParser, JSONParseError
-    from models.parsers.retry_parser import RetryParser, RetryExhaustedError
+    from models.parsers.json_parser import JSONParseError, JSONParser
+    from models.parsers.retry_parser import RetryExhaustedError, RetryParser
 except ImportError as exc:
     logger.warning("JSON parsers not available: %s", exc)
     JSONParser = None  # type: ignore[misc,assignment]

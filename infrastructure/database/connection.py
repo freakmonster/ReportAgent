@@ -16,6 +16,10 @@ from config.settings import settings
 # ── Declarative Base ────────────────────────────────────────
 Base = declarative_base()
 
+# Import models so their metadata is registered on Base BEFORE create_tables() runs.
+# This ensures ``Base.metadata.create_all`` and Alembic autogenerate see all tables.
+from infrastructure.database import models  # noqa: E402, F401
+
 # ── Engine ──────────────────────────────────────────────────
 _engine: AsyncEngine | None = None
 _async_session_factory: async_sessionmaker[AsyncSession] | None = None

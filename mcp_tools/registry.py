@@ -272,8 +272,8 @@ def _register_internal_tools() -> None:
 
     try:
         from mcp_tools.internal_tools.web_search import (
-            web_search_tool,
             news_search_tool,
+            web_search_tool,
         )
         registry.register(
             name="web_search",
@@ -294,8 +294,8 @@ def _register_internal_tools() -> None:
 
     try:
         from mcp_tools.internal_tools.file_manager import (
-            save_report_tool,
             read_report_tool,
+            save_report_tool,
         )
         registry.register(
             name="save_report",

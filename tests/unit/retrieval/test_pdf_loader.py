@@ -1,14 +1,14 @@
 """Unit tests for pdf_loader — streaming parse, page limit, error guidance."""
 
 import pytest
+
 from retrieval.loaders.pdf_loader import (
+    MAX_PAGES,
+    PDFDocument,
+    count_pages,
     parse_pdf,
     parse_pdf_streaming,
-    count_pages,
-    PDFDocument,
-    MAX_PAGES,
 )
-
 
 # A minimal valid 1-page PDF
 _MIN_PDF_BYTES = (

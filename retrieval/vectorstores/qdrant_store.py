@@ -28,7 +28,7 @@ class QdrantStore:
         port: int = 6333,
         api_key: str | None = None,
         collection_prefix: str = "research_agent",
-        embedding_dimension: int = 1024,
+        embedding_dimension: int = 768,
     ) -> None:
         self._host = host
         self._port = port
@@ -72,6 +72,9 @@ class QdrantStore:
         client = await self._get_client()
         collection_name = self._collection_name(name)
 
+        # Use stored dimension if already known, otherwise detect from embedder
+        if self._dimension <= 0:
+            self._dimension = EmbeddingModel.get_instance().dimension
         try:
             await client.create_collection(
                 collection_name=collection_name,
@@ -206,9 +209,9 @@ class QdrantStore:
 
         query_vector = embedder.embed_single(query)
 
-        results = await client.search(
+        results = await client.query_points(
             collection_name=collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=limit,
             score_threshold=score_threshold,
             with_payload=True,
@@ -221,7 +224,7 @@ class QdrantStore:
                 "score": hit.score,
                 "payload": {k: v for k, v in hit.payload.items() if k != "text"},
             }
-            for hit in results
+            for hit in results.points
         ]
 
     async def search_batch(
@@ -276,6 +279,39 @@ class QdrantStore:
                 for hit in batch
             ]
             for batch in results
+        ]
+
+    # ── 按 ID 获取 Point Payload ──────────────────────────────
+
+    async def get_points(
+        self,
+        collection: str,
+        point_ids: list[str],
+    ) -> list[dict[str, Any]]:
+        """按 ID 批量获取 Point 的 payload。
+
+        Args:
+            collection: Collection 名称。
+            point_ids: Point ID 列表。
+
+        Returns:
+            [{id, payload: {source, chunk_index, ...}}, ...]。
+        """
+        if not point_ids:
+            return []
+        client = await self._get_client()
+        collection_name = self._collection_name(collection)
+        results = await client.retrieve(
+            collection_name=collection_name,
+            ids=point_ids,
+            with_payload=True,
+        )
+        return [
+            {
+                "id": pt.id,
+                "payload": {k: v for k, v in (pt.payload or {}).items()},
+            }
+            for pt in results
         ]
 
     # ── V2.1 双缓冲 ────────────────────────────────────────────
