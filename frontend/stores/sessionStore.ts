@@ -33,7 +33,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   loadSessions: async (userId: string) => {
     set({ loading: true });
     try {
-      const data = await apiGet('/sessions', { user_id: userId });
+      const data = await apiGet('/session/sessions', { user_id: userId });
       const sessions: Session[] = Array.isArray(data)
         ? data
         : Array.isArray((data as Record<string, unknown>)?.sessions)
@@ -66,7 +66,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   deleteSession: async (id: string) => {
     try {
-      await apiDel(`/session/${id}`);
+      await apiDel(`/session/session/${id}`);
       // 重新加载列表（使用匿名用户作为默认 userId，或者不提供 userId 让后端处理）
       // 如果当前没有 userId 上下文，则直接从前端列表中移除
       set((state) => ({
