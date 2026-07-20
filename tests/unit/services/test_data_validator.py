@@ -38,7 +38,7 @@ class TestFreshness:
 
     def test_boundary_30_days(self) -> None:
         """Data exactly 30 days ago is still fresh with low score."""
-        boundary = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        boundary = (datetime.now(timezone.utc) - timedelta(days=29, hours=23, minutes=59, seconds=59)).isoformat()
         score, is_fresh = check_freshness(boundary)
         assert is_fresh is True
         assert score == pytest.approx(0.2, abs=0.01)

@@ -33,7 +33,7 @@ async def test_chat_success(
 
         mock_client.chat.completions.create.assert_called_once()
         call_kwargs = mock_client.chat.completions.create.call_args.kwargs
-        assert call_kwargs["model"] == "deepseek-v4-pro"
+        assert call_kwargs["model"] == "deepseek-v4-flash"
         assert call_kwargs["messages"] == sample_messages
         assert (
             response.choices[0].message.content == mock_openai_response.choices[0].message.content
@@ -135,9 +135,10 @@ def test_init_uses_settings() -> None:
     mock_settings.deepseek_base_url = "https://api.deepseek.com"
     mock_settings.deepseek_model = "deepseek-v3"
 
-    # DeepSeekClient.__init__ does a local ``from config.settings import settings``,
-    # so we must patch the canonical source rather than the re-exported module ref.
-    with patch("config.settings.settings", mock_settings):
+    # DeepSeekClient.__init__ imports settings at module level with
+    # ``from config.settings import settings``, so we must patch the local
+    # reference in deepseek_client's namespace rather than config.settings.
+    with patch("models.llm_providers.deepseek_client.settings", mock_settings):
         client = DeepSeekClient()
 
         # Lazy init: AsyncOpenAI is NOT created during __init__,
