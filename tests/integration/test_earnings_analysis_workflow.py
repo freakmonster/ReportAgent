@@ -23,6 +23,7 @@ from agents.state import ReportState, create_initial_state  # noqa: E402
 # Mock helpers — return fixed data without real network/LLM calls
 # ---------------------------------------------------------------------------
 
+
 async def _mock_data_collector(state: dict) -> dict:
     """Return 3 finance/earnings themed raw_docs."""
     existing_collection = state.get("collection", {})
@@ -33,19 +34,19 @@ async def _mock_data_collector(state: dict) -> dict:
                     "title": "苹果Q2财报超预期",
                     "url": "https://example.com/finance/1",
                     "content": "苹果公司发布2026财年第二季度财报，营收同比增长8%至1200亿美元。"
-                              "净利润320亿美元，同比增长12%。服务业务收入持续增长。",
+                    "净利润320亿美元，同比增长12%。服务业务收入持续增长。",
                 },
                 {
                     "title": "特斯拉毛利率下滑分析",
                     "url": "https://example.com/finance/2",
                     "content": "特斯拉最新财报显示毛利率降至18.5%，低于市场预期的19.2%。"
-                              "主要受降价策略影响，但交付量同比增长25%。",
+                    "主要受降价策略影响，但交付量同比增长25%。",
                 },
                 {
                     "title": "腾讯财报：广告收入增长强劲",
                     "url": "https://example.com/finance/3",
                     "content": "腾讯控股发布季度财报，总营收1800亿元，同比增长11%。"
-                              "广告业务收入同比增长20%，成为第二大收入来源。",
+                    "广告业务收入同比增长20%，成为第二大收入来源。",
                 },
             ],
             "compressed_summary": existing_collection.get("compressed_summary", {}),
@@ -86,9 +87,9 @@ async def _mock_writer(state: dict) -> dict:
         "writing": {
             "chapter_drafts": {
                 "收入分析": "## 收入分析\n\n苹果营收同比增长8%至1200亿美元，"
-                          "腾讯总营收1800亿元同比增长11%。两家公司收入增长稳健。",
+                "腾讯总营收1800亿元同比增长11%。两家公司收入增长稳健。",
                 "利润分析": "## 利润分析\n\n苹果净利润320亿美元，同比增长12%。"
-                          "特斯拉毛利率降至18.5%，低于市场预期。",
+                "特斯拉毛利率降至18.5%，低于市场预期。",
             },
             "final_content": "",
             "citation_list": [],
@@ -159,17 +160,20 @@ class TestEarningsAnalysisGraphConstruction:
         graph = WorkflowBuilder().build("earnings_analysis", ReportState)
         all_nodes = graph.get_graph().nodes
         # Filter out internal __start__ and __end__ nodes
-        user_nodes = {
-            k: v for k, v in all_nodes.items()
-            if k not in ("__start__", "__end__")
-        }
+        user_nodes = {k: v for k, v in all_nodes.items() if k not in ("__start__", "__end__")}
         assert len(user_nodes) == 9
 
         node_names = set(user_nodes.keys())
         expected = {
-            "intent_classifier", "research_planner", "data_collector",
-            "data_analyst", "writer", "editor", "reviewer",
-            "human_review", "publisher",
+            "intent_classifier",
+            "research_planner",
+            "data_collector",
+            "data_analyst",
+            "writer",
+            "editor",
+            "reviewer",
+            "human_review",
+            "publisher",
         }
         assert node_names == expected
 
@@ -195,7 +199,9 @@ class TestEarningsAnalysisApprovedPath:
         ):
             graph = WorkflowBuilder().build("earnings_analysis", ReportState)
             initial_state = create_initial_state(
-                "wf-ea-1", "u-ea-1", "earnings_analysis",
+                "wf-ea-1",
+                "u-ea-1",
+                "earnings_analysis",
             )
             initial_state["base"]["user_input"] = "分析最新财报数据"
             result = await graph.ainvoke(initial_state)
@@ -233,7 +239,9 @@ class TestEarningsAnalysisNeedsHumanPath:
         ):
             graph = WorkflowBuilder().build("earnings_analysis", ReportState)
             initial_state = create_initial_state(
-                "wf-ea-2", "u-ea-2", "earnings_analysis",
+                "wf-ea-2",
+                "u-ea-2",
+                "earnings_analysis",
             )
             initial_state["base"]["user_input"] = "分析最新财报数据"
             result = await graph.ainvoke(initial_state)
@@ -266,7 +274,9 @@ class TestEarningsAnalysisSSEStream:
         ):
             graph = WorkflowBuilder().build("earnings_analysis", ReportState)
             initial_state = create_initial_state(
-                "wf-ea-3", "u-ea-3", "earnings_analysis",
+                "wf-ea-3",
+                "u-ea-3",
+                "earnings_analysis",
             )
             initial_state["base"]["user_input"] = "分析最新财报数据"
 
@@ -289,7 +299,9 @@ class TestEarningsAnalysisSSEStream:
         ):
             graph = WorkflowBuilder().build("earnings_analysis", ReportState)
             initial_state = create_initial_state(
-                "wf-ea-4", "u-ea-4", "earnings_analysis",
+                "wf-ea-4",
+                "u-ea-4",
+                "earnings_analysis",
             )
             initial_state["base"]["user_input"] = "分析最新财报数据"
 
@@ -298,8 +310,13 @@ class TestEarningsAnalysisSSEStream:
                 seen_keys.update(event.keys())
 
         expected = {
-            "intent_classifier", "research_planner", "data_collector",
-            "data_analyst", "writer", "editor", "reviewer",
+            "intent_classifier",
+            "research_planner",
+            "data_collector",
+            "data_analyst",
+            "writer",
+            "editor",
+            "reviewer",
             "publisher",
         }
         assert seen_keys == expected

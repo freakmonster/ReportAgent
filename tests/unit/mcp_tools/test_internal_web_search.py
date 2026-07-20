@@ -41,7 +41,9 @@ class TestWebSearch:
         mock_ddgs.text = MagicMock(return_value=mock_results)
 
         # Patch the import inside web_search module (not the global module)
-        with patch.dict("sys.modules", {"duckduckgo_search": MagicMock(DDGS=MagicMock(return_value=mock_ddgs))}):
+        with patch.dict(
+            "sys.modules", {"duckduckgo_search": MagicMock(DDGS=MagicMock(return_value=mock_ddgs))}
+        ):
             results = await web_search("test query", max_results=5)
 
         assert len(results) == 2
@@ -55,6 +57,7 @@ class TestWebSearch:
         # Ensure duckduckgo_search is not importable
         with patch.dict("sys.modules", {"duckduckgo_search": None}):
             import importlib
+
             importlib.reload(sys.modules["mcp_tools.internal_tools.web_search"])
             # DDG HTML returns valid HTML with results
             html_content = """
@@ -75,6 +78,7 @@ class TestWebSearch:
             with patch("httpx.AsyncClient", return_value=mock_client):
                 # Reload the module after clearing the duckduckgo_search module
                 import mcp_tools.internal_tools.web_search as ws_mod
+
                 results = await ws_mod.web_search("test query", max_results=5)
 
         assert len(results) == 1
@@ -87,26 +91,32 @@ class TestWebSearch:
         with patch.dict("sys.modules", {"duckduckgo_search": None}):
             with patch("httpx.AsyncClient", side_effect=ImportError("not installed")):
                 import importlib
+
                 importlib.reload(sys.modules["mcp_tools.internal_tools.web_search"])
                 import mcp_tools.internal_tools.web_search as ws_mod
+
                 results = await ws_mod.web_search("unreachable query", max_results=3)
 
         assert len(results) == 1
-        assert "unavailable" in results[0]["snippet"].lower() or "currently" in results[0]["snippet"].lower()
+        assert (
+            "unavailable" in results[0]["snippet"].lower()
+            or "currently" in results[0]["snippet"].lower()
+        )
 
     @pytest.mark.asyncio
     async def test_web_search_respects_max_results(self) -> None:
         """web_search truncates to max_results."""
         mock_results = [
-            {"title": f"R{i}", "href": f"https://e.com/{i}", "body": f"S{i}"}
-            for i in range(10)
+            {"title": f"R{i}", "href": f"https://e.com/{i}", "body": f"S{i}"} for i in range(10)
         ]
         mock_ddgs = MagicMock()
         mock_ddgs.__enter__ = MagicMock(return_value=mock_ddgs)
         mock_ddgs.__exit__ = MagicMock(return_value=False)
         mock_ddgs.text = MagicMock(return_value=mock_results[:3])  # DDGS respects max
 
-        with patch.dict("sys.modules", {"duckduckgo_search": MagicMock(DDGS=MagicMock(return_value=mock_ddgs))}):
+        with patch.dict(
+            "sys.modules", {"duckduckgo_search": MagicMock(DDGS=MagicMock(return_value=mock_ddgs))}
+        ):
             results = await web_search("query", max_results=3)
 
         assert len(results) <= 3

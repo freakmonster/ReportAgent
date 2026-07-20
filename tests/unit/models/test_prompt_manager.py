@@ -35,11 +35,7 @@ def templates_dir() -> str:
 
     # Writer template
     (base / "writer.jinja2").write_text(
-        (
-            "You are a professional writer.\n"
-            "Chapter: {{ chapter_title }}\n"
-            "Data: {{ chapter_data }}"
-        ),
+        ("You are a professional writer.\nChapter: {{ chapter_title }}\nData: {{ chapter_data }}"),
         encoding="utf-8",
     )
 
@@ -48,7 +44,7 @@ def templates_dir() -> str:
         (
             "You are a rigorous reviewer.\n"
             "Report: {{ report_content }}\n"
-            "Output as JSON: {\"verdict\": \"{{ verdict }}\"}"
+            'Output as JSON: {"verdict": "{{ verdict }}"}'
         ),
         encoding="utf-8",
     )
@@ -109,9 +105,12 @@ def test_version_hash_consistency(templates_dir: str) -> None:
 
     assert hash1 == hash2
     assert len(hash1) == 64  # SHA256 hex digest length
-    assert hash1 == hashlib.sha256(
-        (Path(templates_dir) / "researcher.jinja2").read_text("utf-8").encode("utf-8")
-    ).hexdigest()
+    assert (
+        hash1
+        == hashlib.sha256(
+            (Path(templates_dir) / "researcher.jinja2").read_text("utf-8").encode("utf-8")
+        ).hexdigest()
+    )
 
 
 def test_version_hash_changes_on_content_update(templates_dir: str) -> None:

@@ -16,8 +16,16 @@ logger = get_logger(__name__)
 
 # HTML 标签中需要移除的噪点元素
 _NOISE_TAGS: set[str] = {
-    "script", "style", "nav", "footer", "header",
-    "aside", "noscript", "iframe", "form", "button",
+    "script",
+    "style",
+    "nav",
+    "footer",
+    "header",
+    "aside",
+    "noscript",
+    "iframe",
+    "form",
+    "button",
 }
 
 # CSS 类名/ID 常含的广告/噪点关键词
@@ -83,6 +91,7 @@ def _detect_encoding(response: httpx.Response) -> str:
 @dataclass
 class WebPage:
     """抓取结果"""
+
     url: str
     title: str = ""
     text: str = ""

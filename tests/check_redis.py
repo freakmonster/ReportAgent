@@ -1,4 +1,5 @@
 """Quick check: Redis version and Stream support."""
+
 import asyncio
 
 import redis.asyncio
@@ -21,5 +22,6 @@ async def main():
             print(f"XADD: FAILED - {e}")
     finally:
         await r.close()
+
 
 asyncio.run(main())

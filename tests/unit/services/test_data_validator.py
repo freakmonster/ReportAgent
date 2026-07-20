@@ -150,7 +150,12 @@ class TestValidateData:
 
     def test_perfect_data(self) -> None:
         """Fresh, complete, high-credibility data passes."""
-        record = {"title": "T", "url": "https://stats.gov.cn/r", "content": "C", "source": "https://stats.gov.cn/r"}
+        record = {
+            "title": "T",
+            "url": "https://stats.gov.cn/r",
+            "content": "C",
+            "source": "https://stats.gov.cn/r",
+        }
         result = validate_data(record, collected_at=datetime.now(timezone.utc).isoformat())
         assert result.is_valid is True
         assert result.freshness_score > 0.9
@@ -167,7 +172,12 @@ class TestValidateData:
 
     def test_low_credibility_warning(self) -> None:
         """Low credibility source adds warnings."""
-        record = {"title": "T", "url": "https://blog.com/p", "content": "C", "source": "https://blog.com/p"}
+        record = {
+            "title": "T",
+            "url": "https://blog.com/p",
+            "content": "C",
+            "source": "https://blog.com/p",
+        }
         result = validate_data(record, collected_at=datetime.now(timezone.utc).isoformat())
         assert result.credibility_score == 0.0
         assert len(result.warnings) >= 1

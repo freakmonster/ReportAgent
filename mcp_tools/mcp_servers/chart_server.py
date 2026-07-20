@@ -24,8 +24,10 @@ logger = logging.getLogger(__name__)
 # Request models (module-level for correct FastAPI body parsing)
 # ---------------------------------------------------------------------------
 
+
 class LineChartReq(BaseModel):
     """Request model for line chart generation."""
+
     title: str = Field(..., description="Chart title")
     x_label: str = Field(default="X", description="X-axis label")
     y_label: str = Field(default="Y", description="Y-axis label")
@@ -35,6 +37,7 @@ class LineChartReq(BaseModel):
 
 class BarChartReq(BaseModel):
     """Request model for bar chart generation."""
+
     title: str = Field(..., description="Chart title")
     x_label: str = Field(default="Category", description="X-axis label")
     y_label: str = Field(default="Value", description="Y-axis label")
@@ -45,6 +48,7 @@ class BarChartReq(BaseModel):
 
 class PieChartReq(BaseModel):
     """Request model for pie chart generation."""
+
     title: str = Field(..., description="Chart title")
     data: dict[str, float] = Field(..., description="Label → value mapping")
 
@@ -52,6 +56,7 @@ class PieChartReq(BaseModel):
 # ---------------------------------------------------------------------------
 # Chart generation (uses matplotlib)
 # ---------------------------------------------------------------------------
+
 
 class ChartGenerator:
     """Generate chart images using matplotlib."""
@@ -69,6 +74,7 @@ class ChartGenerator:
         """Detect a CJK-supporting font available on the system."""
         try:
             import matplotlib.font_manager as fm
+
             for candidate in ("Microsoft YaHei", "SimHei", "SimSun", "KaiTi", "FangSong"):
                 for f in fm.fontManager.ttflist:
                     if f.name == candidate:
@@ -81,6 +87,7 @@ class ChartGenerator:
         """Check if matplotlib is available."""
         try:
             import matplotlib  # noqa: F401
+
             self._mpl_available = True
         except ImportError:
             logger.warning(
@@ -91,6 +98,7 @@ class ChartGenerator:
     def _setup_figure(self, figsize: tuple[int, int] = (10, 6)) -> tuple[object, object]:
         """Set up a matplotlib figure and axis with the default style."""
         import matplotlib
+
         matplotlib.use("Agg")  # Non-interactive backend
         import matplotlib.pyplot as plt
 
@@ -286,6 +294,7 @@ class ChartGenerator:
 # ---------------------------------------------------------------------------
 # FastAPI application
 # ---------------------------------------------------------------------------
+
 
 def create_chart_app() -> object:
     """Create and configure the FastAPI chart MCP server application."""

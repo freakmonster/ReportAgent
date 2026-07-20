@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # Email sender
 # ---------------------------------------------------------------------------
 
+
 class EmailSender:
     """Async email sender via SMTP."""
 
@@ -133,6 +134,7 @@ class EmailSender:
 # FastAPI application
 # ---------------------------------------------------------------------------
 
+
 def create_email_app() -> object:
     """Create and configure the FastAPI email MCP server application."""
     from fastapi import FastAPI
@@ -151,6 +153,7 @@ def create_email_app() -> object:
 
     class ReviewNotificationRequest(BaseModel):
         """Convenience request for human review notifications."""
+
         workflow_id: str = Field(..., description="Workflow ID needing review")
         reviewer_email: str = Field(..., description="Reviewer email address")
         report_title: str = Field(default="", description="Report title")
@@ -180,9 +183,9 @@ def create_email_app() -> object:
         body = f"""
         <h2>Research Report Needs Your Review</h2>
         <p><strong>Workflow ID:</strong> {req.workflow_id}</p>
-        <p><strong>Report:</strong> {req.report_title or 'Untitled'}</p>
+        <p><strong>Report:</strong> {req.report_title or "Untitled"}</p>
         <p>Please review the generated report and approve or request changes.</p>
-        {f'<p><a href="{req.review_url}">Click here to review</a></p>' if req.review_url else ''}
+        {f'<p><a href="{req.review_url}">Click here to review</a></p>' if req.review_url else ""}
         <hr/>
         <p><small>This is an automated notification from the Research Agent system.</small></p>
         """
@@ -220,6 +223,7 @@ def main() -> None:
 # ---------------------------------------------------------------------------
 # Error types
 # ---------------------------------------------------------------------------
+
 
 class EmailSendError(Exception):
     """Raised when email sending fails."""

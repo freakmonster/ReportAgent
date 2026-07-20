@@ -28,9 +28,8 @@ _HEADERS = {"Content-Type": "application/json", "Accept": "text/event-stream"}
 
 # ── Helper: parse SSE stream ───────────────────────────────────────────
 
-def _consume_sse_stream(
-    response: Any, _request_meta: dict[str, Any]
-) -> tuple[bool, int]:
+
+def _consume_sse_stream(response: Any, _request_meta: dict[str, Any]) -> tuple[bool, int]:
     """Read an SSE event stream until [DONE] or timeout.
 
     Returns (success: bool, event_count: int).
@@ -45,9 +44,9 @@ def _consume_sse_stream(
 
             # Standard SSE: "data: {...}" or "event: ..." or empty delimiter
             if line.startswith("data: "):
-                payload = line[len("data: "):]
+                payload = line[len("data: ") :]
             elif line.startswith("data:"):
-                payload = line[len("data:"):].lstrip()
+                payload = line[len("data:") :].lstrip()
             elif line.startswith("{") or line.startswith("["):
                 # Some servers emit raw JSON lines (non-standard but common)
                 payload = line
@@ -69,7 +68,9 @@ def _consume_sse_stream(
                 return True, event_count
 
             if event_type == "error":
-                logger.warning("SSE error event: %s", data.get("data", {}).get("message", "unknown"))
+                logger.warning(
+                    "SSE error event: %s", data.get("data", {}).get("message", "unknown")
+                )
                 return False, event_count
 
             # Timeout guard
@@ -88,6 +89,7 @@ def _consume_sse_stream(
 
 # ── Locust event hooks ─────────────────────────────────────────────────
 
+
 @events.test_start.add_listener
 def on_test_start(environment: Any, **kwargs: Any) -> None:
     """Called once when the test run begins."""
@@ -104,8 +106,7 @@ def on_test_stop(environment: Any, **kwargs: Any) -> None:
     """Called once when the test run ends."""
     if environment.stats is not None:
         logger.info(
-            "=== Locust load test finished === "
-            "total_requests=%d failures=%d avg_ms=%d p95_ms=%d",
+            "=== Locust load test finished === total_requests=%d failures=%d avg_ms=%d p95_ms=%d",
             environment.stats.total.num_requests,
             environment.stats.total.num_failures,
             environment.stats.total.avg_response_time,
@@ -114,6 +115,7 @@ def on_test_stop(environment: Any, **kwargs: Any) -> None:
 
 
 # ── Base user ──────────────────────────────────────────────────────────
+
 
 class ReportStreamingUser(HttpUser):
     """Base user for SSE report streaming — shared SSE parsing logic."""
@@ -190,6 +192,7 @@ class ReportStreamingUser(HttpUser):
 
 
 # ── Concrete user classes ──────────────────────────────────────────────
+
 
 class DeepReportUser(ReportStreamingUser):
     """Simulates a user requesting a deep_report via SSE streaming."""

@@ -87,9 +87,7 @@ class TestHybridRetriever:
             score=0.95,
         )
         store.search = mocker.AsyncMock(return_value=[fake_result])
-        store.upsert = mocker.AsyncMock(
-            return_value=["id1", "id2"]
-        )
+        store.upsert = mocker.AsyncMock(return_value=["id1", "id2"])
 
         retriever = HybridRetriever(
             qdrant_store=store,
@@ -133,9 +131,7 @@ class TestHybridRetriever:
             for i in range(5)
         ]
         store.search = mocker.AsyncMock(return_value=fake_results)
-        store.upsert = mocker.AsyncMock(
-            return_value=[f"id{i}" for i in range(5)]
-        )
+        store.upsert = mocker.AsyncMock(return_value=[f"id{i}" for i in range(5)])
 
         retriever = HybridRetriever(
             qdrant_store=store,

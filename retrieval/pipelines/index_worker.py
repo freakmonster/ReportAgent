@@ -60,6 +60,7 @@ class IndexWorker:
         init_dead_letter_queue(get_redis())
 
         from infrastructure.message_queue.task_queue import _get_queue
+
         self._queue = _get_queue()
 
         self._running = True
@@ -109,7 +110,7 @@ class IndexWorker:
                         f"Too many consecutive errors, stopping worker | count={consecutive_errors}"
                     )
                     break
-                await asyncio.sleep(min(2 ** consecutive_errors, 30))
+                await asyncio.sleep(min(2**consecutive_errors, 30))
 
         await close_redis()
         logger.info(f"IndexWorker stopped | consumer={self._consumer_name}")
@@ -151,9 +152,7 @@ class IndexWorker:
             # IndexBuilder._build() 已推送 DLQ，这里只需更新状态和 ACK
             await self._queue.update_status(task.task_id, "failed", error=str(exc))
             await self._queue.ack(message_id)
-            logger.error(
-                f"IndexWorker task failed | task_id={task.task_id} error={exc}"
-            )
+            logger.error(f"IndexWorker task failed | task_id={task.task_id} error={exc}")
             return True  # 有处理，只是失败了
 
     async def _build_index(self, task: Any) -> None:

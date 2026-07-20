@@ -7,6 +7,7 @@ from typing import TypedDict
 
 class ClaimMarker(TypedDict):
     """A data claim flagged by Stage 1 fact check."""
+
     text: str
     entity_type: str
     position: int
@@ -16,6 +17,7 @@ class ClaimMarker(TypedDict):
 
 class VerifiedClaim(TypedDict):
     """A claim verified by Stage 2 fact check."""
+
     claim_text: str
     verified: bool
     confidence: float
@@ -24,7 +26,8 @@ class VerifiedClaim(TypedDict):
 
 class ReviewContext(TypedDict):
     """Context for review and verification phase."""
+
     stage1_markers: list[ClaimMarker]
     stage2_verified: list[VerifiedClaim]
-    quality_scores: dict[str, float]   # completeness, accuracy, citation, logic
+    quality_scores: dict[str, float]  # completeness, accuracy, citation, logic
     hallucination_flag: bool

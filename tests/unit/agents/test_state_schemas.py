@@ -32,17 +32,19 @@ class TestNestedState:
 
     def test_base_context_has_required_fields(self) -> None:
         bc: BaseContext = {
-            "workflow_id": "w1", "user_id": "u1", "retry_count": 0,
-            "version": 1, "status": "init", "template_name": "deep_report",
+            "workflow_id": "w1",
+            "user_id": "u1",
+            "retry_count": 0,
+            "version": 1,
+            "status": "init",
+            "template_name": "deep_report",
         }
         assert bc["version"] == 1
         assert bc["template_name"] == "deep_report"
 
     def test_collection_context_document_type(self) -> None:
         doc: Document = {"title": "Test", "url": "https://x.com", "content": "body"}
-        cc: CollectionContext = {
-            "raw_docs": [doc], "compressed_summary": {}, "source_urls": []
-        }
+        cc: CollectionContext = {"raw_docs": [doc], "compressed_summary": {}, "source_urls": []}
         assert len(cc["raw_docs"]) == 1
 
     def test_writing_context(self) -> None:
@@ -104,7 +106,17 @@ class TestMigrator:
         assert state["base"]["retry_count"] == 0
 
     def test_upgrade_preserves_review_data(self) -> None:
-        old = {"stage1_markers": [{"text": "abc", "entity_type": "pct", "position": 5, "has_citation": True, "source": "[1]"}]}
+        old = {
+            "stage1_markers": [
+                {
+                    "text": "abc",
+                    "entity_type": "pct",
+                    "position": 5,
+                    "has_citation": True,
+                    "source": "[1]",
+                }
+            ]
+        }
         state = upgrade_v1_to_v2(old)
         assert len(state["review"]["stage1_markers"]) == 1
         assert state["review"]["stage1_markers"][0]["text"] == "abc"

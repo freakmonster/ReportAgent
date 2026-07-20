@@ -175,7 +175,5 @@ def get_session_repo() -> SessionRepository:
     Raises ``RuntimeError`` if ``init_session_repo()`` was not called first.
     """
     if _session_repo is None:
-        raise RuntimeError(
-            "SessionRepository not initialised. Call init_session_repo() first."
-        )
+        raise RuntimeError("SessionRepository not initialised. Call init_session_repo() first.")
     return _session_repo

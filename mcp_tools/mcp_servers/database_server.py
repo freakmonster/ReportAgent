@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # Configuration helper
 # ---------------------------------------------------------------------------
 
+
 def build_docker_compose_entry() -> dict[str, object]:
     """Generate the docker-compose service definition for the database MCP server.
 
@@ -51,6 +52,7 @@ def build_docker_compose_entry() -> dict[str, object]:
 # FastAPI proxy (optional thin wrapper for auth/logging)
 # ---------------------------------------------------------------------------
 
+
 def create_database_proxy_app() -> object:
     """Create a FastAPI proxy that adds auth/logging to the community MCP image.
 
@@ -72,6 +74,7 @@ def create_database_proxy_app() -> object:
 # ---------------------------------------------------------------------------
 # Direct PostgreSQL client for internal use
 # ---------------------------------------------------------------------------
+
 
 class DatabaseClient:
     """Direct async PostgreSQL client for internal tools (bypasses MCP).

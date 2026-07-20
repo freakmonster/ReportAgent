@@ -16,6 +16,7 @@ MAX_PAGES: int = 200
 @dataclass
 class PDFPage:
     """单页结果"""
+
     page_num: int
     text: str
 
@@ -23,6 +24,7 @@ class PDFPage:
 @dataclass
 class PDFDocument:
     """解析后的 PDF 文档"""
+
     source: str
     total_pages: int
     pages: list[PDFPage] = field(default_factory=list)
@@ -137,7 +139,9 @@ def parse_pdf_streaming(
                 f"PDF has {total_pages} pages, exceeds the maximum of {max_pages} pages. "
                 f"Please split the document into smaller parts or use a different source."
             )
-            logger.warning("PDF page limit exceeded", source=source, pages=total_pages, max=max_pages)
+            logger.warning(
+                "PDF page limit exceeded", source=source, pages=total_pages, max=max_pages
+            )
             raise ValueError(msg)
 
         batch: list[PDFPage] = []

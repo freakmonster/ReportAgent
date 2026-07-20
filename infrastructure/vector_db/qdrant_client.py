@@ -42,9 +42,7 @@ async def close_qdrant() -> None:
 def get_qdrant() -> AsyncQdrantClient:
     """Return the shared Qdrant client instance."""
     if _qdrant_client is None:
-        raise RuntimeError(
-            "Qdrant not initialised. Call init_qdrant() before get_qdrant()."
-        )
+        raise RuntimeError("Qdrant not initialised. Call init_qdrant() before get_qdrant().")
     return _qdrant_client
 
 
@@ -53,9 +51,7 @@ async def collection_exists(name: str) -> bool:
     client = get_qdrant()
     try:
         collections_response = await client.get_collections()
-        collection_names = [
-            c.name for c in collections_response.collections
-        ]
+        collection_names = [c.name for c in collections_response.collections]
         return name in collection_names
     except Exception:
         return False

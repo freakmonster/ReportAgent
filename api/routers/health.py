@@ -25,6 +25,7 @@ async def health_check() -> HealthResponse:
         from sqlalchemy import text
 
         from infrastructure.database.connection import get_db
+
         async with get_db() as session:
             await session.execute(text("SELECT 1"))
         services["postgresql"] = "connected"
@@ -34,6 +35,7 @@ async def health_check() -> HealthResponse:
     # Redis
     try:
         from infrastructure.cache.redis_client import get_redis
+
         await get_redis().ping()
         services["redis"] = "connected"
     except Exception as exc:
@@ -46,6 +48,7 @@ async def health_check() -> HealthResponse:
     # Qdrant
     try:
         from infrastructure.vector_db.qdrant_client import get_qdrant
+
         await get_qdrant().get_collections()
         services["qdrant"] = "connected"
     except Exception:

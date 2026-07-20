@@ -55,8 +55,6 @@ class TestAuditHandler:
     @pytest.mark.asyncio
     async def test_clear_resets_log(self) -> None:
         handler = AuditHandler()
-        await handler.handle(
-            PreExecContext(raw_input="x"), PostExecContext(raw_output="y")
-        )
+        await handler.handle(PreExecContext(raw_input="x"), PostExecContext(raw_output="y"))
         handler.clear()
         assert handler.get_audit_log() == []

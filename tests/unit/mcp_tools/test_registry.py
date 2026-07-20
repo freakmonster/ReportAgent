@@ -38,6 +38,7 @@ class TestToolRegistry:
     def test_register_adds_tool(self, fresh_registry: ToolRegistry) -> None:
         """register() adds a tool entry."""
         handler = AsyncMock()
+
         async def fake_tool(args: dict) -> dict:
             return {"ok": True}
 
@@ -57,6 +58,7 @@ class TestToolRegistry:
 
     def test_register_defaults_to_internal_active(self, fresh_registry: ToolRegistry) -> None:
         """Default registration creates internal + active tool."""
+
         async def noop(args: dict) -> dict:
             return {}
 
@@ -68,6 +70,7 @@ class TestToolRegistry:
 
     def test_register_mcp_tool(self, fresh_registry: ToolRegistry) -> None:
         """MCP tools store server_url and mcp_tool_name."""
+
         async def proxy(args: dict) -> dict:
             return {}
 
@@ -88,6 +91,7 @@ class TestToolRegistry:
 
     def test_unregister_removes_tool(self, fresh_registry: ToolRegistry) -> None:
         """unregister() removes a tool and returns True."""
+
         async def noop(args: dict) -> dict:
             return {}
 
@@ -108,6 +112,7 @@ class TestToolRegistry:
     @pytest.mark.asyncio
     async def test_get_tool_returns_handler(self, fresh_registry: ToolRegistry) -> None:
         """get_tool() returns the registered handler."""
+
         async def handler(args: dict) -> dict:
             return {"called": True}
 
@@ -126,6 +131,7 @@ class TestToolRegistry:
     @pytest.mark.asyncio
     async def test_get_tool_unavailable_returns_none(self, fresh_registry: ToolRegistry) -> None:
         """get_tool() returns None when tool is UNAVAILABLE."""
+
         async def handler(args: dict) -> dict:
             return {}
 
@@ -136,10 +142,13 @@ class TestToolRegistry:
 
     def test_get_tool_info_returns_metadata(self, fresh_registry: ToolRegistry) -> None:
         """get_tool_info() returns full metadata dict."""
+
         async def handler(args: dict) -> dict:
             return {}
 
-        fresh_registry.register(name="meta_test", handler=handler, description="desc", tags=["a", "b"])
+        fresh_registry.register(
+            name="meta_test", handler=handler, description="desc", tags=["a", "b"]
+        )
         info = fresh_registry.get_tool_info("meta_test")
         assert info is not None
         assert info["name"] == "meta_test"
@@ -150,6 +159,7 @@ class TestToolRegistry:
 
     def test_list_tools_returns_all(self, fresh_registry: ToolRegistry) -> None:
         """list_tools() returns all registered tools by default."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -162,6 +172,7 @@ class TestToolRegistry:
 
     def test_list_tools_filter_by_source(self, fresh_registry: ToolRegistry) -> None:
         """list_tools() filters by source."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -178,6 +189,7 @@ class TestToolRegistry:
 
     def test_list_tools_filter_by_status(self, fresh_registry: ToolRegistry) -> None:
         """list_tools() filters by status."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -191,6 +203,7 @@ class TestToolRegistry:
 
     def test_list_tools_filter_by_tag(self, fresh_registry: ToolRegistry) -> None:
         """list_tools() filters by tag."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -205,6 +218,7 @@ class TestToolRegistry:
 
     def test_set_status_updates_tool(self, fresh_registry: ToolRegistry) -> None:
         """set_status() changes tool status."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -224,6 +238,7 @@ class TestToolRegistry:
 
     def test_mark_degraded_unavailable_active(self, fresh_registry: ToolRegistry) -> None:
         """Convenience status methods work correctly."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -248,6 +263,7 @@ class TestToolRegistry:
 
     def test_health_check_counts_correctly(self, fresh_registry: ToolRegistry) -> None:
         """health_check() reports accurate counts."""
+
         async def h(args: dict) -> dict:
             return {}
 
@@ -319,6 +335,7 @@ class TestRegisterMCPTools:
             with patch("mcp_tools.mcp_client.mcp_client", mock_mcp):
                 with patch("config.settings.settings", mock_settings):
                     from mcp_tools import registry as reg_mod
+
                     reg_mod.registry = test_reg
                     reg_mod.register_mcp_tools()
 
@@ -340,6 +357,7 @@ class TestRegisterMCPTools:
 
             with patch("config.settings.settings", mock_settings):
                 from mcp_tools import registry as reg_mod
+
                 reg_mod.registry = test_reg
                 reg_mod.register_mcp_tools()
 

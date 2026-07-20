@@ -67,6 +67,7 @@ class TestFetchURL:
 
     async def test_http_error_continues_in_batch(self, mocker):
         """fetch_multiple skips failed URLs but returns successful ones."""
+
         async def mock_fetch(url, **kwargs):
             if "fail" in url:
                 raise httpx.HTTPError("Connection failed")
@@ -77,11 +78,13 @@ class TestFetchURL:
             side_effect=mock_fetch,
         )
 
-        pages = await fetch_multiple([
-            "https://example.com/ok1",
-            "https://fail.com/bad",
-            "https://example.com/ok2",
-        ])
+        pages = await fetch_multiple(
+            [
+                "https://example.com/ok1",
+                "https://fail.com/bad",
+                "https://example.com/ok2",
+            ]
+        )
         assert len(pages) == 2
         assert pages[0].url == "https://example.com/ok1"
         assert pages[1].url == "https://example.com/ok2"

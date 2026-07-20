@@ -146,6 +146,7 @@ class FeatureFlagManager:
     async def _redis_get(name: str) -> bool | None:
         try:
             from infrastructure.cache.redis_client import get_redis
+
             redis = get_redis()
             val = await redis.get(FeatureFlagManager._key(name))
             if val is None:
@@ -158,6 +159,7 @@ class FeatureFlagManager:
     async def _redis_set(name: str, value: bool) -> None:
         try:
             from infrastructure.cache.redis_client import get_redis
+
             redis = get_redis()
             await redis.set(
                 FeatureFlagManager._key(name),
@@ -170,6 +172,7 @@ class FeatureFlagManager:
     async def _redis_delete(name: str) -> bool:
         try:
             from infrastructure.cache.redis_client import get_redis
+
             redis = get_redis()
             deleted = await redis.delete(FeatureFlagManager._key(name))
             return deleted > 0

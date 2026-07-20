@@ -20,9 +20,23 @@ from harness.handlers.base import HandlerDecision, HandlerResult, HarnessHandler
 # ── Stage 1.5: Relation Extractor (V2.1) ──────────────────────────────
 
 _COMPARISON_KEYWORDS: list[str] = [
-    "领先", "超越", "超过", "优于", "强于", "高于", "低于",
-    "不如", "落后", "逊于", "击败", "碾压", "赶超",
-    "领先于", "超越了", "超过了", "优于",
+    "领先",
+    "超越",
+    "超过",
+    "优于",
+    "强于",
+    "高于",
+    "低于",
+    "不如",
+    "落后",
+    "逊于",
+    "击败",
+    "碾压",
+    "赶超",
+    "领先于",
+    "超越了",
+    "超过了",
+    "优于",
 ]
 
 _RELATION_PATTERN = re.compile(
@@ -45,16 +59,19 @@ def extract_qualitative_claims(text: str) -> list[dict[str, str]]:
         start = max(0, match.start() - 40)
         end = min(len(text), match.end() + 40)
         sentence = text[start:end].strip()
-        claims.append({
-            "subject": subject,
-            "relation": relation,
-            "object": obj,
-            "sentence": sentence,
-        })
+        claims.append(
+            {
+                "subject": subject,
+                "relation": relation,
+                "object": obj,
+                "sentence": sentence,
+            }
+        )
     return claims
 
 
 # ── Stage 2: External verification ────────────────────────────────────
+
 
 async def _verify_claim_via_mcp(claim: dict[str, str]) -> dict[str, Any]:
     """Verify a single claim using MCP web_search.
@@ -93,10 +110,7 @@ async def _verify_claim_via_mcp(claim: dict[str, str]) -> dict[str, Any]:
             evidence_text += snippet + " "
 
         # Simple heuristic: evidence contains both entities
-        verified = (
-            claim["subject"] in evidence_text
-            and claim["object"] in evidence_text
-        )
+        verified = claim["subject"] in evidence_text and claim["object"] in evidence_text
 
         return {
             "verified": verified,
@@ -122,7 +136,7 @@ async def _verify_claim_via_llm(claim: dict[str, str]) -> dict[str, Any]:
         f"主体：{claim['subject']}\n"
         f"关系：{claim['relation']}\n"
         f"对象：{claim['object']}\n\n"
-        f"请回复 JSON：{{\"verified\": true/false, \"reason\": \"简短理由\"}}\n"
+        f'请回复 JSON：{{"verified": true/false, "reason": "简短理由"}}\n'
         f"如果你不确定，请回复 verified: false。只返回 JSON。"
     )
 
@@ -139,7 +153,7 @@ async def _verify_claim_via_llm(claim: dict[str, str]) -> dict[str, Any]:
         content = response.choices[0].message.content if response.choices else ""
 
         # Parse JSON from response
-        json_match = re.search(r'\{[^}]+\}', content)
+        json_match = re.search(r"\{[^}]+\}", content)
         if json_match:
             parsed = json.loads(json_match.group(0))
             return {
@@ -183,12 +197,14 @@ async def _verify_claims(claims: list[dict[str, str]]) -> dict[str, Any]:
         else:
             unverified_count += 1
 
-        details.append({
-            "claim": f"{claim['subject']} {claim['relation']} {claim['object']}",
-            "verified": result["verified"],
-            "method": result["method"],
-            "evidence": result["evidence"][:200],
-        })
+        details.append(
+            {
+                "claim": f"{claim['subject']} {claim['relation']} {claim['object']}",
+                "verified": result["verified"],
+                "method": result["method"],
+                "evidence": result["evidence"][:200],
+            }
+        )
 
     return {
         "verified_count": verified_count,
@@ -200,6 +216,7 @@ async def _verify_claims(claims: list[dict[str, str]]) -> dict[str, Any]:
 
 
 # ── Handler ───────────────────────────────────────────────────────────
+
 
 class FactStage2Handler(HarnessHandler):
     """Stage 2 fact check: MCP/LLM verification of high-risk claims.
@@ -257,9 +274,7 @@ class FactStage2Handler(HarnessHandler):
         detail_parts: list[str] = []
         for d in verification["details"]:
             status = "✓" if d["verified"] else "✗"
-            detail_parts.append(
-                f"{status} {d['claim']} [{d['method']}]"
-            )
+            detail_parts.append(f"{status} {d['claim']} [{d['method']}]")
 
         if unverified == 0:
             return HandlerResult(
@@ -276,7 +291,8 @@ class FactStage2Handler(HarnessHandler):
         # Some claims unverified → warning
         return HandlerResult(
             decision=HandlerDecision.FAIL,
-            detail=f"{unverified}/{total} qualitative claims unverified: " + "; ".join(detail_parts),
+            detail=f"{unverified}/{total} qualitative claims unverified: "
+            + "; ".join(detail_parts),
             metrics={
                 "qualitative_claims_found": len(qualitative_claims),
                 "verified_via_mcp": verification["verified_count"],

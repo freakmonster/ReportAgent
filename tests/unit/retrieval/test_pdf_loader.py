@@ -34,9 +34,7 @@ def _make_pdf(page_count: int) -> bytes:
         kids_refs.append(f"{obj_num} 0 R")
 
     catalog = "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-    pages_root = (
-        f"2 0 obj<</Type/Pages/Kids[{' '.join(kids_refs)}]/Count {page_count}>>endobj\n"
-    )
+    pages_root = f"2 0 obj<</Type/Pages/Kids[{' '.join(kids_refs)}]/Count {page_count}>>endobj\n"
     body = "\n".join(pages_obj)
 
     xref_entries = [

@@ -8,6 +8,7 @@
     - 已安装 fastembed（可选）
     - VPN 开启（仅 fastembed 后端首次下载模型需要）
 """
+
 from __future__ import annotations
 
 import sys

@@ -32,11 +32,13 @@ from infrastructure.database.connection import Base  # noqa: E402
 
 target_metadata = Base.metadata
 
+
 # ── Only track tables in our metadata; ignore LangGraph checkpointer tables
 def include_name(name: str, type_: str, parent_names: dict) -> bool:
     if type_ == "table":
         return name in target_metadata.tables
     return True
+
 
 # ── Override sqlalchemy.url from settings ─────────────────────────────
 config.set_main_option("sqlalchemy.url", settings.pg_dsn)

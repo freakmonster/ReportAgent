@@ -79,7 +79,10 @@ class TestParagraphChunker:
 
     def test_overlap_token_precision(self):
         """Adjacent chunks have overlap within a reasonable tolerance of overlap_tokens."""
-        text_lines = [f"第{i}段：这是一段有意义的文本内容，包含足够的中文字符来测试重叠功能。" for i in range(30)]
+        text_lines = [
+            f"第{i}段：这是一段有意义的文本内容，包含足够的中文字符来测试重叠功能。"
+            for i in range(30)
+        ]
         text = "\n\n".join(text_lines)
 
         result = chunk_text(

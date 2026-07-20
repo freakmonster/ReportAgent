@@ -72,11 +72,15 @@ def _load_dotenv_if_enabled(yaml_data: dict[str, Any]) -> None:
                 os.environ[key] = value
                 loaded_keys.append(key)
         if loaded_keys:
-            print(f"[settings] .env file loaded: {len(loaded_keys)} keys ({', '.join(loaded_keys)})")
+            print(
+                f"[settings] .env file loaded: {len(loaded_keys)} keys ({', '.join(loaded_keys)})"
+            )
         else:
             print("[settings] .env file found but all keys already set in environment, skipped")
     else:
-        print(f"[settings] .env file NOT found at {dotenv_path}, env_file_enabled=true but no .env exists")
+        print(
+            f"[settings] .env file NOT found at {dotenv_path}, env_file_enabled=true but no .env exists"
+        )
 
 
 # ── YAML loading ────────────────────────────────────────────────────────
@@ -167,9 +171,15 @@ def _collect_env_overrides() -> dict[str, Any]:
             if field_name == "debug":
                 overrides[field_name] = val.lower() in ("1", "true", "yes")
             elif field_name in (
-                "port", "pg_port", "redis_port", "qdrant_port",
-                "redis_db", "cb_failure_threshold", "cb_timeout",
-                "rate_limit_requests", "rate_limit_window",
+                "port",
+                "pg_port",
+                "redis_port",
+                "qdrant_port",
+                "redis_db",
+                "cb_failure_threshold",
+                "cb_timeout",
+                "rate_limit_requests",
+                "rate_limit_window",
             ):
                 overrides[field_name] = int(val)
             else:
@@ -208,6 +218,7 @@ class Settings(BaseSettings):
         # Initialise feature flags from YAML data
         try:
             from config.feature_flags import init_feature_flags
+
             init_feature_flags(yaml_data)
         except Exception:
             pass  # Feature flag init is non-critical
@@ -284,9 +295,7 @@ class Settings(BaseSettings):
 
     # ── Qwen ─────────────────────────────────────────────────────────
     qwen_api_key: str = Field(default="")
-    qwen_base_url: str = Field(
-        default="https://dashscope.aliyuncs.com/compatible-mode/v1"
-    )
+    qwen_base_url: str = Field(default="https://dashscope.aliyuncs.com/compatible-mode/v1")
     qwen_model_size: str = Field(default="max")  # "8b" | "32b" | "max"
     qwen_model: str = Field(default="qwen-max")
     qwen_light_model: str = Field(default="qwen3-8b")

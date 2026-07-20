@@ -26,6 +26,7 @@ from harness.orchestrator.context import PostExecContext  # noqa: E402
 
 # ── Prediction detection ──────────────────────────────────────────────
 
+
 class TestPredictionDetection:
     """Verify prediction/speculation statement detection."""
 
@@ -40,9 +41,7 @@ class TestPredictionDetection:
     @pytest.mark.asyncio
     async def test_detects_multiple_predictions(self) -> None:
         handler = HallucinationHandler()
-        ctx = PostExecContext(
-            raw_output="预计销量将增长30%。预测2027年渗透率将达到50%。"
-        )
+        ctx = PostExecContext(raw_output="预计销量将增长30%。预测2027年渗透率将达到50%。")
         result = await handler.handle(None, ctx)
         assert result.metrics["prediction_count"] == 2
 
@@ -73,6 +72,7 @@ class TestPredictionDetection:
 
 
 # ── Absolute language detection ───────────────────────────────────────
+
 
 class TestAbsoluteLanguageDetection:
     """Verify detection of unsubstantiated absolute claims."""
@@ -111,6 +111,7 @@ class TestAbsoluteLanguageDetection:
 
 # ── Contradiction detection ───────────────────────────────────────────
 
+
 class TestContradictionDetection:
     """Verify internal contradiction detection."""
 
@@ -124,9 +125,7 @@ class TestContradictionDetection:
     @pytest.mark.asyncio
     async def test_detects_multiple_contradiction_pairs(self) -> None:
         handler = HallucinationHandler()
-        ctx = PostExecContext(
-            raw_output="盈利但亏损扩大，市场份额提高的同时渗透率降低。"
-        )
+        ctx = PostExecContext(raw_output="盈利但亏损扩大，市场份额提高的同时渗透率降低。")
         result = await handler.handle(None, ctx)
         # "盈利/亏损" + "提高/降低" = 2 pairs
         assert result.metrics["contradictions"] >= 2
@@ -159,6 +158,7 @@ class TestContradictionDetection:
 
 # ── Edge cases ────────────────────────────────────────────────────────
 
+
 class TestHallucinationEdgeCases:
     """Boundary conditions for hallucination detection."""
 
@@ -178,9 +178,7 @@ class TestHallucinationEdgeCases:
     @pytest.mark.asyncio
     async def test_purely_factual_text_passes(self) -> None:
         handler = HallucinationHandler()
-        ctx = PostExecContext(
-            raw_output="根据国家统计局数据[1]，2025年GDP增长5.2%。"
-        )
+        ctx = PostExecContext(raw_output="根据国家统计局数据[1]，2025年GDP增长5.2%。")
         result = await handler.handle(None, ctx)
         assert result.decision == HandlerDecision.PASS
 
@@ -188,9 +186,7 @@ class TestHallucinationEdgeCases:
     async def test_mixed_content_fails_on_hallucination(self) -> None:
         """Even one hallucination flag should trigger FAIL."""
         handler = HallucinationHandler()
-        ctx = PostExecContext(
-            raw_output="2025年销量300万辆[1]。预计2030年将达到1000万辆。"
-        )
+        ctx = PostExecContext(raw_output="2025年销量300万辆[1]。预计2030年将达到1000万辆。")
         result = await handler.handle(None, ctx)
         assert result.decision == HandlerDecision.FAIL
         assert result.metrics["prediction_count"] >= 1
@@ -199,9 +195,7 @@ class TestHallucinationEdgeCases:
     async def test_all_three_types_flagged(self) -> None:
         """Text with predictions + absolutes + contradictions should flag all."""
         handler = HallucinationHandler()
-        ctx = PostExecContext(
-            raw_output="预计将达到500亿，毋庸置疑是最佳，但增长的同时也在下降。"
-        )
+        ctx = PostExecContext(raw_output="预计将达到500亿，毋庸置疑是最佳，但增长的同时也在下降。")
         result = await handler.handle(None, ctx)
         assert result.metrics["prediction_count"] >= 1
         assert result.metrics["absolute_claims"] >= 1
@@ -219,6 +213,7 @@ class TestHallucinationEdgeCases:
 
 
 # ── Handler interface compliance ───────────────────────────────────────
+
 
 class TestHallucinationHandlerInterface:
     """Verify HallucinationHandler conforms to HarnessHandler ABC."""

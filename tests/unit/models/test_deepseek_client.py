@@ -23,9 +23,7 @@ async def test_chat_success(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify that chat() returns the correct response on a successful API call."""
-    with patch(
-        "models.llm_providers.deepseek_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.deepseek_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
         mock_async_openai.return_value = mock_client
@@ -37,7 +35,9 @@ async def test_chat_success(
         call_kwargs = mock_client.chat.completions.create.call_args.kwargs
         assert call_kwargs["model"] == "deepseek-v4-pro"
         assert call_kwargs["messages"] == sample_messages
-        assert response.choices[0].message.content == mock_openai_response.choices[0].message.content
+        assert (
+            response.choices[0].message.content == mock_openai_response.choices[0].message.content
+        )
 
 
 @pytest.mark.asyncio
@@ -46,9 +46,7 @@ async def test_chat_with_retry(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify retry on first failure: first call raises APIError, second succeeds."""
-    with patch(
-        "models.llm_providers.deepseek_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.deepseek_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(
             side_effect=[
@@ -66,7 +64,9 @@ async def test_chat_with_retry(
         response = await client.chat(sample_messages)
 
         assert mock_client.chat.completions.create.call_count == 2
-        assert response.choices[0].message.content == mock_openai_response.choices[0].message.content
+        assert (
+            response.choices[0].message.content == mock_openai_response.choices[0].message.content
+        )
 
 
 @pytest.mark.asyncio
@@ -75,9 +75,7 @@ async def test_chat_stream(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify chat_stream() yields all chunks correctly."""
-    with patch(
-        "models.llm_providers.deepseek_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.deepseek_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
 
         async def _stream_iter():
@@ -110,9 +108,7 @@ async def test_chat_max_retries_exhausted(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify that after 3 failures, tenacity raises RetryError."""
-    with patch(
-        "models.llm_providers.deepseek_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.deepseek_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(
             side_effect=APIError(

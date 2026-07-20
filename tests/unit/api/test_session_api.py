@@ -38,14 +38,22 @@ def test_session_list_response():
     """SessionListResponse 序列化"""
     items = [
         SessionResponse(
-            session_id="s1", user_id="u1", title="S1",
-            status="active", report_count=1,
-            created_at="2026-01-01T00:00:00Z", updated_at="2026-01-01T00:00:00Z",
+            session_id="s1",
+            user_id="u1",
+            title="S1",
+            status="active",
+            report_count=1,
+            created_at="2026-01-01T00:00:00Z",
+            updated_at="2026-01-01T00:00:00Z",
         ),
         SessionResponse(
-            session_id="s2", user_id="u1", title="S2",
-            status="active", report_count=2,
-            created_at="2026-01-02T00:00:00Z", updated_at="2026-01-02T00:00:00Z",
+            session_id="s2",
+            user_id="u1",
+            title="S2",
+            status="active",
+            report_count=2,
+            created_at="2026-01-02T00:00:00Z",
+            updated_at="2026-01-02T00:00:00Z",
         ),
     ]
     resp = SessionListResponse(sessions=items, total=2)

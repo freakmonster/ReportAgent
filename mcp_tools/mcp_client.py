@@ -25,16 +25,19 @@ logger = logging.getLogger(__name__)
 # Data types
 # ---------------------------------------------------------------------------
 
+
 class CircuitState(str, Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"          # Normal operation
-    OPEN = "open"              # Circuit broken, requests fail fast / degrade
-    HALF_OPEN = "half_open"    # Probing if service recovered
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Circuit broken, requests fail fast / degrade
+    HALF_OPEN = "half_open"  # Probing if service recovered
 
 
 @dataclass
 class MCPToolResult:
     """Result returned from an MCP tool call."""
+
     success: bool
     data: Any = None
     error: str | None = None
@@ -45,6 +48,7 @@ class MCPToolResult:
 # ---------------------------------------------------------------------------
 # Circuit breaker
 # ---------------------------------------------------------------------------
+
 
 class CircuitBreaker:
     """Circuit breaker for MCP server calls.
@@ -84,9 +88,7 @@ class CircuitBreaker:
             elapsed = time.time() - self._opened_at
             if elapsed >= self._timeout_seconds:
                 self._state = CircuitState.HALF_OPEN
-                logger.info(
-                    "Circuit transitioned to HALF_OPEN after %.1fs", elapsed
-                )
+                logger.info("Circuit transitioned to HALF_OPEN after %.1fs", elapsed)
         return self._state
 
     @property
@@ -146,6 +148,7 @@ class CircuitBreaker:
 # Tenacity version compatibility helper
 # ---------------------------------------------------------------------------
 
+
 def _is_last_tenacity_attempt(attempt: object) -> bool:
     """Check if the current tenacity attempt is the last one.
 
@@ -203,6 +206,7 @@ class MCPClient:
         """Lazily create the httpx AsyncClient if not already initialized."""
         if self._http_client is None:
             import httpx
+
             self._http_client = httpx.AsyncClient(
                 timeout=httpx.Timeout(self.REQUEST_TIMEOUT),
                 limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
@@ -268,8 +272,7 @@ class MCPClient:
                 )
                 return await self._degrade(degradation, tool_name, arguments)
             raise CircuitBreakerOpenError(
-                f"Circuit OPEN for {server_name or server_url} and no "
-                f"degradation target registered"
+                f"Circuit OPEN for {server_name or server_url} and no degradation target registered"
             )
 
         # Execute with retry
@@ -309,7 +312,9 @@ class MCPClient:
                 with attempt:
                     try:
                         result = await self._do_call(
-                            server_url, tool_name, arguments,
+                            server_url,
+                            tool_name,
+                            arguments,
                             is_probe=(breaker.state == CircuitState.HALF_OPEN),
                         )
                         breaker.record_success()
@@ -401,9 +406,7 @@ class MCPClient:
                 url,
                 exc.response.text[:200],
             )
-            raise MCPServerError(
-                f"HTTP {exc.response.status_code} from {url}"
-            ) from exc
+            raise MCPServerError(f"HTTP {exc.response.status_code} from {url}") from exc
         except httpx.RequestError as exc:
             logger.warning("Request error for %s: %s", url, exc)
             raise MCPConnectionError(f"Connection failed for {url}") from exc
@@ -417,6 +420,7 @@ class MCPClient:
         """Call the fallback internal tool."""
         try:
             from mcp_tools.registry import registry
+
             tool = await registry.get_tool(internal_tool_name)
             if tool is None:
                 return MCPToolResult(
@@ -432,9 +436,7 @@ class MCPClient:
                 tool_name=tool_name,
             )
         except Exception as exc:
-            logger.error(
-                "Internal tool '%s' also failed: %s", internal_tool_name, exc
-            )
+            logger.error("Internal tool '%s' also failed: %s", internal_tool_name, exc)
             return MCPToolResult(
                 success=False,
                 error=f"Degradation to '{internal_tool_name}' also failed: {exc}",
@@ -483,10 +485,7 @@ class MCPClient:
 
     def get_all_metrics(self) -> dict[str, Any]:
         """Return metrics for all registered circuit breakers."""
-        return {
-            server_url: breaker.metrics
-            for server_url, breaker in self._breakers.items()
-        }
+        return {server_url: breaker.metrics for server_url, breaker in self._breakers.items()}
 
     async def close(self) -> None:
         """Close the underlying HTTP client."""

@@ -33,7 +33,7 @@ class TestJSONParser:
 
     def test_parse_json_array(self) -> None:
         """Verify JSON arrays parse correctly."""
-        result = JSONParser.parse('[1, 2, 3]')
+        result = JSONParser.parse("[1, 2, 3]")
         assert result == [1, 2, 3]
 
     def test_parse_json_in_markdown_block(self) -> None:
@@ -60,7 +60,7 @@ That's all."""
 
     def test_parse_json_with_trailing_comma_in_array(self) -> None:
         """Verify trailing comma in array is removed."""
-        text = '[1, 2, 3,]'
+        text = "[1, 2, 3,]"
         result = JSONParser.parse(text)
         assert result == [1, 2, 3]
 
@@ -91,7 +91,7 @@ That's all."""
 
     def test_parse_json_with_text_surrounding(self) -> None:
         """Verify JSON is extracted from surrounding explanatory text."""
-        text = "The answer is: {\"result\": \"success\"}. That's correct."
+        text = 'The answer is: {"result": "success"}. That\'s correct.'
         result = JSONParser.parse(text)
         assert result == {"result": "success"}
 

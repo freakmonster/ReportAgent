@@ -154,15 +154,25 @@ def demo_chunking(label: str, text: str, target_chunk_tokens: int, overlap: int 
 
 if __name__ == "__main__":
     # 演示 1: 小 chunk — 展示段落边界和 overlap 效果
-    demo_chunking("演示 1: 小 chunk (target=80, overlap=20)", _SAMPLE, target_chunk_tokens=80, overlap=20)
+    demo_chunking(
+        "演示 1: 小 chunk (target=80, overlap=20)", _SAMPLE, target_chunk_tokens=80, overlap=20
+    )
 
     # 演示 2: 中等 chunk — 模拟 data_processor 中 per-doc 2000 字符截断场景
     demo_chunking("演示 2: 中等 chunk (target=400)", _SAMPLE, target_chunk_tokens=400)
 
     # 演示 3: 大批量重复文本 — 模拟 combined 多文档拼接后 6000 字符截断
     long_text = _SAMPLE * 2  # 约 6000 字符
-    demo_chunking("演示 3: 长文本 (target=1200, 模拟 6000 字符 topic 压缩)", long_text, target_chunk_tokens=1200)
+    demo_chunking(
+        "演示 3: 长文本 (target=1200, 模拟 6000 字符 topic 压缩)",
+        long_text,
+        target_chunk_tokens=1200,
+    )
 
     # 演示 4: 无标题纯段落文本 — 测试纯文本场景
-    plain_text = "\n\n".join(f"这是第{i}段文字。它包含了一些有意义的文本内容，用来测试段落切分器在纯文本场景下的表现。" * 3 for i in range(20))
+    plain_text = "\n\n".join(
+        f"这是第{i}段文字。它包含了一些有意义的文本内容，用来测试段落切分器在纯文本场景下的表现。"
+        * 3
+        for i in range(20)
+    )
     demo_chunking("演示 4: 无标题纯段落文本 (target=200)", plain_text, target_chunk_tokens=200)

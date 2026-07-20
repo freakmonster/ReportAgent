@@ -39,9 +39,7 @@ class RetryParser:
             raise ValueError("max_retries must be >= 1")
         self._max_retries = max_retries
 
-    def retry_parse(
-        self, text: str, repair_callback: Optional[Callable[[str], str]] = None
-    ) -> Any:
+    def retry_parse(self, text: str, repair_callback: Optional[Callable[[str], str]] = None) -> Any:
         """Parse JSON text with retry logic.
 
         Args:
@@ -64,7 +62,9 @@ class RetryParser:
                 return JSONParser.parse(current_text)
             except JSONParseError:
                 if attempt >= self._max_retries:
-                    logger.warning("retry_parser.exhausted | attempts=%d max=%d", attempt, self._max_retries)
+                    logger.warning(
+                        "retry_parser.exhausted | attempts=%d max=%d", attempt, self._max_retries
+                    )
                     raise RetryExhaustedError(
                         f"Failed to parse JSON after {self._max_retries} attempts",
                         original_text=text,

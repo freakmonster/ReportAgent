@@ -31,6 +31,7 @@ logger = get_logger(__name__)
 @dataclass
 class IndexProgress:
     """索引构建进度"""
+
     total_docs: int
     indexed_docs: int
     total_chunks: int
@@ -41,6 +42,7 @@ class IndexProgress:
 @dataclass
 class DocumentRecord:
     """文档记录"""
+
     source: str
     content: str
     content_hash: str
@@ -50,6 +52,7 @@ class DocumentRecord:
 @dataclass
 class BuildResult:
     """索引构建结果"""
+
     collection_name: str
     doc_count: int
     chunk_count: int
@@ -120,12 +123,14 @@ class IndexBuilder:
                 doc = parse_pdf(source, pdf_bytes)
                 content = doc.full_text
                 content_hash = _hash_content(content)
-                documents.append(DocumentRecord(
-                    source=source,
-                    content=content,
-                    content_hash=content_hash,
-                    mime_type="application/pdf",
-                ))
+                documents.append(
+                    DocumentRecord(
+                        source=source,
+                        content=content,
+                        content_hash=content_hash,
+                        mime_type="application/pdf",
+                    )
+                )
             except ValueError as exc:
                 errors.append(f"Skipped {source}: {exc}")
                 logger.warning("Skipping PDF", source=source, reason=str(exc))
@@ -133,7 +138,9 @@ class IndexBuilder:
                 errors.append(f"Failed {source}: {exc}")
                 logger.error("Failed to process PDF", source=source, error=str(exc))
 
-        return await self._build(documents, incremental=incremental, use_buffer=use_buffer, errors=errors)
+        return await self._build(
+            documents, incremental=incremental, use_buffer=use_buffer, errors=errors
+        )
 
     async def build_from_urls(
         self,
@@ -180,14 +187,18 @@ class IndexBuilder:
                 errors.append(f"Empty content from {page.url}")
                 continue
             content_hash = _hash_content(page.text)
-            documents.append(DocumentRecord(
-                source=page.url,
-                content=page.text,
-                content_hash=content_hash,
-                mime_type="text/html",
-            ))
+            documents.append(
+                DocumentRecord(
+                    source=page.url,
+                    content=page.text,
+                    content_hash=content_hash,
+                    mime_type="text/html",
+                )
+            )
 
-        return await self._build(documents, incremental=incremental, use_buffer=use_buffer, errors=errors)
+        return await self._build(
+            documents, incremental=incremental, use_buffer=use_buffer, errors=errors
+        )
 
     async def build_from_texts(
         self,
@@ -214,14 +225,18 @@ class IndexBuilder:
         documents: list[DocumentRecord] = []
         for source, text in zip(sources, texts):
             content_hash = _hash_content(text)
-            documents.append(DocumentRecord(
-                source=source,
-                content=text,
-                content_hash=content_hash,
-                mime_type="text/plain",
-            ))
+            documents.append(
+                DocumentRecord(
+                    source=source,
+                    content=text,
+                    content_hash=content_hash,
+                    mime_type="text/plain",
+                )
+            )
 
-        return await self._build(documents, incremental=incremental, use_buffer=use_buffer, errors=[])
+        return await self._build(
+            documents, incremental=incremental, use_buffer=use_buffer, errors=[]
+        )
 
     async def _build(
         self,
@@ -309,7 +324,11 @@ class IndexBuilder:
             if use_buffer:
                 await self.store.promote_buffer(target_collection, self.base_collection)
                 published = True
-                logger.info("Buffer promoted successfully", buffer=target_collection, active=self.base_collection)
+                logger.info(
+                    "Buffer promoted successfully",
+                    buffer=target_collection,
+                    active=self.base_collection,
+                )
 
             result = BuildResult(
                 collection_name=self.base_collection,
@@ -415,5 +434,7 @@ class IndexBuilder:
             chunk_count=sum(r.total_chunks for r in chunk_results),
             published=True,
         )
-        logger.info("Incremental update completed", docs=result.doc_count, chunks=result.chunk_count)
+        logger.info(
+            "Incremental update completed", docs=result.doc_count, chunks=result.chunk_count
+        )
         return result

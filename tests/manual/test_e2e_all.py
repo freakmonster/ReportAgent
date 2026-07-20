@@ -33,21 +33,24 @@ ROUNDS = 1
 def run_one(workflow: str, query: str, round_idx: int) -> dict:
     """Run a single workflow test and return timing data."""
     conv_id = f"e2e-bench-{workflow}-{round_idx}"
-    body = json.dumps({
-        "query": query,
-        "report_type": workflow,
-        "conversation_id": conv_id,
-        "user_id": "u1",
-    })
+    body = json.dumps(
+        {
+            "query": query,
+            "report_type": workflow,
+            "conversation_id": conv_id,
+            "user_id": "u1",
+        }
+    )
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  [{workflow}] round {round_idx + 1}/{ROUNDS}  conv_id={conv_id}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     t_start = time.time()
     conn = http.client.HTTPConnection(SERVER_HOST, SERVER_PORT, timeout=600)
     conn.request(
-        "POST", "/chat/stream",
+        "POST",
+        "/chat/stream",
         body=body,
         headers={
             "Content-Type": "application/json",
@@ -114,9 +117,9 @@ def main():
     all_results: list[dict] = []
 
     for wf_name, wf_query in WORKFLOWS.items():
-        print(f"\n{'#'*60}")
+        print(f"\n{'#' * 60}")
         print(f"  WORKFLOW: {wf_name}  ({ROUNDS} rounds)")
-        print(f"{'#'*60}")
+        print(f"{'#' * 60}")
         for r in range(ROUNDS):
             result = run_one(wf_name, wf_query, r)
             all_results.append(result)

@@ -59,7 +59,9 @@ async def create_session(body: CreateSessionRequest) -> SessionResponse:
 
 
 @router.get("/sessions", response_model=SessionListResponse)
-async def list_sessions(user_id: str = Query(..., description="User identifier")) -> SessionListResponse:
+async def list_sessions(
+    user_id: str = Query(..., description="User identifier"),
+) -> SessionListResponse:
     """List all active sessions for a user, ordered by most recent update."""
     repo = get_session_repo()
 

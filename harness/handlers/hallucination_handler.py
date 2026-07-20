@@ -28,8 +28,12 @@ _ABSOLUTE_RE = re.compile(
 
 # Internal contradiction markers
 _CONTRADICTION_PAIRS: list[tuple[str, str]] = [
-    ("增长", "下降"), ("上升", "下跌"), ("增加", "减少"),
-    ("盈利", "亏损"), ("扩大", "缩小"), ("提高", "降低"),
+    ("增长", "下降"),
+    ("上升", "下跌"),
+    ("增加", "减少"),
+    ("盈利", "亏损"),
+    ("扩大", "缩小"),
+    ("提高", "降低"),
 ]
 
 

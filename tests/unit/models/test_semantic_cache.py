@@ -32,6 +32,7 @@ from models.semantic_cache import (
 
 # ── Prompt hashing ─────────────────────────────────────────────────────
 
+
 class TestPromptHashing:
     """Verify prompt hash is deterministic and sensitive to parameters."""
 
@@ -68,6 +69,7 @@ class TestPromptHashing:
 
 
 # ── Cache get/set cycle ────────────────────────────────────────────────
+
 
 class TestCacheGetSet:
     """Verify cache read/write with mock Redis."""
@@ -156,6 +158,7 @@ class TestCacheGetSet:
 
 # ── Cache invalidation ─────────────────────────────────────────────────
 
+
 class TestCacheInvalidation:
     """Verify cache entry deletion."""
 
@@ -187,6 +190,7 @@ class TestCacheInvalidation:
 
 
 # ── Cache flush ────────────────────────────────────────────────────────
+
 
 class TestCacheFlush:
     """Verify bulk cache deletion."""
@@ -238,6 +242,7 @@ class TestCacheFlush:
 
 
 # ── CachedLLMCall context manager ──────────────────────────────────────
+
 
 class TestCachedLLMCall:
     """Verify the async context manager wrapper."""

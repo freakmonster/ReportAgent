@@ -23,6 +23,7 @@ from harness.orchestrator.context import PostExecContext  # noqa: E402
 
 # ── Stage 1.5: Relation Extractor ─────────────────────────────────────
 
+
 class TestRelationExtractor:
     """Verify V2.1 Stage 1.5 qualitative assertion detection."""
 
@@ -56,13 +57,19 @@ class TestRelationExtractor:
 
 # ── Stage 2: MCP Verification ─────────────────────────────────────────
 
+
 class TestMCPVerification:
     """Verify MCP-based claim verification."""
 
     @pytest.mark.asyncio
     async def test_mcp_verifies_claim(self) -> None:
         """MCP returns search results containing both entities → verified."""
-        claim = {"subject": "比亚迪", "relation": "领先", "object": "宁德时代", "sentence": "比亚迪领先宁德时代"}
+        claim = {
+            "subject": "比亚迪",
+            "relation": "领先",
+            "object": "宁德时代",
+            "sentence": "比亚迪领先宁德时代",
+        }
         mock_result = MagicMock()
         mock_result.success = True
         mock_result.data = {
@@ -86,7 +93,12 @@ class TestMCPVerification:
     @pytest.mark.asyncio
     async def test_mcp_no_evidence(self) -> None:
         """MCP returns results without both entities → not verified."""
-        claim = {"subject": "UnknownCorp", "relation": "领先", "object": "OtherCorp", "sentence": "UnknownCorp领先OtherCorp"}
+        claim = {
+            "subject": "UnknownCorp",
+            "relation": "领先",
+            "object": "OtherCorp",
+            "sentence": "UnknownCorp领先OtherCorp",
+        }
         mock_result = MagicMock()
         mock_result.success = True
         mock_result.data = {
@@ -139,21 +151,25 @@ class TestMCPVerification:
 
 # ── Stage 2: LLM Verification ─────────────────────────────────────────
 
+
 class TestLLMVerification:
     """Verify LLM-based claim verification (fallback)."""
 
     @pytest.mark.asyncio
     async def test_llm_confirms_claim(self) -> None:
         """LLM returns verified=true → verified."""
-        claim = {"subject": "比亚迪", "relation": "领先", "object": "宁德时代", "sentence": "比亚迪领先宁德时代"}
+        claim = {
+            "subject": "比亚迪",
+            "relation": "领先",
+            "object": "宁德时代",
+            "sentence": "比亚迪领先宁德时代",
+        }
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(message=MagicMock(content='{"verified": true, "reason": "行业报告确认"}'))
         ]
 
-        with patch(
-            "models.llm_providers.deepseek_client.DeepSeekClient"
-        ) as mock_client_cls:
+        with patch("models.llm_providers.deepseek_client.DeepSeekClient") as mock_client_cls:
             mock_client = MagicMock()
             mock_client.chat = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value = mock_client
@@ -166,15 +182,18 @@ class TestLLMVerification:
     @pytest.mark.asyncio
     async def test_llm_denies_claim(self) -> None:
         """LLM returns verified=false → not verified."""
-        claim = {"subject": "UnknownCorp", "relation": "领先", "object": "OtherCorp", "sentence": "UnknownCorp领先OtherCorp"}
+        claim = {
+            "subject": "UnknownCorp",
+            "relation": "领先",
+            "object": "OtherCorp",
+            "sentence": "UnknownCorp领先OtherCorp",
+        }
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(message=MagicMock(content='{"verified": false, "reason": "无法确认"}'))
         ]
 
-        with patch(
-            "models.llm_providers.deepseek_client.DeepSeekClient"
-        ) as mock_client_cls:
+        with patch("models.llm_providers.deepseek_client.DeepSeekClient") as mock_client_cls:
             mock_client = MagicMock()
             mock_client.chat = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value = mock_client
@@ -189,9 +208,7 @@ class TestLLMVerification:
         """LLM call fails → llm_exception."""
         claim = {"subject": "A", "relation": "领先", "object": "B", "sentence": "A领先B"}
 
-        with patch(
-            "models.llm_providers.deepseek_client.DeepSeekClient"
-        ) as mock_client_cls:
+        with patch("models.llm_providers.deepseek_client.DeepSeekClient") as mock_client_cls:
             mock_client = MagicMock()
             mock_client.chat = AsyncMock(side_effect=Exception("API Error"))
             mock_client_cls.return_value = mock_client
@@ -210,9 +227,7 @@ class TestLLMVerification:
             MagicMock(message=MagicMock(content="I cannot verify this claim."))
         ]
 
-        with patch(
-            "models.llm_providers.deepseek_client.DeepSeekClient"
-        ) as mock_client_cls:
+        with patch("models.llm_providers.deepseek_client.DeepSeekClient") as mock_client_cls:
             mock_client = MagicMock()
             mock_client.chat = AsyncMock(return_value=mock_response)
             mock_client_cls.return_value = mock_client
@@ -224,6 +239,7 @@ class TestLLMVerification:
 
 
 # ── Stage 2: Batch Verification ───────────────────────────────────────
+
 
 class TestBatchVerification:
     """Verify batch claim verification flow."""
@@ -280,7 +296,10 @@ class TestBatchVerification:
     @pytest.mark.asyncio
     async def test_max_claims_limit(self) -> None:
         """Only verify up to _MAX_CLAIMS_TO_VERIFY claims."""
-        claims = [{"subject": f"E{i}", "relation": "领先", "object": f"F{i}", "sentence": ""} for i in range(10)]
+        claims = [
+            {"subject": f"E{i}", "relation": "领先", "object": f"F{i}", "sentence": ""}
+            for i in range(10)
+        ]
 
         with patch(
             "harness.handlers.fact_stage2_handler._verify_claim_via_mcp",
@@ -294,6 +313,7 @@ class TestBatchVerification:
 
 
 # ── Handler Integration ───────────────────────────────────────────────
+
 
 class TestFactStage2Handler:
     """Verify handler integration with full Stage 1.5 + Stage 2 flow."""

@@ -34,12 +34,19 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     if session_id and settings.rag_enabled:
         try:
             from infrastructure.memory.short_term import format_context, load_memory
+
             entries = await load_memory(user_input, session_id)
             if entries:
                 memory_context = await format_context(entries)
-                print(f"[data_collector] short-term memory injected | session={session_id} | rounds={len(entries)}", file=sys.stderr, flush=True)
+                print(
+                    f"[data_collector] short-term memory injected | session={session_id} | rounds={len(entries)}",
+                    file=sys.stderr,
+                    flush=True,
+                )
         except Exception as e:
-            print(f"[data_collector] short-term memory load failed: {e}", file=sys.stderr, flush=True)
+            print(
+                f"[data_collector] short-term memory load failed: {e}", file=sys.stderr, flush=True
+            )
 
     rag_query = f"{memory_context} {user_input}".strip() if memory_context else user_input
 
@@ -69,8 +76,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
                     try:
                         rag_payloads = await store.get_points("documents", rag_point_ids)
                         rag_source_map = {
-                            p["id"]: p["payload"].get("source", "")
-                            for p in rag_payloads
+                            p["id"]: p["payload"].get("source", "") for p in rag_payloads
                         }
                     except Exception:
                         pass
@@ -80,15 +86,25 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
                 text = r.get("text", "")
                 first_sentence = text.split("。")[0][:40] if "。" in text else text[:40]
                 source_url = rag_source_map.get(r.get("id", ""), "")
-                supplementary_docs.append({
-                    "title": f"{first_sentence}... (chunk:{doc_id})",
-                    "content": text,
-                    "source": "rag",
-                    "url": source_url,
-                })
-            print(f"[data_collector] RAG retrieval succeeded | query={rag_query[:80]} | results={len(supplementary_docs)}", file=sys.stderr, flush=True)
+                supplementary_docs.append(
+                    {
+                        "title": f"{first_sentence}... (chunk:{doc_id})",
+                        "content": text,
+                        "source": "rag",
+                        "url": source_url,
+                    }
+                )
+            print(
+                f"[data_collector] RAG retrieval succeeded | query={rag_query[:80]} | results={len(supplementary_docs)}",
+                file=sys.stderr,
+                flush=True,
+            )
         except Exception as exc:
-            print(f"[data_collector] RAG retrieval failed, falling back to Tavily only | {exc}", file=sys.stderr, flush=True)
+            print(
+                f"[data_collector] RAG retrieval failed, falling back to Tavily only | {exc}",
+                file=sys.stderr,
+                flush=True,
+            )
 
     # ── 1. Search ────────────────────────────────────────────────────
     api_key = settings.tavily_api_key
@@ -100,11 +116,13 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
 
     try:
         search_params = _search_params(template_name)
-        search_result = await asyncio.to_thread(
-            client.search, query=user_input, **search_params
-        )
+        search_result = await asyncio.to_thread(client.search, query=user_input, **search_params)
         url_count = len(search_result.get("results", []))
-        print(f"[data_collector] Tavily search succeeded | results={url_count}", file=sys.stderr, flush=True)
+        print(
+            f"[data_collector] Tavily search succeeded | results={url_count}",
+            file=sys.stderr,
+            flush=True,
+        )
     except Exception as exc:
         print(f"[data_collector] Tavily search failed: {exc}", file=sys.stderr, flush=True)
         return _noop_result(collection, base)
@@ -129,21 +147,30 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         )
         extract_ok = len(extract_result.get("results", []))
         extract_fail = len(extract_result.get("failed_results", []))
-        print(f"[data_collector] Tavily extract succeeded | ok={extract_ok} failed={extract_fail}", file=sys.stderr, flush=True)
+        print(
+            f"[data_collector] Tavily extract succeeded | ok={extract_ok} failed={extract_fail}",
+            file=sys.stderr,
+            flush=True,
+        )
     except Exception as exc:
         print(f"[data_collector] Tavily extract failed: {exc}", file=sys.stderr, flush=True)
-        extract_result = {"results": [], "failed_results": [{"url": u, "error": str(exc)} for u in urls]}
+        extract_result = {
+            "results": [],
+            "failed_results": [{"url": u, "error": str(exc)} for u in urls],
+        }
 
     raw_docs: list[dict[str, str]] = []
     failed_urls: list[str] = []
 
     for r in extract_result.get("results", []):
         url = r.get("url", "")
-        raw_docs.append({
-            "title": url_title_map.get(url, ""),
-            "url": url,
-            "content": r.get("raw_content", ""),
-        })
+        raw_docs.append(
+            {
+                "title": url_title_map.get(url, ""),
+                "url": url,
+                "content": r.get("raw_content", ""),
+            }
+        )
 
     # ── 2.5 Async index Tavily docs into Qdrant ────────────────────
     asyncio.create_task(_index_tavily_docs_to_qdrant(raw_docs, user_input))
@@ -155,14 +182,21 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     if failed_urls:
         try:
             from retrieval.loaders.url_loader import fetch_multiple
+
             pages = await fetch_multiple(failed_urls)
-            print(f"[data_collector] url_loader fallback recovered {len(pages)} pages", file=sys.stderr, flush=True)
+            print(
+                f"[data_collector] url_loader fallback recovered {len(pages)} pages",
+                file=sys.stderr,
+                flush=True,
+            )
             for page in pages:
-                raw_docs.append({
-                    "title": page.title or url_title_map.get(page.url, ""),
-                    "url": page.url,
-                    "content": page.text,
-                })
+                raw_docs.append(
+                    {
+                        "title": page.title or url_title_map.get(page.url, ""),
+                        "url": page.url,
+                        "content": page.text,
+                    }
+                )
         except Exception:
             pass
 
@@ -172,7 +206,11 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
 
     # Merge RAG supplementary docs into raw_docs so they flow downstream
     raw_docs = supplementary_docs + raw_docs
-    print(f"[data_collector] total docs collected: {len(raw_docs)} ({len(supplementary_docs)} rag + {len(raw_docs) - len(supplementary_docs)} tavily)", file=sys.stderr, flush=True)
+    print(
+        f"[data_collector] total docs collected: {len(raw_docs)} ({len(supplementary_docs)} rag + {len(raw_docs) - len(supplementary_docs)} tavily)",
+        file=sys.stderr,
+        flush=True,
+    )
 
     source_urls: list[str] = []
     seen_urls: set[str] = set()
@@ -240,6 +278,7 @@ async def _index_tavily_docs_to_qdrant(
             api_key=_settings.qdrant_api_key,
         )
         from retrieval.embedders.embedding_model import EmbeddingModel
+
         embedder = EmbeddingModel.get_instance(_settings.embedding_model)
 
         all_chunks: list[str] = []
@@ -267,10 +306,12 @@ async def _index_tavily_docs_to_qdrant(
 
         print(
             f"[data_collector] Qdrant index: {doc_count} Tavily docs → {len(all_chunks)} chunks written to collection 'documents' | query={user_input[:60]}",
-            file=sys.stderr, flush=True,
+            file=sys.stderr,
+            flush=True,
         )
     except Exception as exc:
         print(
             f"[data_collector] Qdrant index failed (non-blocking) | {exc}",
-            file=sys.stderr, flush=True,
+            file=sys.stderr,
+            flush=True,
         )

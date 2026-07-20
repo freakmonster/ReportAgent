@@ -1,4 +1,5 @@
 """Manual end-to-end test: flash_news workflow."""
+
 import json
 import sys
 
@@ -8,7 +9,7 @@ body = {
     "query": "2026年7月AI行业重要动态",
     "report_type": "flash_news",
     "conversation_id": "test-py-001",
-    "user_id": "u1"
+    "user_id": "u1",
 }
 
 with httpx.Client(timeout=120) as client:

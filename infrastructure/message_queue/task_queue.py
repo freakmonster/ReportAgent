@@ -157,9 +157,7 @@ class TaskQueue:
         except Exception:
             return None
 
-    async def update_status(
-        self, task_id: str, status: str, error: Optional[str] = None
-    ) -> None:
+    async def update_status(self, task_id: str, status: str, error: Optional[str] = None) -> None:
         """Update the task status (and optionally an error message) in Redis."""
         key = f"{STATUS_KEY_PREFIX}:{task_id}"
         mapping: dict[str, str] = {"status": status}
@@ -213,9 +211,7 @@ def init_task_queue(redis_client: Redis) -> None:
     _task_queue = TaskQueue(redis_client)
 
 
-async def enqueue_indexing_task(
-    file_path: str, file_type: str, collection_name: str
-) -> str:
+async def enqueue_indexing_task(file_path: str, file_type: str, collection_name: str) -> str:
     """Create an IndexingTask and enqueue it.
 
     Returns the Redis message ID.

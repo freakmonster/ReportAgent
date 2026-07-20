@@ -46,7 +46,9 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     analysis_parts: list[str] = []
     if analysis.get("doc_count"):
         quality = analysis.get("data_quality", "unknown")
-        analysis_parts.append(f"Sources: {analysis['doc_count']} documents ({analysis.get('total_chars', 0)} chars, quality: {quality})")
+        analysis_parts.append(
+            f"Sources: {analysis['doc_count']} documents ({analysis.get('total_chars', 0)} chars, quality: {quality})"
+        )
     if analysis.get("key_metrics"):
         metrics_str = ", ".join(analysis["key_metrics"][:12])
         analysis_parts.append(f"Key Metrics: {metrics_str}")
@@ -78,7 +80,8 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
                 compressed = {"摘要": "\n\n---\n\n".join(combined_parts)[:max_chars]}
                 logger.info(
                     "writer.fallback_raw_docs docs=%d chars=%d",
-                    len(combined_parts), total_chars,
+                    len(combined_parts),
+                    total_chars,
                 )
 
         if not compressed:
@@ -94,6 +97,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     # ── Select LLM provider based on state.model (dynamic user choice) ──
     model: str = base.get("model", "deepseek-flash")
     from models.llm_providers.resolver import resolve_llm_client
+
     client = resolve_llm_client(model)
     print(f"[writer] model={model} | provider={type(client).__name__}")
 
@@ -102,41 +106,81 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         """Generate a single chapter with full fallback chain. Returns (ch_name, content)."""
         try:
             content = await _generate_chapter(
-                client, ch_name, ch_context, user_input, analysis_summary, chart_count, max_tokens, source_urls,
+                client,
+                ch_name,
+                ch_context,
+                user_input,
+                analysis_summary,
+                chart_count,
+                max_tokens,
+                source_urls,
             )
         except Exception as e:
             print(f"[writer] LLM call failed for chapter '{ch_name}': {type(e).__name__}: {e}")
             traceback.print_exc()
-            logger.warning("Writer LLM call failed for chapter '%s', using fallback", ch_name, exc_info=True)
+            logger.warning(
+                "Writer LLM call failed for chapter '%s', using fallback", ch_name, exc_info=True
+            )
             return ch_name, _fallback_chapter(ch_name, ch_context)
 
         # Strip the heading prefix to check actual body content
         heading = f"## {ch_name}\n\n"
-        body = content[len(heading):].strip() if content.startswith(heading) else content.strip()
+        body = content[len(heading) :].strip() if content.startswith(heading) else content.strip()
         if len(body) < 50:
             # Possible rate-limit empty response from parallel calls — retry once
-            print(f"[writer] LLM returned too-short/empty content for chapter '{ch_name}' (body_len={len(body)}), retrying once")
-            logger.warning("Writer LLM returned too-short content for chapter '%s' (body_len=%d), retrying once", ch_name, len(body))
+            print(
+                f"[writer] LLM returned too-short/empty content for chapter '{ch_name}' (body_len={len(body)}), retrying once"
+            )
+            logger.warning(
+                "Writer LLM returned too-short content for chapter '%s' (body_len=%d), retrying once",
+                ch_name,
+                len(body),
+            )
             await asyncio.sleep(1)
             try:
                 content = await _generate_chapter(
-                    client, ch_name, ch_context, user_input, analysis_summary, chart_count, max_tokens, source_urls,
+                    client,
+                    ch_name,
+                    ch_context,
+                    user_input,
+                    analysis_summary,
+                    chart_count,
+                    max_tokens,
+                    source_urls,
                 )
-                body = content[len(heading):].strip() if content.startswith(heading) else content.strip()
+                body = (
+                    content[len(heading) :].strip()
+                    if content.startswith(heading)
+                    else content.strip()
+                )
             except Exception as e:
-                print(f"[writer] LLM retry also failed for chapter '{ch_name}': {type(e).__name__}: {e}")
-                logger.warning("Writer LLM retry also failed for chapter '%s', using fallback", ch_name, exc_info=True)
+                print(
+                    f"[writer] LLM retry also failed for chapter '{ch_name}': {type(e).__name__}: {e}"
+                )
+                logger.warning(
+                    "Writer LLM retry also failed for chapter '%s', using fallback",
+                    ch_name,
+                    exc_info=True,
+                )
                 return ch_name, _fallback_chapter(ch_name, ch_context)
 
             if len(body) < 50:
-                print(f"[writer] LLM retry also returned too-short content for chapter '{ch_name}' (body_len={len(body)}), falling back")
-                logger.warning("Writer LLM retry also returned too-short content for chapter '%s' (body_len=%d), using fallback", ch_name, len(body))
+                print(
+                    f"[writer] LLM retry also returned too-short content for chapter '{ch_name}' (body_len={len(body)}), falling back"
+                )
+                logger.warning(
+                    "Writer LLM retry also returned too-short content for chapter '%s' (body_len=%d), using fallback",
+                    ch_name,
+                    len(body),
+                )
                 return ch_name, _fallback_chapter(ch_name, ch_context)
 
         return ch_name, _post_process_chapter(ch_name, content)
 
     tasks = [_generate_one(ch_name, ch_context) for ch_name, ch_context in compressed.items()]
-    results: list[tuple[str, str] | Exception] = await asyncio.gather(*tasks, return_exceptions=True)
+    results: list[tuple[str, str] | Exception] = await asyncio.gather(
+        *tasks, return_exceptions=True
+    )
 
     drafts: dict[str, str] = {}
     for result in results:
@@ -186,12 +230,11 @@ async def _generate_chapter(
     """
     try:
         from models.prompts.prompt_manager import get_prompt_manager
+
         pm = get_prompt_manager()
         citation_info = ""
         if source_urls:
-            citation_info = "\n".join(
-                f"  [{i}] {url}" for i, url in enumerate(source_urls, 1)
-            )
+            citation_info = "\n".join(f"  [{i}] {url}" for i, url in enumerate(source_urls, 1))
         prompt = pm.render(
             "writer",
             chapter_title=chapter_title,

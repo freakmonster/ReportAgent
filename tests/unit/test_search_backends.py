@@ -113,6 +113,7 @@ class TestSearchBackendFactory:
 
     def test_factory_returns_backend(self) -> None:
         from mcp_tools.search_backends import get_search_backend
+
         backend = get_search_backend()
         assert isinstance(backend, (MockSearchBackend, TavilySearchBackend))
 

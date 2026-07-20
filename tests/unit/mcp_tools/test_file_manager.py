@@ -92,6 +92,7 @@ class TestSaveReport:
         """Multiple saves for same workflow_id create multiple versions."""
         await save_report("wf-004", "Version 1", report_dir=temp_report_dir)
         import asyncio
+
         await asyncio.sleep(0.02)
         await save_report("wf-004", "Version 2", report_dir=temp_report_dir)
 
@@ -122,7 +123,10 @@ class TestReadReport:
         """read_report returns error when workflow has no reports."""
         result = await read_report("nonexistent", report_dir=temp_report_dir)
         assert result["success"] is False
-        assert "not found" in result.get("error", "").lower() or "no reports" in result.get("error", "").lower()
+        assert (
+            "not found" in result.get("error", "").lower()
+            or "no reports" in result.get("error", "").lower()
+        )
 
     @pytest.mark.asyncio
     async def test_read_report_directory_not_exist(self) -> None:
@@ -167,6 +171,7 @@ class TestListVersions:
         """list_versions returns all versions sorted by newest first."""
         await save_report("wf-020", "V1", report_dir=temp_report_dir)
         import asyncio
+
         await asyncio.sleep(0.02)  # Ensure unique timestamp
         await save_report("wf-020", "V2", report_dir=temp_report_dir)
 
@@ -192,6 +197,7 @@ class TestDeleteReport:
         """delete_report without version deletes all versions."""
         await save_report("wf-030", "Content", report_dir=temp_report_dir)
         import asyncio
+
         await asyncio.sleep(0.02)  # Win precision: ~16ms tick, ensure unique timestamp
         await save_report("wf-030", "Content 2", report_dir=temp_report_dir)
 
@@ -224,11 +230,13 @@ class TestToolCallables:
         """save_report_tool accepts arguments dict."""
         with patch("mcp_tools.internal_tools.file_manager.save_report") as mock_save:
             mock_save.return_value = {"success": True, "filepath": "/tmp/test.md"}
-            result = await save_report_tool({
-                "workflow_id": "wf-100",
-                "content": "Test",
-                "metadata": {"title": "T"},
-            })
+            result = await save_report_tool(
+                {
+                    "workflow_id": "wf-100",
+                    "content": "Test",
+                    "metadata": {"title": "T"},
+                }
+            )
             assert result["success"] is True
             mock_save.assert_called_once()
 
@@ -237,10 +245,12 @@ class TestToolCallables:
         """read_report_tool accepts arguments dict."""
         with patch("mcp_tools.internal_tools.file_manager.read_report") as mock_read:
             mock_read.return_value = {"success": True, "content": "data"}
-            result = await read_report_tool({
-                "workflow_id": "wf-200",
-                "version": None,
-            })
+            result = await read_report_tool(
+                {
+                    "workflow_id": "wf-200",
+                    "version": None,
+                }
+            )
             assert result["success"] is True
             mock_read.assert_called_once()
 

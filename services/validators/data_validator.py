@@ -18,35 +18,67 @@ MAX_AGE_DAYS: int = 30
 
 # High-credibility domains (whitelist)
 _HIGH_CREDIBILITY_DOMAINS: set[str] = {
-    "gov.cn", "stats.gov.cn", "pbc.gov.cn", "csrc.gov.cn",
-    "who.int", "worldbank.org", "imf.org", "un.org",
-    "bloomberg.com", "reuters.com", "ft.com", "wsj.com",
-    "caixin.com", "cls.cn", "eastmoney.com", "sse.com.cn", "szse.cn",
-    "sec.gov", "chinamoney.com.cn", "cctv.com", "people.com.cn",
-    "xinhuanet.com", "sciencedirect.com", "nature.com", "ieee.org",
-    "cnki.net", "wanfangdata.com.cn",
+    "gov.cn",
+    "stats.gov.cn",
+    "pbc.gov.cn",
+    "csrc.gov.cn",
+    "who.int",
+    "worldbank.org",
+    "imf.org",
+    "un.org",
+    "bloomberg.com",
+    "reuters.com",
+    "ft.com",
+    "wsj.com",
+    "caixin.com",
+    "cls.cn",
+    "eastmoney.com",
+    "sse.com.cn",
+    "szse.cn",
+    "sec.gov",
+    "chinamoney.com.cn",
+    "cctv.com",
+    "people.com.cn",
+    "xinhuanet.com",
+    "sciencedirect.com",
+    "nature.com",
+    "ieee.org",
+    "cnki.net",
+    "wanfangdata.com.cn",
 }
 
 # Medium-credibility domains
 _MEDIUM_CREDIBILITY_DOMAINS: set[str] = {
-    "163.com", "qq.com", "sina.com.cn", "sohu.com",
-    "36kr.com", "jiemian.com", "thepaper.cn",
-    "baidu.com", "zhihu.com", "weixin.qq.com",
-    "wikipedia.org", "medium.com",
+    "163.com",
+    "qq.com",
+    "sina.com.cn",
+    "sohu.com",
+    "36kr.com",
+    "jiemian.com",
+    "thepaper.cn",
+    "baidu.com",
+    "zhihu.com",
+    "weixin.qq.com",
+    "wikipedia.org",
+    "medium.com",
 }
 
 # Required fields for a valid data point
 _REQUIRED_DATA_FIELDS: set[str] = {
-    "title", "url", "content", "source",
+    "title",
+    "url",
+    "content",
+    "source",
 }
 
 
 @dataclass
 class DataValidationResult:
     """Result of data validation."""
+
     is_valid: bool
-    freshness_score: float    # 0.0 - 1.0 (1.0 = very fresh)
-    completeness_score: float # 0.0 - 1.0
+    freshness_score: float  # 0.0 - 1.0 (1.0 = very fresh)
+    completeness_score: float  # 0.0 - 1.0
     credibility_score: float  # 0.0 - 1.0
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -55,6 +87,7 @@ class DataValidationResult:
 # ---------------------------------------------------------------------------
 # Freshness
 # ---------------------------------------------------------------------------
+
 
 def check_freshness(
     collected_at: str | None = None,
@@ -98,6 +131,7 @@ def check_freshness(
 # Completeness
 # ---------------------------------------------------------------------------
 
+
 def check_completeness(data: dict[str, Any]) -> tuple[float, list[str]]:
     """Check how complete a data record is.
 
@@ -123,6 +157,7 @@ def check_completeness(data: dict[str, Any]) -> tuple[float, list[str]]:
 # ---------------------------------------------------------------------------
 # Credibility
 # ---------------------------------------------------------------------------
+
 
 def score_credibility(source_url: str | None) -> float:
     """Score the credibility of a source based on its domain.
@@ -196,6 +231,7 @@ def _extract_domain(url: str) -> str:
 # Combined validation
 # ---------------------------------------------------------------------------
 
+
 def validate_data(
     record: dict[str, Any],
     collected_at: str | None = None,
@@ -229,9 +265,7 @@ def validate_data(
     credibility = score_credibility(source_url if isinstance(source_url, str) else "")
 
     if credibility < 0.3:
-        warnings.append(
-            f"Low source credibility ({credibility:.0%}) for {source_url}"
-        )
+        warnings.append(f"Low source credibility ({credibility:.0%}) for {source_url}")
 
     is_valid = len(errors) == 0 and is_fresh and completeness == 1.0
 

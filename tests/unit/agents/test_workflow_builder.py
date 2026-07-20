@@ -43,7 +43,9 @@ class TestWorkflowBuilderHarnessWrapping:
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_build_with_orchestrator_wraps_nodes(self, builder: WorkflowBuilder, mock_orchestrator: MagicMock) -> None:
+    async def test_build_with_orchestrator_wraps_nodes(
+        self, builder: WorkflowBuilder, mock_orchestrator: MagicMock
+    ) -> None:
         """When orchestrator is provided, nodes should be wrapped (pre/post executed)."""
         graph = builder.build("flash_news", ReportState, harness_orchestrator=mock_orchestrator)
         state = create_initial_state("wf2", "test_user", "flash_news")
@@ -56,7 +58,9 @@ class TestWorkflowBuilderHarnessWrapping:
         assert mock_orchestrator.execute_post.await_count >= 6
 
     @pytest.mark.asyncio
-    async def test_pre_reject_skips_node_execution(self, builder: WorkflowBuilder, mock_orchestrator: MagicMock) -> None:
+    async def test_pre_reject_skips_node_execution(
+        self, builder: WorkflowBuilder, mock_orchestrator: MagicMock
+    ) -> None:
         """When pre-handler returns REJECT, node entry should not be called but workflow continues."""
         from harness.handlers.base import HandlerResult
 
@@ -83,7 +87,9 @@ class TestWorkflowBuilderHarnessWrapping:
         # Workflow reaches the end regardless of harness REJECT on first node
 
     @pytest.mark.asyncio
-    async def test_build_wraps_deep_report(self, builder: WorkflowBuilder, mock_orchestrator: MagicMock) -> None:
+    async def test_build_wraps_deep_report(
+        self, builder: WorkflowBuilder, mock_orchestrator: MagicMock
+    ) -> None:
         """Deep report (10 nodes) should also wrap correctly."""
         graph = builder.build("deep_report", ReportState, harness_orchestrator=mock_orchestrator)
         state = create_initial_state("wf4", "test_user", "deep_report")

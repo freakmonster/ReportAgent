@@ -18,6 +18,7 @@ from typing import Any
 @dataclass
 class EvalScores:
     """Four-dimension quality scores (0.0 - 1.0 each)."""
+
     completeness: float = 0.0
     accuracy: float = 0.0
     citation_quality: float = 0.0
@@ -27,10 +28,13 @@ class EvalScores:
     def overall(self) -> float:
         """Weighted average of all dimensions."""
         return round(
-            (self.completeness * 0.3
-             + self.accuracy * 0.3
-             + self.citation_quality * 0.2
-             + self.logical_flow * 0.2), 2
+            (
+                self.completeness * 0.3
+                + self.accuracy * 0.3
+                + self.citation_quality * 0.2
+                + self.logical_flow * 0.2
+            ),
+            2,
         )
 
     def to_dict(self) -> dict[str, float]:
@@ -45,14 +49,30 @@ class EvalScores:
 
 # Required sections for a complete report
 _REQUIRED_SECTIONS: list[str] = [
-    "摘要", "概述", "市场", "分析", "数据", "竞争", "风险", "建议",
+    "摘要",
+    "概述",
+    "市场",
+    "分析",
+    "数据",
+    "竞争",
+    "风险",
+    "建议",
 ]
 
 # Logical transition patterns (good flow)
 _TRANSITION_PATTERNS: list[str] = [
-    "因此", "然而", "此外", "另一方面", "综上所述",
-    "根据", "数据显示", "值得关注", "值得注意的是",
-    "综上所述", "总之", "由此可见",
+    "因此",
+    "然而",
+    "此外",
+    "另一方面",
+    "综上所述",
+    "根据",
+    "数据显示",
+    "值得关注",
+    "值得注意的是",
+    "综上所述",
+    "总之",
+    "由此可见",
 ]
 
 

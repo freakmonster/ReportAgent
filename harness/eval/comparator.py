@@ -60,7 +60,7 @@ def _cohens_d(a: Sequence[float], b: Sequence[float]) -> float:
     std_a, std_b = _std(a), _std(b)
 
     # Pooled standard deviation
-    pooled_var = ((n1 - 1) * std_a ** 2 + (n2 - 1) * std_b ** 2) / (n1 + n2 - 2)
+    pooled_var = ((n1 - 1) * std_a**2 + (n2 - 1) * std_b**2) / (n1 + n2 - 2)
     pooled_std = math.sqrt(pooled_var)
     if pooled_std == 0.0:
         return 0.0
@@ -153,9 +153,7 @@ class ABComparisonResult:
     def winner(self) -> str | None:
         """Overall winner by majority of metrics (ignoring overall composite)."""
         metric_winners = [
-            m.winner
-            for k, m in self.metrics.items()
-            if k != "overall" and m.winner is not None
+            m.winner for k, m in self.metrics.items() if k != "overall" and m.winner is not None
         ]
         if not metric_winners:
             return None
@@ -173,15 +171,11 @@ class ABComparator:
 
     METRIC_NAMES: ClassVar[list[str]] = _METRIC_NAMES
 
-    def __init__(
-        self, bootstrap_samples: int = _DEFAULT_BOOTSTRAP_SAMPLES, seed: int = 42
-    ) -> None:
+    def __init__(self, bootstrap_samples: int = _DEFAULT_BOOTSTRAP_SAMPLES, seed: int = 42) -> None:
         self._bootstrap_samples = bootstrap_samples
         self._seed = seed
 
-    def compare(
-        self, control: ExperimentResult, treatment: ExperimentResult
-    ) -> ABComparisonResult:
+    def compare(self, control: ExperimentResult, treatment: ExperimentResult) -> ABComparisonResult:
         """Perform full statistical comparison between control and treatment.
 
         Args:

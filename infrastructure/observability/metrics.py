@@ -50,7 +50,6 @@ def _get_registry() -> CollectorRegistry:
 # ---------------------------------------------------------------------------
 
 if PROMETHEUS_AVAILABLE:
-
     workflow_duration_seconds = Histogram(
         "workflow_duration_seconds",
         "Duration of full workflow execution in seconds.",

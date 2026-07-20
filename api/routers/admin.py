@@ -107,12 +107,14 @@ async def system_status() -> AdminStatusResponse:
     # Quick health probes
     try:
         from infrastructure.database.connection import engine
+
         services["postgresql"] = "connected" if engine else "unknown"
     except Exception:
         services["postgresql"] = "unavailable"
 
     try:
         from infrastructure.cache.redis_client import get_redis
+
         await get_redis().ping()
         services["redis"] = "connected"
     except Exception:
@@ -120,6 +122,7 @@ async def system_status() -> AdminStatusResponse:
 
     try:
         from infrastructure.vector_db.qdrant_client import get_qdrant
+
         await get_qdrant().get_collections()
         services["qdrant"] = "connected"
     except Exception:
@@ -163,6 +166,7 @@ async def _has_redis_override(name: str) -> bool:
     try:
         from config.feature_flags import FeatureFlagManager
         from infrastructure.cache.redis_client import get_redis
+
         redis = get_redis()
         val = await redis.get(FeatureFlagManager._key(name))
         return val is not None

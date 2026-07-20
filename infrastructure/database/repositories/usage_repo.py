@@ -120,15 +120,13 @@ class UsageRepository:
 
             avg_dur_row = (
                 await session.execute(
-                    select(
-                        func.avg(workflow_info.c.duration_seconds)
-                    ).where(workflow_info.c.created_at >= cutoff_dt)
+                    select(func.avg(workflow_info.c.duration_seconds)).where(
+                        workflow_info.c.created_at >= cutoff_dt
+                    )
                 )
             ).first()
 
-            avg_duration = (
-                float(avg_dur_row[0]) if avg_dur_row and avg_dur_row[0] else 0.0
-            )
+            avg_duration = float(avg_dur_row[0]) if avg_dur_row and avg_dur_row[0] else 0.0
 
             # by_template: grouped by template_name
             template_rows = (
@@ -147,16 +145,12 @@ class UsageRepository:
             for row in template_rows:
                 by_template[row.template_name] = {
                     "count": row.count,
-                    "avg_duration": round(float(row.avg_duration), 2)
-                    if row.avg_duration
-                    else 0.0,
+                    "avg_duration": round(float(row.avg_duration), 2) if row.avg_duration else 0.0,
                 }
 
             return {
                 "total_requests": int(usage_row.total_requests) if usage_row else 0,
-                "success_rate": round(success_count / total_count, 4)
-                if total_count > 0
-                else 0.0,
+                "success_rate": round(success_count / total_count, 4) if total_count > 0 else 0.0,
                 "total_tokens": int(usage_row.total_tokens) if usage_row else 0,
                 "avg_duration_seconds": round(avg_duration, 2),
                 "by_template": by_template,
@@ -200,9 +194,7 @@ class UsageRepository:
                     "duration": round(float(row.duration_seconds), 1)
                     if row.duration_seconds
                     else 0,
-                    "created_at": row.created_at.isoformat()
-                    if row.created_at
-                    else None,
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
                 }
                 for row in rows
             ]
@@ -228,7 +220,5 @@ def get_usage_repo() -> UsageRepository:
     Raises ``RuntimeError`` if ``init_usage_repo()`` was not called first.
     """
     if _usage_repo is None:
-        raise RuntimeError(
-            "UsageRepository not initialised. Call init_usage_repo() first."
-        )
+        raise RuntimeError("UsageRepository not initialised. Call init_usage_repo() first.")
     return _usage_repo

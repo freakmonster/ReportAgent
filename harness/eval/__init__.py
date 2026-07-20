@@ -51,7 +51,7 @@ async def run_ab_test(
     """
     experiment = Experiment(config)
     ctrl_result, treat_result = await experiment.run(runner)
-    comparison = ABComparator(
-        bootstrap_samples=bootstrap_samples, seed=seed
-    ).compare(ctrl_result, treat_result)
+    comparison = ABComparator(bootstrap_samples=bootstrap_samples, seed=seed).compare(
+        ctrl_result, treat_result
+    )
     return generate_report(comparison, control_label, treatment_label)

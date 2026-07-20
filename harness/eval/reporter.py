@@ -44,10 +44,7 @@ def _format_metric_row(mc: MetricComparison) -> str:
     """Format a single metric row as a Markdown table row."""
     direction = "↑" if mc.mean_difference > 0 else "↓" if mc.mean_difference < 0 else "="
     winner = (
-        "Treatment"
-        if mc.winner == "treatment"
-        else "Control" if mc.winner == "control"
-        else "—"
+        "Treatment" if mc.winner == "treatment" else "Control" if mc.winner == "control" else "—"
     )
     return (
         f"| {mc.metric} "
@@ -121,8 +118,7 @@ def generate_report(
             "**Effect size guide:** |d| < 0.2 = negligible, 0.2–0.5 = small, "
             "0.5–0.8 = medium, > 0.8 = large",
             "",
-            "**Confidence:** p < 0.01 = high, p < 0.05 = medium, p < 0.10 = low, "
-            "p ≥ 0.10 = none",
+            "**Confidence:** p < 0.01 = high, p < 0.05 = medium, p < 0.10 = low, p ≥ 0.10 = none",
             "",
             f"**Win/Loss/Tie:** {comparison.win_count} / "
             f"{comparison.loss_count} / {comparison.tie_count}",

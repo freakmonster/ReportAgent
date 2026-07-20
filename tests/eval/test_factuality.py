@@ -23,6 +23,7 @@ class TestFactuality:
         uncited = "销量大概增长了不到一半。市场规模非常大。"
         # Cited content has more data entities and citations
         import re
+
         cited_entities = len(re.findall(r"\d+", cited))
         uncited_entities = len(re.findall(r"\d+", uncited))
         assert cited_entities > uncited_entities, "Cited content should have more data entities"
@@ -31,6 +32,7 @@ class TestFactuality:
         """Content full of placeholder text scores poorly."""
         placeholder = "这是一个很长的占位文本，没有实际的数据和引用。"
         import re
+
         entities = len(re.findall(r"\d+", placeholder))
         assert entities == 0, "Placeholder content should have zero data entities"
 

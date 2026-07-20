@@ -64,11 +64,14 @@ class TestMakeRouter:
     """Verify the make_router factory."""
 
     def test_reviewer_router_approved(self) -> None:
-        router = make_router("reviewer", {
-            "approved": "publish",
-            "needs_human": "human",
-            "rejected": {"true_dest": "write", "false_dest": "human"},
-        })
+        router = make_router(
+            "reviewer",
+            {
+                "approved": "publish",
+                "needs_human": "human",
+                "rejected": {"true_dest": "write", "false_dest": "human"},
+            },
+        )
         state = {"base": {"retry_count": 1}, "review": {"decision": "approved"}}
         assert router(state) == "publish"
 

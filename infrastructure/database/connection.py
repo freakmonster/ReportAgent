@@ -56,9 +56,7 @@ async def close_db() -> None:
 
 def _get_session_factory() -> async_sessionmaker[AsyncSession]:
     if _async_session_factory is None:
-        raise RuntimeError(
-            "Database not initialised. Call init_db() before using get_db()."
-        )
+        raise RuntimeError("Database not initialised. Call init_db() before using get_db().")
     return _async_session_factory
 
 
@@ -82,8 +80,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def create_tables() -> None:
     """Create all tables declared via Base.metadata."""
     if _engine is None:
-        raise RuntimeError(
-            "Database not initialised. Call init_db() before create_tables()."
-        )
+        raise RuntimeError("Database not initialised. Call init_db() before create_tables().")
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

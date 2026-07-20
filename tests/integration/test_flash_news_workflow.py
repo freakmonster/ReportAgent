@@ -22,6 +22,7 @@ from agents.state import ReportState, create_initial_state  # noqa: E402
 # Mock helpers — return fixed data without real network/LLM calls
 # ---------------------------------------------------------------------------
 
+
 async def _mock_data_collector(state: dict) -> dict:
     """Return 3 sample raw_docs while preserving existing collection fields."""
     existing_collection = state.get("collection", {})
@@ -82,16 +83,17 @@ class TestFlashNewsGraphConstruction:
         graph = WorkflowBuilder().build("flash_news", ReportState)
         all_nodes = graph.get_graph().nodes
         # Filter out internal __start__ and __end__ nodes
-        user_nodes = {
-            k: v for k, v in all_nodes.items()
-            if k not in ("__start__", "__end__")
-        }
+        user_nodes = {k: v for k, v in all_nodes.items() if k not in ("__start__", "__end__")}
         assert len(user_nodes) == 6
 
         node_names = set(user_nodes.keys())
         expected = {
-            "intent_classifier", "research_planner", "data_collector",
-            "writer", "editor", "publisher",
+            "intent_classifier",
+            "research_planner",
+            "data_collector",
+            "writer",
+            "editor",
+            "publisher",
         }
         assert node_names == expected
 
@@ -115,7 +117,9 @@ class TestFlashNewsEndToEnd:
         ):
             graph = WorkflowBuilder().build("flash_news", ReportState)
             initial_state = create_initial_state(
-                "wf-flash-1", "u-flash-1", "flash_news",
+                "wf-flash-1",
+                "u-flash-1",
+                "flash_news",
             )
             initial_state["base"]["user_input"] = "今日市场快讯分析"
             result = await graph.ainvoke(initial_state)
@@ -151,7 +155,9 @@ class TestFlashNewsSSEStream:
         ):
             graph = WorkflowBuilder().build("flash_news", ReportState)
             initial_state = create_initial_state(
-                "wf-flash-2", "u-flash-2", "flash_news",
+                "wf-flash-2",
+                "u-flash-2",
+                "flash_news",
             )
             initial_state["base"]["user_input"] = "今日市场快讯分析"
 
@@ -172,7 +178,9 @@ class TestFlashNewsSSEStream:
         ):
             graph = WorkflowBuilder().build("flash_news", ReportState)
             initial_state = create_initial_state(
-                "wf-flash-3", "u-flash-3", "flash_news",
+                "wf-flash-3",
+                "u-flash-3",
+                "flash_news",
             )
             initial_state["base"]["user_input"] = "今日市场快讯分析"
 

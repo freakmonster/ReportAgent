@@ -28,6 +28,7 @@ DEFAULT_REPORT_DIR: Path = Path(__file__).resolve().parent.parent.parent / "data
 # File operations
 # ---------------------------------------------------------------------------
 
+
 async def save_report(
     workflow_id: str,
     content: str,
@@ -171,11 +172,13 @@ async def list_versions(
     versions: list[dict[str, Any]] = []
     for f in matches:
         stat = f.stat()
-        versions.append({
-            "filename": f.name,
-            "size_bytes": stat.st_size,
-            "modified_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
-        })
+        versions.append(
+            {
+                "filename": f.name,
+                "size_bytes": stat.st_size,
+                "modified_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+            }
+        )
 
     return {"success": True, "workflow_id": workflow_id, "versions": versions}
 
@@ -224,6 +227,7 @@ async def delete_report(
 # Registry-compatible callables
 # ---------------------------------------------------------------------------
 
+
 async def save_report_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Registry-compatible callable for saving reports.
 
@@ -252,6 +256,7 @@ async def read_report_tool(arguments: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Error types
 # ---------------------------------------------------------------------------
+
 
 class FileManagerError(Exception):
     """Raised when a file operation fails."""

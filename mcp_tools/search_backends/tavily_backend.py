@@ -47,6 +47,7 @@ class TavilySearchBackend(BaseSearchBackend):
         try:
             client = self._get_client()
             import asyncio
+
             response = await asyncio.to_thread(
                 client.search,
                 query=query,
@@ -74,6 +75,7 @@ class TavilySearchBackend(BaseSearchBackend):
         try:
             client = self._get_client()
             import asyncio
+
             response = await asyncio.to_thread(
                 client.search,
                 query=query,
@@ -100,6 +102,7 @@ class TavilySearchBackend(BaseSearchBackend):
         try:
             client = self._get_client()
             import asyncio
+
             response = await asyncio.to_thread(
                 client.search,
                 query=query,
@@ -129,10 +132,12 @@ class TavilySearchBackend(BaseSearchBackend):
         """Normalise Tavily results to a consistent schema."""
         normalised: list[dict[str, Any]] = []
         for r in results:
-            normalised.append({
-                "title": r.get("title", ""),
-                "url": r.get("url", ""),
-                "content": r.get("content", ""),
-                "score": r.get("score", 0.0),
-            })
+            normalised.append(
+                {
+                    "title": r.get("title", ""),
+                    "url": r.get("url", ""),
+                    "content": r.get("content", ""),
+                    "score": r.get("score", 0.0),
+                }
+            )
         return normalised

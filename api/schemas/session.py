@@ -11,8 +11,12 @@ class CreateSessionRequest(BaseModel):
     """Request body for POST /session/create."""
 
     user_id: str = Field(..., description="User identifier")
-    title: Optional[str] = Field(default=None, description="Session title; auto-generated if not provided")
-    first_query: Optional[str] = Field(default=None, description="Optional first query to associate with the session")
+    title: Optional[str] = Field(
+        default=None, description="Session title; auto-generated if not provided"
+    )
+    first_query: Optional[str] = Field(
+        default=None, description="Optional first query to associate with the session"
+    )
 
 
 class SessionResponse(BaseModel):

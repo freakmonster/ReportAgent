@@ -1,4 +1,5 @@
 """Smoke test: data_collector returns real web content (not hardcoded)."""
+
 import sys
 from pathlib import Path
 
@@ -27,5 +28,6 @@ async def test():
     no_fake = "example.com" not in str(docs)
     print(f"Real data (no example.com): {no_fake}")
     assert no_fake, "Still using hardcoded example.com data!"
+
 
 asyncio.run(test())

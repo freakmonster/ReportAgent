@@ -27,7 +27,7 @@ def mock_openai_response() -> MagicMock:
     choice = MagicMock()
     message = MagicMock()
     message.role = "assistant"
-    message.content = "{\"answer\": \"This is a mocked response from the LLM.\"}"
+    message.content = '{"answer": "This is a mocked response from the LLM."}'
     choice.message = message
     choice.index = 0
     choice.finish_reason = "stop"

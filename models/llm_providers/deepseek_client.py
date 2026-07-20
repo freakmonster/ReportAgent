@@ -43,6 +43,7 @@ _DEEPSEEK_TIER_MAP: dict[str, str] = {
 
 # ── Client ───────────────────────────────────────────────────────────
 
+
 class DeepSeekClient:
     """Async client for DeepSeek API (OpenAI-compatible)."""
 
@@ -56,7 +57,8 @@ class DeepSeekClient:
             else:
                 logger.warning(
                     "Unknown DeepSeek tier '%s', falling back to '%s'",
-                    tier, settings.deepseek_model,
+                    tier,
+                    settings.deepseek_model,
                 )
                 self._model = settings.deepseek_model
         else:
@@ -91,9 +93,7 @@ class DeepSeekClient:
         )
         return response.model_dump()
 
-    async def chat(
-        self, messages: list[dict[str, Any]], **kwargs: Any
-    ) -> dict[str, Any]:
+    async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
         """Send a chat completion request with semantic caching.
 
         Cache hit → returns immediately (no API call).
@@ -122,9 +122,8 @@ class DeepSeekClient:
 
         # ── Store in cache (fire-and-forget, non-blocking) ──
         import asyncio
-        asyncio.create_task(
-            cache_set(messages, result, temperature, max_tokens, self._model)
-        )
+
+        asyncio.create_task(cache_set(messages, result, temperature, max_tokens, self._model))
 
         # ── Async stats (fire-and-forget) ──
         try:
@@ -140,9 +139,7 @@ class DeepSeekClient:
         wait=wait_exponential(min=1, max=30),
         before_sleep=_log_retry,
     )
-    async def chat_stream(
-        self, messages: list[dict[str, Any]], **kwargs: Any
-    ) -> Any:
+    async def chat_stream(self, messages: list[dict[str, Any]], **kwargs: Any) -> Any:
         """Stream chat completion chunks.
 
         Args:

@@ -74,8 +74,7 @@ async def main() -> None:
     state["writing"]["chapter_drafts"] = SIMULATED_CHAPTERS
     state["collection"]["source_urls"] = SOURCE_URLS
 
-    print(f"\n[Input] {len(SIMULATED_CHAPTERS)} chapters, "
-          f"{len(SOURCE_URLS)} source URLs")
+    print(f"\n[Input] {len(SIMULATED_CHAPTERS)} chapters, {len(SOURCE_URLS)} source URLs")
 
     # ── Step 2: 调用 editor.entry() ───────────────────────────────────
     from agents.nodes.editor import entry
@@ -105,7 +104,9 @@ async def main() -> None:
     for ch_name in SIMULATED_CHAPTERS:
         before = SIMULATED_CHAPTERS[ch_name][:150].replace("\n", "\\n")
         after = edited[ch_name][:150].replace("\n", "\\n")
-        changed = "CHANGED" if edited[ch_name] != SIMULATED_CHAPTERS[ch_name] else "identical (fallback)"
+        changed = (
+            "CHANGED" if edited[ch_name] != SIMULATED_CHAPTERS[ch_name] else "identical (fallback)"
+        )
         print(f"\n  --- {ch_name} [{changed}] ---")
         print(f"  BEFORE: {before}...")
         print(f"  AFTER:  {after}...")

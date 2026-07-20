@@ -28,6 +28,7 @@ client = TestClient(app)
 
 # ── Health endpoint contract ──────────────────────────────────────────
 
+
 class TestHealthContract:
     """GET /health 契约验证。"""
 
@@ -52,6 +53,7 @@ class TestHealthContract:
     def test_response_time_under_100ms(self) -> None:
         """AGENTS.md 硬性要求：/health 必须在 100ms 内响应。"""
         import time
+
         start = time.perf_counter()
         client.get("/health")
         elapsed_ms = (time.perf_counter() - start) * 1000
@@ -59,6 +61,7 @@ class TestHealthContract:
 
 
 # ── Metrics endpoint contract ─────────────────────────────────────────
+
 
 class TestMetricsContract:
     """GET /metrics 契约验证。"""
@@ -71,6 +74,7 @@ class TestMetricsContract:
 
 
 # ── Chat stream endpoint contract ─────────────────────────────────────
+
 
 class TestChatStreamContract:
     """POST /chat/stream SSE 契约验证。"""
@@ -124,6 +128,7 @@ class TestChatStreamContract:
 
 # ── Index build endpoint contract ─────────────────────────────────────
 
+
 class TestIndexBuildContract:
     """POST /index/build 契约验证。
 
@@ -163,6 +168,7 @@ class TestIndexBuildContract:
 
 # ── Task status endpoint contract ─────────────────────────────────────
 
+
 class TestTaskStatusContract:
     """GET /task/{workflow_id} 契约验证。"""
 
@@ -185,6 +191,7 @@ class TestTaskStatusContract:
 
 
 # ── Human review endpoint contract ────────────────────────────────────
+
 
 class TestHumanReviewContract:
     """POST /task/review 契约验证。
@@ -237,6 +244,7 @@ class TestHumanReviewContract:
 
 
 # ── Error response contract ───────────────────────────────────────────
+
 
 class TestErrorResponseContract:
     """统一错误响应格式契约。"""

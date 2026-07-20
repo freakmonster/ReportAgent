@@ -21,9 +21,7 @@ async def test_chat_success(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify chat() returns a valid response on success for the default 'max' model."""
-    with patch(
-        "models.llm_providers.qwen_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.qwen_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
         mock_async_openai.return_value = mock_client
@@ -35,7 +33,9 @@ async def test_chat_success(
         call_kwargs = mock_client.chat.completions.create.call_args.kwargs
         assert call_kwargs["model"] == "qwen-max"
         assert call_kwargs["messages"] == sample_messages
-        assert response.choices[0].message.content == mock_openai_response.choices[0].message.content
+        assert (
+            response.choices[0].message.content == mock_openai_response.choices[0].message.content
+        )
 
 
 @pytest.mark.asyncio
@@ -44,9 +44,7 @@ async def test_model_size_routing(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify that different model_size values in the constructor select the correct model."""
-    with patch(
-        "models.llm_providers.qwen_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.qwen_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
         mock_client.chat.completions.create = AsyncMock(return_value=mock_openai_response)
         mock_async_openai.return_value = mock_client
@@ -54,12 +52,18 @@ async def test_model_size_routing(
         # 8b client
         client_8 = QwenClient(model_size="8b")
         await client_8.chat(sample_messages)
-        assert mock_client.chat.completions.create.call_args.kwargs["model"] == settings.qwen_light_model
+        assert (
+            mock_client.chat.completions.create.call_args.kwargs["model"]
+            == settings.qwen_light_model
+        )
 
         # 32b client
         client_32 = QwenClient(model_size="32b")
         await client_32.chat(sample_messages)
-        assert mock_client.chat.completions.create.call_args.kwargs["model"] == settings.qwen_medium_model
+        assert (
+            mock_client.chat.completions.create.call_args.kwargs["model"]
+            == settings.qwen_medium_model
+        )
 
         # max client
         client_max = QwenClient(model_size="max")
@@ -75,9 +79,7 @@ async def test_chat_stream(
     sample_messages: list[dict[str, str]],
 ) -> None:
     """Verify chat_stream() yields all chunks correctly."""
-    with patch(
-        "models.llm_providers.qwen_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.qwen_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
 
         async def _stream_iter():
@@ -118,9 +120,7 @@ def test_init_uses_settings() -> None:
 
 def test_init_default_model_size() -> None:
     """Verify the default model_size is 'max'."""
-    with patch(
-        "models.llm_providers.qwen_client.AsyncOpenAI"
-    ) as mock_async_openai:
+    with patch("models.llm_providers.qwen_client.AsyncOpenAI") as mock_async_openai:
         mock_client = MagicMock()
         mock_async_openai.return_value = mock_client
 

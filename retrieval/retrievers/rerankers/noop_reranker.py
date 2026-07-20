@@ -1,4 +1,5 @@
 """No-Op 重排序器 —— 空转直通实现。默认配置，零开销。"""
+
 from typing import Any
 
 from .base import BaseReranker

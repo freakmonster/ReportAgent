@@ -86,7 +86,9 @@ def _load_tenant_quotas_from_yaml() -> dict[str, TenantRateQuota]:
 
         rate_limit_block = data.get("rate_limit", {})
         if isinstance(rate_limit_block, dict):
-            tenants = rate_limit_block.get("tenants", {}) if isinstance(rate_limit_block, dict) else {}
+            tenants = (
+                rate_limit_block.get("tenants", {}) if isinstance(rate_limit_block, dict) else {}
+            )
         else:
             tenants = {}
 
@@ -227,10 +229,7 @@ class TenantRateLimitMiddleware:
         now = time.time()
         if key not in self._fallback_counters:
             self._fallback_counters[key] = []
-        self._fallback_counters[key] = [
-            t for t in self._fallback_counters[key]
-            if now - t < window
-        ]
+        self._fallback_counters[key] = [t for t in self._fallback_counters[key] if now - t < window]
         if len(self._fallback_counters[key]) >= max_req:
             response = JSONResponse(
                 status_code=429,

@@ -11,7 +11,9 @@ def _para_truncate(text: str, max_chars: int) -> str:
     """Truncate text at paragraph boundary within max_chars using paragraph_chunker."""
     if len(text) <= max_chars:
         return text
-    result = chunk_text(text, target_chunk_tokens=int(max_chars / 1.8), min_chars=200, overlap_tokens=0) # result = chunk_text(text, target_chunk_tokens=int(max_chars / 2), min_chars=200)
+    result = chunk_text(
+        text, target_chunk_tokens=int(max_chars / 1.8), min_chars=200, overlap_tokens=0
+    )  # result = chunk_text(text, target_chunk_tokens=int(max_chars / 2), min_chars=200)
     # _para_truncate 调用 chunk_text 时用的是默认 overlap_tokens=50 ，但 data_processor 的用途是 压缩塞进 LLM prompt ，不是 RAG 检索。overlap=50 浪费了截断预算
     # 当前 target_chunk_tokens = int(max_chars / 2) （即 2000→1000 tokens），但中文约 1.8 字符/token，1000 tokens ≈ 1800 字符，距离 2000 的预算有 200 字符的空档。对于 6000 字符的 topic 压缩， 3000 * 1.8 = 5400 ，差距更大。改为 target_chunk_tokens = int(max_chars / 1.8) ，使 chunk 的目标大小更贴近字符预算上限。
     if result.chunks:

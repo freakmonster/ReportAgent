@@ -71,9 +71,7 @@ class IndexRepository:
         """Return the status record for *collection_name*, or ``None``."""
         async with self._session_factory() as session:
             result = await session.execute(
-                select(index_status).where(
-                    index_status.c.collection_name == collection_name
-                )
+                select(index_status).where(index_status.c.collection_name == collection_name)
             )
             row = result.first()
             if row is None:
@@ -136,9 +134,7 @@ class IndexRepository:
             await session.execute(stmt)
             await session.commit()
 
-    async def mark_ready(
-        self, collection_name: str, document_count: int, checksum: str
-    ) -> None:
+    async def mark_ready(self, collection_name: str, document_count: int, checksum: str) -> None:
         """Shortcut: mark *collection_name* as ``'ready'`` after a successful build."""
         async with self._session_factory() as session:
             stmt = (
@@ -211,7 +207,5 @@ def get_index_repo() -> IndexRepository:
     Raises ``RuntimeError`` if ``init_index_repo()`` was not called first.
     """
     if _index_repo is None:
-        raise RuntimeError(
-            "IndexRepository not initialised. Call init_index_repo() first."
-        )
+        raise RuntimeError("IndexRepository not initialised. Call init_index_repo() first.")
     return _index_repo

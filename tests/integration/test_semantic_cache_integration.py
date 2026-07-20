@@ -42,6 +42,7 @@ _API_RESPONSE: dict = {
 
 class MockOpenAIResponse:
     """Mock OpenAI chat completion response."""
+
     choices: list
     model: str = "test-model"
 
@@ -79,6 +80,7 @@ class TestDeepSeekClientCache:
         # Actually we need to test chat(), let's do it properly via async
         # This is a structural test — verify chat() method exists and has cache import
         import inspect
+
         source = inspect.getsource(client.chat)
         assert "cache_get" in source
         assert "cache_set" in source
@@ -90,6 +92,7 @@ class TestDeepSeekClientCache:
 
         client = DeepSeekClient()
         import inspect
+
         source = inspect.getsource(client.chat)
         # Verify the method delegates to _chat_raw on cache miss
         assert "cache_get" in source
@@ -101,6 +104,7 @@ class TestDeepSeekClientCache:
 
         client = DeepSeekClient()
         import inspect
+
         source = inspect.getsource(client._chat_raw)
         assert "@retry" in source or "_chat_raw" in source
 
@@ -110,6 +114,7 @@ class TestDeepSeekClientCache:
 
         client = DeepSeekClient()
         import inspect
+
         source = inspect.getsource(client.chat_stream)
         assert "cache_get" not in source
         assert "cache_set" not in source
@@ -127,6 +132,7 @@ class TestQwenClientCache:
 
         client = QwenClient(model_size="8b")
         import inspect
+
         source = inspect.getsource(client.chat)
         assert "cache_get" in source
         assert "cache_set" in source
@@ -137,6 +143,7 @@ class TestQwenClientCache:
 
         client = QwenClient(model_size="8b")
         import inspect
+
         source = inspect.getsource(client.chat_stream)
         assert "cache_get" not in source
         assert "cache_set" not in source
@@ -150,6 +157,7 @@ class TestCacheHashDeterminism:
 
     def test_same_input_produces_same_hash(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         h1 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "deepseek-v3")
         h2 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "deepseek-v3")
         assert h1 == h2
@@ -157,35 +165,41 @@ class TestCacheHashDeterminism:
 
     def test_different_model_produces_different_hash(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         h1 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "deepseek-v3")
         h2 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "qwen-max")
         assert h1 != h2
 
     def test_different_temperature_produces_different_hash(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         h1 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "deepseek-v3")
         h2 = _hash_prompt(_SAMPLE_MESSAGES, 0.3, 2048, "deepseek-v3")
         assert h1 != h2
 
     def test_different_max_tokens_produces_different_hash(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         h1 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "deepseek-v3")
         h2 = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 4096, "deepseek-v3")
         assert h1 != h2
 
     def test_different_messages_produces_different_hash(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         msgs_a: list[dict[str, str]] = [{"role": "user", "content": "A"}]
         msgs_b: list[dict[str, str]] = [{"role": "user", "content": "B"}]
         assert _hash_prompt(msgs_a, 0.7, 2048, "") != _hash_prompt(msgs_b, 0.7, 2048, "")
 
     def test_hash_is_hex_string(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         h = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "deepseek-v3")
         assert all(c in "0123456789abcdef" for c in h)
 
     def test_empty_model_produces_valid_hash(self) -> None:
         from models.semantic_cache import _hash_prompt
+
         h = _hash_prompt(_SAMPLE_MESSAGES, 0.7, 2048, "")
         assert len(h) == 64
 
@@ -200,12 +214,14 @@ class TestCacheToggle:
         """By default (dev.yaml), llm_cache_enabled is false."""
         with patch("models.semantic_cache._is_cache_enabled", return_value=False):
             from models.semantic_cache import _is_cache_enabled
+
             assert not _is_cache_enabled()
 
     def test_cache_enabled_when_configured(self) -> None:
         """When setting llm_cache_enabled=True, cache is active."""
         with patch("models.semantic_cache._is_cache_enabled", return_value=True):
             from models.semantic_cache import _is_cache_enabled
+
             assert _is_cache_enabled()
 
 
@@ -217,6 +233,7 @@ class TestCacheSerialisation:
 
     def test_dict_response_stored_as_is(self) -> None:
         from models.semantic_cache import cache_set
+
         # Check that a dict response is directly serialisable
         serialised = json.dumps(_CACHED_RESPONSE, ensure_ascii=False)
         parsed = json.loads(serialised)
@@ -224,6 +241,7 @@ class TestCacheSerialisation:
 
     def test_cache_key_prefix(self) -> None:
         from models.semantic_cache import _CACHE_KEY_PREFIX, _cache_key
+
         key = _cache_key("abc123")
         assert key.startswith(_CACHE_KEY_PREFIX)
         assert key == f"{_CACHE_KEY_PREFIX}abc123"
@@ -240,6 +258,7 @@ class TestCrossModelIsolation:
         import inspect
 
         from models.semantic_cache import cache_get
+
         sig = inspect.signature(cache_get)
         assert "model" in sig.parameters
 
@@ -248,6 +267,7 @@ class TestCrossModelIsolation:
         import inspect
 
         from models.semantic_cache import cache_set
+
         sig = inspect.signature(cache_set)
         assert "model" in sig.parameters
 
@@ -256,11 +276,13 @@ class TestCrossModelIsolation:
         import inspect
 
         from models.semantic_cache import cache_invalidate
+
         sig = inspect.signature(cache_invalidate)
         assert "model" in sig.parameters
 
     def test_cached_llm_call_with_model_parameter(self) -> None:
         """CachedLLMCall constructor accepts model parameter."""
         from models.semantic_cache import CachedLLMCall
+
         call = CachedLLMCall(_SAMPLE_MESSAGES, model="deepseek-v3")
         assert call.model == "deepseek-v3"

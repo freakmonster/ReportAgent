@@ -13,6 +13,7 @@ logger = get_logger(__name__)
 
 # ── Token estimation ────────────────────────────────────────────────────
 
+
 def count_tokens_estimate(text: str) -> int:
     """估算 Token 数——针对 bge-m3 tokenizer 校准。
 
@@ -26,6 +27,7 @@ def count_tokens_estimate(text: str) -> int:
 # ── Natural boundary helper ─────────────────────────────────────────────
 
 _NATURAL_BOUNDARIES = "。！？；\n，"
+
 
 def _find_split_point(text: str, target: int, window: int = 50) -> int:
     """在 target 位置附近查找最近的自然分隔符作为切割点。
@@ -51,9 +53,11 @@ def _find_split_point(text: str, target: int, window: int = 50) -> int:
 
 # ── Data classes ────────────────────────────────────────────────────────
 
+
 @dataclass
 class Chunk:
     """文本块"""
+
     text: str
     index: int
     char_count: int = 0
@@ -67,6 +71,7 @@ class Chunk:
 @dataclass
 class ChunkResult:
     """分块结果"""
+
     source: str
     chunks: list[Chunk] = field(default_factory=list)
 
@@ -87,9 +92,9 @@ class ChunkResult:
 
 # 段落分隔正则（按优先级）
 _PARAGRAPH_SPLITTERS: list[re.Pattern] = [
-    re.compile(r"\n\s*\n"),                      # 双换行（段落边界）
-    re.compile(r"\n(?=[#＃])"),                     # 标题前换行
-    re.compile(r"(?<=[。！？.!?])\s*\n"),            # 句末换行
+    re.compile(r"\n\s*\n"),  # 双换行（段落边界）
+    re.compile(r"\n(?=[#＃])"),  # 标题前换行
+    re.compile(r"(?<=[。！？.!?])\s*\n"),  # 句末换行
 ]
 
 # Markdown 标题模式
@@ -154,6 +159,7 @@ def _respect_heading_boundaries(paragraphs: list[str]) -> list[str]:
 
 # ── Recursive split ─────────────────────────────────────────────────────
 
+
 def recursive_split_paragraph(
     text: str,
     target_tokens: int,
@@ -204,7 +210,9 @@ def recursive_split_paragraph(
 
             result = []
             for p in merged_parts:
-                result.extend(recursive_split_paragraph(p, target_tokens, min_chunk_tokens, _depth + 1))
+                result.extend(
+                    recursive_split_paragraph(p, target_tokens, min_chunk_tokens, _depth + 1)
+                )
             return result
 
     return [text]
@@ -242,6 +250,7 @@ def _hard_split(text: str, target_tokens: int) -> list[str]:
 
 
 # ── Main API ────────────────────────────────────────────────────────────
+
 
 def chunk_text(
     text: str,
@@ -323,7 +332,9 @@ def chunk_text(
                 previous_overlap_text = ""
 
             buffer_parts = [previous_overlap_text] if previous_overlap_text else []
-            buffer_tokens = count_tokens_estimate(previous_overlap_text) if previous_overlap_text else 0
+            buffer_tokens = (
+                count_tokens_estimate(previous_overlap_text) if previous_overlap_text else 0
+            )
 
         buffer_parts.append(para)
         buffer_tokens += para_tokens

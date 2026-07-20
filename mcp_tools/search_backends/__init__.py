@@ -36,13 +36,12 @@ def _cached_get_backend() -> object:
 
     if backend_name == "tavily":
         from .tavily_backend import TavilySearchBackend
+
         return TavilySearchBackend()
 
     if backend_name == "mock":
         from .mock_backend import MockSearchBackend
+
         return MockSearchBackend()
 
-    raise ValueError(
-        f"Unknown search_backend '{backend_name}'. "
-        f"Valid options: 'tavily', 'mock'."
-    )
+    raise ValueError(f"Unknown search_backend '{backend_name}'. Valid options: 'tavily', 'mock'.")

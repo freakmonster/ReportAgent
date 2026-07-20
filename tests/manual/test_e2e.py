@@ -1,23 +1,27 @@
 """Manual E2E test of flash_news workflow via SSE."""
+
 import http.client
 import json
 
 
 def main():
-    body = json.dumps({
-        "query": "2026年7月AI行业重要动态",
-        "report_type": "deep_report",
-        "conversation_id": "e2e-test-006",
-        "user_id": "u1"
-    })
+    body = json.dumps(
+        {
+            "query": "2026年7月AI行业重要动态",
+            "report_type": "deep_report",
+            "conversation_id": "e2e-test-006",
+            "user_id": "u1",
+        }
+    )
     conn = http.client.HTTPConnection("localhost", 8010, timeout=120)
     conn.request(
-        "POST", "/chat/stream",
+        "POST",
+        "/chat/stream",
         body=body,
         headers={
             "Content-Type": "application/json",
-            "X-API-Key": "dev-secret-key-change-in-production"
-        }
+            "X-API-Key": "dev-secret-key-change-in-production",
+        },
     )
     resp = conn.getresponse()
     print(f"HTTP {resp.status}")
@@ -46,6 +50,7 @@ def main():
             break
 
     conn.close()
+
 
 if __name__ == "__main__":
     main()

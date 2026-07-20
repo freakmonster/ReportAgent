@@ -82,17 +82,23 @@ async def main():
         diff_ratio = difflib.SequenceMatcher(None, w_text, e_text).ratio()
         changed = len(w_text) != len(e_text) or diff_ratio < 1.0
         status = "CHANGED" if changed else "IDENTICAL"
-        print(f"\n  ── DIFF ──  ratio={diff_ratio:.3f}  status={status}  len: {len(w_text)} → {len(e_text)}")
+        print(
+            f"\n  ── DIFF ──  ratio={diff_ratio:.3f}  status={status}  len: {len(w_text)} → {len(e_text)}"
+        )
 
         # Show actual diff lines
         if changed and len(w_text) < 3000 and len(e_text) < 3000:
             w_lines = w_text.splitlines(keepends=True)
             e_lines = e_text.splitlines(keepends=True)
-            diff_lines = list(difflib.unified_diff(
-                w_lines, e_lines,
-                fromfile="[Writer]", tofile="[Editor]",
-                lineterm="",
-            ))
+            diff_lines = list(
+                difflib.unified_diff(
+                    w_lines,
+                    e_lines,
+                    fromfile="[Writer]",
+                    tofile="[Editor]",
+                    lineterm="",
+                )
+            )
             if diff_lines:
                 print(f"  {'-' * 64}")
                 for dl in diff_lines[:30]:

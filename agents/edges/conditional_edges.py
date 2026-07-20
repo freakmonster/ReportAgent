@@ -15,6 +15,7 @@ def make_router(node_name: str, routes: dict[str, Any]):
     Returns:
         A callable that takes State and returns the next node name.
     """
+
     def router(state: dict[str, Any]) -> str:
         base = state.get("base", {})
 
@@ -52,6 +53,7 @@ def make_router(node_name: str, routes: dict[str, Any]):
 
 
 # ── Standalone routing helpers (used by tests) ────────────────────────
+
 
 def route_by_intent(state: dict[str, Any]) -> str:
     """Route based on base.intent field."""

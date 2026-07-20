@@ -14,6 +14,7 @@ from typing import Any
 @dataclass
 class TokenUsage:
     """Token consumption record for a single node execution."""
+
     node_name: str
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -22,7 +23,7 @@ class TokenUsage:
     @property
     def estimated_cost(self) -> float:
         """Estimate cost in USD (approximate DeepSeek pricing)."""
-        prompt_cost = (self.prompt_tokens / 1_000_000) * 0.14   # $0.14/M input
+        prompt_cost = (self.prompt_tokens / 1_000_000) * 0.14  # $0.14/M input
         completion_cost = (self.completion_tokens / 1_000_000) * 0.28  # $0.28/M output
         return round(prompt_cost + completion_cost, 6)
 
@@ -37,8 +38,8 @@ class TokenMonitor:
     - Threshold-based warnings
     """
 
-    WARNING_THRESHOLD: int = 100_000       # Warn when total exceeds 100K
-    CRITICAL_THRESHOLD: int = 500_000      # Alert at 500K tokens
+    WARNING_THRESHOLD: int = 100_000  # Warn when total exceeds 100K
+    CRITICAL_THRESHOLD: int = 500_000  # Alert at 500K tokens
 
     def __init__(self) -> None:
         self._usage: list[TokenUsage] = []
@@ -109,11 +110,13 @@ class TokenMonitor:
         """Return per-node token usage summary."""
         result: list[dict[str, Any]] = []
         for u in self._usage:
-            result.append({
-                "node": u.node_name,
-                "tokens": u.total_tokens,
-                "cost": u.estimated_cost,
-            })
+            result.append(
+                {
+                    "node": u.node_name,
+                    "tokens": u.total_tokens,
+                    "cost": u.estimated_cost,
+                }
+            )
         return result
 
     def reset(self) -> None:

@@ -41,9 +41,7 @@ class TestCreateCheckpointer:
     @pytest.mark.asyncio
     async def test_yields_none_on_connection_error_dev_mode(self) -> None:
         """In dev mode, connection failure → yield None without crash."""
-        with patch(
-            "infrastructure.database.checkpointer.settings"
-        ) as mock_settings:
+        with patch("infrastructure.database.checkpointer.settings") as mock_settings:
             mock_settings.environment = "development"
             mock_settings.pg_dsn = "postgresql://localhost:5432/db"
             mock_settings.environment = "development"
@@ -71,8 +69,10 @@ class TestBuilderCheckpointerIntegration:
 
         builder = WorkflowBuilder()
         with patch.object(builder, "_load_node_entry") as mock_load:
+
             async def _noop(state):  # noqa: E306
                 return state
+
             mock_load.return_value = _noop
             graph = builder.build("flash_news", ReportState)
 
@@ -88,8 +88,10 @@ class TestBuilderCheckpointerIntegration:
         builder = WorkflowBuilder()
 
         with patch.object(builder, "_load_node_entry") as mock_load:
+
             async def _noop(state):  # noqa: E306
                 return state
+
             mock_load.return_value = _noop
             graph = builder.build("flash_news", ReportState, checkpointer=cp)
 
@@ -109,8 +111,10 @@ class TestBuilderCheckpointerIntegration:
         mock_harness.execute_post = AsyncMock(return_value=[])
 
         with patch.object(builder, "_load_node_entry") as mock_load:
+
             async def _noop(state):  # noqa: E306
                 return state
+
             mock_load.return_value = _noop
             graph = builder.build(
                 "deep_report",

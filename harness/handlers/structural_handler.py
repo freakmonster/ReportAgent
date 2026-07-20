@@ -17,7 +17,11 @@ class StructuralHandler(HarnessHandler):
 
     # Content that should not appear in final output
     _BLACKLIST_STRINGS: list[str] = [
-        "<script", "</script", "javascript:", "onerror=", "onload=",
+        "<script",
+        "</script",
+        "javascript:",
+        "onerror=",
+        "onload=",
     ]
 
     # Style issues to warn about

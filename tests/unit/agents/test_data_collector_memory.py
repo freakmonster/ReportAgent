@@ -31,4 +31,5 @@ def test_data_collector_fallback_behavior():
 def test_format_context_import():
     """验证 format_context 可从 short_term 导入"""
     from infrastructure.memory.short_term import format_context
+
     assert callable(format_context)

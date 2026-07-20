@@ -17,14 +17,16 @@ from typing import Any
 
 class UserTier(str, Enum):
     """Access tier for users."""
-    FREE = "free"          # Basic reports, limited features
-    PRO = "pro"            # Full features, higher rate limits
-    ADMIN = "admin"       # Admin access, no restrictions
+
+    FREE = "free"  # Basic reports, limited features
+    PRO = "pro"  # Full features, higher rate limits
+    ADMIN = "admin"  # Admin access, no restrictions
 
 
 @dataclass
 class UserContext:
     """Per-user context for personalization and access control."""
+
     user_id: str
     tier: UserTier = UserTier.FREE
     preferred_language: str = "zh-CN"
@@ -38,6 +40,7 @@ class UserContext:
 @dataclass
 class TemplatePreference:
     """User's preference for a specific report template."""
+
     template_name: str
     use_count: int = 0
     last_used: str = ""
@@ -63,6 +66,7 @@ _DEFAULT_TEMPLATES: dict[UserTier, list[str]] = {
 # ---------------------------------------------------------------------------
 # API
 # ---------------------------------------------------------------------------
+
 
 def get_or_create_user(user_id: str, tier: UserTier = UserTier.FREE) -> UserContext:
     """Get existing user context or create a new one.
@@ -108,8 +112,7 @@ def get_template_preferences(user_id: str) -> list[TemplatePreference]:
     """
     if user_id not in _template_preferences:
         _template_preferences[user_id] = [
-            TemplatePreference(template_name=name)
-            for name in get_available_templates(user_id)
+            TemplatePreference(template_name=name) for name in get_available_templates(user_id)
         ]
     return _template_preferences[user_id]
 

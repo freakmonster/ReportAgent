@@ -125,12 +125,8 @@ class Experiment:
             self.config.name,
             self.config.runs_per_group,
         )
-        self._control_result = await self._run_group(
-            self.config.control, runner
-        )
-        self._treatment_result = await self._run_group(
-            self.config.treatment, runner
-        )
+        self._control_result = await self._run_group(self.config.control, runner)
+        self._treatment_result = await self._run_group(self.config.treatment, runner)
         logger.info("Experiment '%s' complete", self.config.name)
         return self._control_result, self._treatment_result
 
@@ -141,8 +137,7 @@ class Experiment:
     ) -> ExperimentResult:
         """Run all iterations for a single group."""
         tasks = [
-            self._single_run(group_config, runner, i)
-            for i in range(self.config.runs_per_group)
+            self._single_run(group_config, runner, i) for i in range(self.config.runs_per_group)
         ]
         runs = await asyncio.gather(*tasks)
         return ExperimentResult(config=group_config, runs=list(runs))

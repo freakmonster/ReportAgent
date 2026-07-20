@@ -47,14 +47,17 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     session_id = base.get("session_id", "")
     if session_id:
         user_id = base.get("user_id", "anonymous")
-        asyncio.create_task(_save_short_term_memory(
-            user_id, session_id,
-            query=base.get("user_input", ""),
-            summary=final[:300] if final else "",
-            template=base.get("template_name", "deep_report"),
-            model=base.get("model", "deepseek-flash"),
-            workflow_id=base.get("workflow_id", ""),
-        ))
+        asyncio.create_task(
+            _save_short_term_memory(
+                user_id,
+                session_id,
+                query=base.get("user_input", ""),
+                summary=final[:300] if final else "",
+                template=base.get("template_name", "deep_report"),
+                model=base.get("model", "deepseek-flash"),
+                workflow_id=base.get("workflow_id", ""),
+            )
+        )
 
     return {
         "writing": {
@@ -78,13 +81,22 @@ async def _save_short_term_memory(
     """Persist a summary snapshot to Redis short-term memory for this session."""
     try:
         from infrastructure.memory.short_term import save_memory
-        await save_memory(user_id, session_id, {
-            "query": query,
-            "summary": summary,
-            "template": template,
-            "model": model,
-            "workflow_id": workflow_id,
-        })
-        print(f"[publisher] short-term memory saved | session={session_id}", file=sys.stderr, flush=True)
+
+        await save_memory(
+            user_id,
+            session_id,
+            {
+                "query": query,
+                "summary": summary,
+                "template": template,
+                "model": model,
+                "workflow_id": workflow_id,
+            },
+        )
+        print(
+            f"[publisher] short-term memory saved | session={session_id}",
+            file=sys.stderr,
+            flush=True,
+        )
     except Exception as e:
         print(f"[publisher] short-term memory save failed: {e}", file=sys.stderr, flush=True)

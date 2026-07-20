@@ -18,6 +18,7 @@ from typing import Any
 @dataclass
 class ContentValidationResult:
     """Result of content validation."""
+
     is_valid: bool
     has_sensitive_content: bool = False
     has_format_errors: bool = False
@@ -61,6 +62,7 @@ _CITATION_RE = re.compile(r"\[(\d+)\]|\[\d+,\s*\d+\]|\([^)]*\d{4}[^)]*\)")
 # Sensitive content detection
 # ---------------------------------------------------------------------------
 
+
 def check_sensitive_content(text: str) -> tuple[bool, list[str]]:
     """Detect sensitive / harmful content in text.
 
@@ -94,6 +96,7 @@ def check_sensitive_content(text: str) -> tuple[bool, list[str]]:
 # ---------------------------------------------------------------------------
 # Markdown format validation
 # ---------------------------------------------------------------------------
+
 
 def validate_markdown_format(text: str) -> list[str]:
     """Validate Markdown structural integrity.
@@ -136,6 +139,7 @@ def validate_markdown_format(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Combined validation
 # ---------------------------------------------------------------------------
+
 
 def validate_content(text: str) -> ContentValidationResult:
     """Run full content validation: sensitive + Markdown + citations.

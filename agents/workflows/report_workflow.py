@@ -20,4 +20,6 @@ def increment_retry(state: dict[str, Any]) -> dict[str, Any]:
 def get_template_name(state: dict[str, Any]) -> str:
     """Extract template name from state."""
     base = state.get("base", {})
-    return str(base.get("template_name", "deep_report")) if isinstance(base, dict) else "deep_report"
+    return (
+        str(base.get("template_name", "deep_report")) if isinstance(base, dict) else "deep_report"
+    )

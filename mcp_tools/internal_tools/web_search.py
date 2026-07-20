@@ -38,14 +38,17 @@ async def web_search(query: str, max_results: int = 5) -> list[dict[str, Any]]:
     # Option 1: duckduckgo-search library
     try:
         from duckduckgo_search import DDGS
+
         results: list[dict[str, Any]] = []
         with DDGS() as ddgs:
             for r in ddgs.text(query, max_results=max_results):
-                results.append({
-                    "title": r.get("title", ""),
-                    "url": r.get("href", ""),
-                    "snippet": r.get("body", ""),
-                })
+                results.append(
+                    {
+                        "title": r.get("title", ""),
+                        "url": r.get("href", ""),
+                        "snippet": r.get("body", ""),
+                    }
+                )
         if results:
             logger.info("Internal search returned %d results via duckduckgo-search", len(results))
             return results
@@ -130,6 +133,7 @@ async def academic_search(query: str, max_results: int = 5) -> list[dict[str, An
 # Callable tool interface (compatible with registry)
 # ---------------------------------------------------------------------------
 
+
 async def web_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     """Registry-compatible callable for web_search.
 
@@ -142,7 +146,12 @@ async def web_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     query = arguments.get("query", "")
     max_results = int(arguments.get("max_results", 5))
     results = await web_search(query, max_results=max_results)
-    return {"results": results, "query": query, "source": "internal", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "results": results,
+        "query": query,
+        "source": "internal",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
 
 
 async def news_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
@@ -150,4 +159,9 @@ async def news_search_tool(arguments: dict[str, Any]) -> dict[str, Any]:
     query = arguments.get("query", "")
     max_results = int(arguments.get("max_results", 5))
     results = await news_search(query, max_results=max_results)
-    return {"results": results, "query": query, "source": "internal_news", "timestamp": datetime.utcnow().isoformat()}
+    return {
+        "results": results,
+        "query": query,
+        "source": "internal_news",
+        "timestamp": datetime.utcnow().isoformat(),
+    }

@@ -27,6 +27,7 @@ _MODEL_SIZE_MAP: dict[str, str] = {
 
 # ── Client ───────────────────────────────────────────────────────────
 
+
 class QwenClient:
     """Async client for Qwen API (OpenAI-compatible)."""
 
@@ -38,9 +39,7 @@ class QwenClient:
         """
         resolved: str | None = _MODEL_SIZE_MAP.get(model_size)
         if resolved is None:
-            logger.warning(
-                "Unknown model_size '%s', falling back to 'max'", model_size
-            )
+            logger.warning("Unknown model_size '%s', falling back to 'max'", model_size)
             resolved = settings.qwen_model
 
         self._api_key: str = settings.qwen_api_key
@@ -57,9 +56,7 @@ class QwenClient:
             )
         return self._client
 
-    async def chat(
-        self, messages: list[dict[str, Any]], **kwargs: Any
-    ) -> dict[str, Any]:
+    async def chat(self, messages: list[dict[str, Any]], **kwargs: Any) -> dict[str, Any]:
         """Send a chat completion request with semantic caching.
 
         Cache hit → returns immediately (no API call).
@@ -96,9 +93,8 @@ class QwenClient:
 
         # ── Store in cache (fire-and-forget, non-blocking) ──
         import asyncio
-        asyncio.create_task(
-            cache_set(messages, result, temperature, max_tokens, self._model)
-        )
+
+        asyncio.create_task(cache_set(messages, result, temperature, max_tokens, self._model))
 
         # ── Async stats (fire-and-forget) ──
         try:
@@ -108,9 +104,7 @@ class QwenClient:
 
         return result
 
-    async def chat_stream(
-        self, messages: list[dict[str, Any]], **kwargs: Any
-    ) -> Any:
+    async def chat_stream(self, messages: list[dict[str, Any]], **kwargs: Any) -> Any:
         """Stream chat completion chunks.
 
         Args:

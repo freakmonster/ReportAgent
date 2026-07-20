@@ -2,6 +2,7 @@
 Embedding 模型对比评测：GTE-base vs bge-m3
 指标：维度、显存、推理延迟、语义相关度、BM25 互补性、RRF 排序质量
 """
+
 import asyncio
 import json
 import os
@@ -31,6 +32,7 @@ QUERIES = [
     ("跨领域", "AI如何与数据库结合？", [0, 3, 4]),
 ]
 
+
 @dataclass
 class ModelMetrics:
     name: str
@@ -43,24 +45,28 @@ class ModelMetrics:
     top1_hits: int = 0
     total_queries: int = 0
 
+
 async def test_model(model_path: str, name: str) -> ModelMetrics:
     mm = ModelMetrics(name=name)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Testing: {name}")
     print(f"Path: {model_path}")
 
     # ── 0. 重置 EmbeddingModel 单例 ──
     from retrieval.embedders.embedding_model import EmbeddingModel
+
     EmbeddingModel.reset_instance()
 
     import httpx
+
     async with httpx.AsyncClient() as c:
         await c.delete("http://localhost:6333/collections/research_agent_bench")
 
     # ── 1. 加载时间 ──
     t0 = time.time()
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer(model_path)
     mm.dimension = model.get_sentence_embedding_dimension()
     mm.load_time = time.time() - t0
@@ -96,7 +102,7 @@ async def test_model(model_path: str, name: str) -> ModelMetrics:
 
     print("\n  检索评测:")
     print(f"  {'Query':<16} {'Top-1':<10} {'sem':>8} {'bm25':>8} {'RRF':>8} {'Hit':>6}")
-    print(f"  {'-'*16} {'-'*10} {'-'*8} {'-'*8} {'-'*8} {'-'*6}")
+    print(f"  {'-' * 16} {'-' * 10} {'-' * 8} {'-' * 8} {'-' * 8} {'-' * 6}")
 
     for qtype, query, expected in QUERIES:
         results = await retriever.search(query, top_k=3)
@@ -129,7 +135,10 @@ async def test_model(model_path: str, name: str) -> ModelMetrics:
 async def main():
     models = [
         ("E:/models/bge-m3", "bge-m3 (1024d)"),
-        ("E:/models/iic--nlp_gte_sentence-embedding_chinese-base/snapshots/master", "GTE-base (768d)"),
+        (
+            "E:/models/iic--nlp_gte_sentence-embedding_chinese-base/snapshots/master",
+            "GTE-base (768d)",
+        ),
     ]
 
     results = []
@@ -141,7 +150,7 @@ async def main():
         results.append(r)
 
     # ── 汇总 ──
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("SUMMARY")
     print(f"{'Metric':<22}", end="")
     for r in results:
@@ -155,7 +164,14 @@ async def main():
         ("Encode 1x (ms)", lambda r: f"{r.encode_time_1:.1f}"),
         ("Encode 8x batch (ms)", lambda r: f"{r.encode_time_batch:.1f}"),
         ("Top-1 Hits", lambda r: f"{r.top1_hits}/{r.total_queries}"),
-        ("Avg Semantic Score", lambda r: f"{sum(r.semantic_scores)/len(r.semantic_scores):.4f}" if r.semantic_scores else "N/A"),
+        (
+            "Avg Semantic Score",
+            lambda r: (
+                f"{sum(r.semantic_scores) / len(r.semantic_scores):.4f}"
+                if r.semantic_scores
+                else "N/A"
+            ),
+        ),
     ]
     for label, fn in rows:
         print(f"  {label:<22}", end="")

@@ -40,6 +40,7 @@ async def _build_from_urls(collection_name: str, urls: list[str]) -> None:
             get_index_repo,
             init_index_repo,
         )
+
         await init_db()
         from infrastructure.database.connection import _get_session_factory
 
@@ -80,6 +81,7 @@ async def _build_from_texts(collection_name: str, texts: list[str]) -> None:
             get_index_repo,
             init_index_repo,
         )
+
         await init_db()
         from infrastructure.database.connection import _get_session_factory
 

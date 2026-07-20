@@ -40,6 +40,7 @@ async def auth_dependency(request: Request) -> str:
         try:
             # Simple JWT decode (in production, use full JWT validation)
             import jwt
+
             payload = jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
             return payload.get("sub", "anonymous")
         except Exception:

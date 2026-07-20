@@ -122,7 +122,9 @@ class TestMCPClientCircuitBreaker:
         mock_tool = AsyncMock(return_value={"degraded": True, "results": []})
         with patch("mcp_tools.registry.registry.get_tool", AsyncMock(return_value=mock_tool)):
             # Mock _do_call to always fail
-            with patch.object(client, "_do_call", AsyncMock(side_effect=MCPConnectionError("down"))):
+            with patch.object(
+                client, "_do_call", AsyncMock(side_effect=MCPConnectionError("down"))
+            ):
                 # Call 3 times — circuit should open after 3rd
                 for i in range(3):
                     result = await client.call(server_url, "test_tool", {}, "test-server")
@@ -135,9 +137,7 @@ class TestMCPClientCircuitBreaker:
                 assert result.data["degraded"] is True
 
     @pytest.mark.asyncio
-    async def test_circuit_open_raises_without_degradation(
-        self, client: MCPClient
-    ) -> None:
+    async def test_circuit_open_raises_without_degradation(self, client: MCPClient) -> None:
         """When circuit is OPEN and no degradation registered, raises error."""
         server_url = "http://test-mcp:8000"
         # Manually open the breaker
@@ -238,9 +238,7 @@ class TestMCPClientRetry:
                 assert result.data["fallback"] is True
 
     @pytest.mark.asyncio
-    async def test_failed_without_degradation_returns_error_result(
-        self, client: MCPClient
-    ) -> None:
+    async def test_failed_without_degradation_returns_error_result(self, client: MCPClient) -> None:
         """When all retries fail and no degradation, returns error MCPToolResult."""
         server_url = "http://test-mcp:8000"
         with patch.object(

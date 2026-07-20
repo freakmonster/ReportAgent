@@ -28,6 +28,7 @@ client = TestClient(app)
 
 # ── Writer LLM 故障注入 ───────────────────────────────────────────────
 
+
 class TestWriterLLMFailure:
     """Writer 节点 DeepSeek 全部挂掉时，应降级到 fallback_chapter。"""
 
@@ -49,6 +50,7 @@ class TestWriterLLMFailure:
 
 # ── Editor LLM 故障注入 ───────────────────────────────────────────────
 
+
 class TestEditorLLMFailure:
     """Editor 节点 DeepSeek 挂掉时，应保留原文。"""
 
@@ -69,6 +71,7 @@ class TestEditorLLMFailure:
 
 # ── Data Analyst LLM 故障注入 ─────────────────────────────────────────
 
+
 class TestDataAnalystLLMFailure:
     """Data Analyst 三级降级链验证。"""
 
@@ -80,13 +83,17 @@ class TestDataAnalystLLMFailure:
         state = {
             "base": {},
             "collection": {
-                "raw_docs": [{"title": "量子计算", "url": "https://example.com", "content": "数据"}],
+                "raw_docs": [
+                    {"title": "量子计算", "url": "https://example.com", "content": "数据"}
+                ],
                 "compressed_summary": {"量子计算": "数据内容"},
                 "chapter_plan": ["摘要与概述"],
                 "source_urls": ["https://example.com"],
             },
         }
-        with patch("agents.nodes.data_analyst._generate_insights", new_callable=AsyncMock, return_value=[]):
+        with patch(
+            "agents.nodes.data_analyst._generate_insights", new_callable=AsyncMock, return_value=[]
+        ):
             result = await entry(state)
 
         analysis = result["collection"].get("analysis", {})
@@ -106,12 +113,15 @@ class TestDataAnalystLLMFailure:
                 "source_urls": [],
             },
         }
-        with patch("agents.nodes.data_analyst._generate_insights", new_callable=AsyncMock, return_value=[]):
+        with patch(
+            "agents.nodes.data_analyst._generate_insights", new_callable=AsyncMock, return_value=[]
+        ):
             result = await entry(state)
         assert "collection" in result, "Must return state even with no insights"
 
 
 # ── Rate Limiter 过载 ─────────────────────────────────────────────────
+
 
 class TestRateLimiterOverload:
     """限流器过载保护验证。"""
@@ -138,6 +148,7 @@ class TestRateLimiterOverload:
 
 
 # ── Auth Middleware 故障场景 ──────────────────────────────────────────
+
 
 class TestAuthFailureScenarios:
     """认证中间件故障场景。"""
@@ -166,6 +177,7 @@ class TestAuthFailureScenarios:
 
 
 # ── Data Collector 降级 ───────────────────────────────────────────────
+
 
 class TestDataCollectorDegradation:
     """数据采集器降级行为验证。"""
@@ -196,6 +208,7 @@ class TestDataCollectorDegradation:
 
 
 # ── Reviewer Retry Loop ───────────────────────────────────────────────
+
 
 class TestReviewerRetryLoop:
     """审核重试循环验证。"""
@@ -233,16 +246,20 @@ class TestReviewerRetryLoop:
     def test_make_router_works(self) -> None:
         from agents.edges.conditional_edges import make_router
 
-        router = make_router("reviewer", {
-            "approved": "publisher",
-            "needs_human": "human_review",
-            "rejected": {"true_dest": "writer", "false_dest": "human_review"},
-        })
+        router = make_router(
+            "reviewer",
+            {
+                "approved": "publisher",
+                "needs_human": "human_review",
+                "rejected": {"true_dest": "writer", "false_dest": "human_review"},
+            },
+        )
         result = router({"review": {"decision": "approved"}, "base": {"retry_count": 0}})
         assert result == "publisher"
 
 
 # ── DeepSeek Client Tenacity Retry ─────────────────────────────────────
+
 
 class TestDeepSeekRetry:
     """DeepSeek 客户端 tenacity 重试验证。"""

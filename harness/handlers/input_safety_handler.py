@@ -46,8 +46,7 @@ class InputSafetyHandler(HarnessHandler):
 
     def __init__(self) -> None:
         self._compiled_patterns: list[tuple[re.Pattern, str]] = [
-            (re.compile(p, re.IGNORECASE), desc)
-            for p, desc in _BLOCKED_PATTERNS
+            (re.compile(p, re.IGNORECASE), desc) for p, desc in _BLOCKED_PATTERNS
         ]
 
     async def handle(
@@ -89,9 +88,7 @@ class InputSafetyHandler(HarnessHandler):
 
         # ── Injection keywords ────────────────────────────────────────
         lower_input = user_input.lower()
-        hits: list[str] = [
-            kw for kw in _INJECTION_KEYWORDS if kw.lower() in lower_input
-        ]
+        hits: list[str] = [kw for kw in _INJECTION_KEYWORDS if kw.lower() in lower_input]
         if hits:
             return HandlerResult(
                 decision=HandlerDecision.FAIL,

@@ -25,6 +25,7 @@ from agents.state import ReportState, create_initial_state  # noqa: E402
 # Mock helpers — return fixed data without real network/LLM calls
 # ---------------------------------------------------------------------------
 
+
 async def _mock_data_collector(state: dict) -> dict:
     """Return 3 sample raw_docs for deep research."""
     existing_collection = state.get("collection", {})
@@ -35,19 +36,19 @@ async def _mock_data_collector(state: dict) -> dict:
                     "title": "新能源汽车市场分析",
                     "url": "https://example.com/ev/1",
                     "content": "2026年上半年新能源汽车销量突破500万辆，同比增长35%。"
-                              "比亚迪以180万辆销量继续领跑，市场份额达36%。",
+                    "比亚迪以180万辆销量继续领跑，市场份额达36%。",
                 },
                 {
                     "title": "电池技术路线对比",
                     "url": "https://example.com/ev/2",
                     "content": "固态电池技术路线逐渐清晰，宁德时代、比亚迪等企业加速布局。"
-                              "磷酸铁锂电池仍占据60%以上市场份额。",
+                    "磷酸铁锂电池仍占据60%以上市场份额。",
                 },
                 {
                     "title": "充电基础设施发展",
                     "url": "https://example.com/ev/3",
                     "content": "全国充电桩保有量突破1000万个，车桩比降至2.5:1。"
-                              "超充技术普及推动充电效率大幅提升。",
+                    "超充技术普及推动充电效率大幅提升。",
                 },
             ],
             "compressed_summary": existing_collection.get("compressed_summary", {}),
@@ -103,11 +104,11 @@ async def _mock_writer(state: dict) -> dict:
         "writing": {
             "chapter_drafts": {
                 "市场概览": "## 市场概览\n\n2026年上半年新能源汽车销量突破500万辆，"
-                          "同比增长35%，市场保持高速增长态势。",
+                "同比增长35%，市场保持高速增长态势。",
                 "技术分析": "## 技术分析\n\n固态电池技术路线逐渐清晰，"
-                          "磷酸铁锂仍占据60%以上市场份额。",
+                "磷酸铁锂仍占据60%以上市场份额。",
                 "基础设施": "## 基础设施\n\n全国充电桩保有量突破1000万个，"
-                          "车桩比降至2.5:1，超充技术加速普及。",
+                "车桩比降至2.5:1，超充技术加速普及。",
             },
             "final_content": "",
             "citation_list": [],
@@ -200,17 +201,21 @@ class TestDeepReportGraphConstruction:
 
         graph = WorkflowBuilder().build("deep_report", ReportState)
         all_nodes = graph.get_graph().nodes
-        user_nodes = {
-            k: v for k, v in all_nodes.items()
-            if k not in ("__start__", "__end__")
-        }
+        user_nodes = {k: v for k, v in all_nodes.items() if k not in ("__start__", "__end__")}
         assert len(user_nodes) == 10
 
         node_names = set(user_nodes.keys())
         expected = {
-            "intent_classifier", "research_planner", "data_collector",
-            "data_processor", "data_analyst", "writer", "editor",
-            "reviewer", "human_review", "publisher",
+            "intent_classifier",
+            "research_planner",
+            "data_collector",
+            "data_processor",
+            "data_analyst",
+            "writer",
+            "editor",
+            "reviewer",
+            "human_review",
+            "publisher",
         }
         assert node_names == expected
 
@@ -386,8 +391,14 @@ class TestDeepReportSSEStream:
                 seen_keys.update(event.keys())
 
         expected = {
-            "intent_classifier", "research_planner", "data_collector",
-            "data_processor", "data_analyst", "writer", "editor",
-            "reviewer", "publisher",
+            "intent_classifier",
+            "research_planner",
+            "data_collector",
+            "data_processor",
+            "data_analyst",
+            "writer",
+            "editor",
+            "reviewer",
+            "publisher",
         }
         assert seen_keys == expected

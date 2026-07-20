@@ -28,6 +28,7 @@ async def acquire_workflow_lock(
     if redis_client is None:
         try:
             from infrastructure.cache.redis_client import RedisClient
+
             redis_client = RedisClient()
         except ImportError:
             # Redis not available — allow execution (dev mode)

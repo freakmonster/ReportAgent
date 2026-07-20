@@ -20,15 +20,23 @@ class TemplateLoader:
 
     # Known valid node modules (must exist under agents/nodes/)
     _KNOWN_NODES: set[str] = {
-        "intent_classifier", "research_planner", "data_collector",
-        "data_processor", "data_analyst", "writer", "editor",
-        "reviewer", "human_review", "publisher",
+        "intent_classifier",
+        "research_planner",
+        "data_collector",
+        "data_processor",
+        "data_analyst",
+        "writer",
+        "editor",
+        "reviewer",
+        "human_review",
+        "publisher",
     }
 
     def __init__(self, config_path: str | None = None) -> None:
         self._config_path = config_path or str(
             Path(__file__).resolve().parent.parent.parent.parent
-            / "config" / "workflow_templates.yaml"
+            / "config"
+            / "workflow_templates.yaml"
         )
         self._config: dict[str, Any] = {}
         self._load()
@@ -93,15 +101,17 @@ class TemplateLoader:
         # Check entry point is in nodes
         entry = tpl.get("entry_point", "")
         if entry not in tpl.get("nodes", []):
-            raise ValueError(
-                f"Template '{name}' entry_point '{entry}' not in nodes list"
-            )
+            raise ValueError(f"Template '{name}' entry_point '{entry}' not in nodes list")
 
     def list_templates(self) -> list[dict[str, Any]]:
         """Return metadata for all templates."""
         templates = self._config.get("templates", {})
         return [
-            {"name": name, "description": tpl.get("description", ""), "node_count": len(tpl.get("nodes", []))}
+            {
+                "name": name,
+                "description": tpl.get("description", ""),
+                "node_count": len(tpl.get("nodes", [])),
+            }
             for name, tpl in templates.items()
         ]
 

@@ -70,9 +70,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
             workflow_id,
         )
         review["human_review_status"] = "bypassed"
-        review["review_feedback"] = review.get(
-            "review_feedback", "Content rejected by reviewer"
-        )
+        review["review_feedback"] = review.get("review_feedback", "Content rejected by reviewer")
         return {
             "review": review,
             "base": {**base, "status": "reviewing"},
@@ -113,7 +111,8 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     except Exception as exc:
         logger.warning(
             "human_review.state_save_failed | workflow=%s | %s",
-            workflow_id, exc,
+            workflow_id,
+            exc,
         )
 
     # 2. Set Redis signal
@@ -129,28 +128,33 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     except Exception as exc:
         logger.warning(
             "human_review.redis_failed | workflow=%s | %s",
-            workflow_id, exc,
+            workflow_id,
+            exc,
         )
 
     # 3. MCP Email notification (best-effort)
     try:
         from mcp_tools.mcp_client import call_mcp_tool
 
-        await call_mcp_tool("mcp_send_email", {
-            "to": "admin@example.com",
-            "subject": f"Human Review Required: {workflow_id}",
-            "body": (
-                f"Workflow {workflow_id} requires human review.\n\n"
-                f"Query: {user_input}\n"
-                f"Quality scores: {quality_scores}\n\n"
-                f"Review at: /task/review/{workflow_id}"
-            ),
-        })
+        await call_mcp_tool(
+            "mcp_send_email",
+            {
+                "to": "admin@example.com",
+                "subject": f"Human Review Required: {workflow_id}",
+                "body": (
+                    f"Workflow {workflow_id} requires human review.\n\n"
+                    f"Query: {user_input}\n"
+                    f"Quality scores: {quality_scores}\n\n"
+                    f"Review at: /task/review/{workflow_id}"
+                ),
+            },
+        )
         logger.info("human_review.email_sent | workflow=%s", workflow_id)
     except Exception as exc:
         logger.info(
             "human_review.email_skipped | workflow=%s | %s",
-            workflow_id, exc,
+            workflow_id,
+            exc,
         )
 
     # 4. Interrupt — wait for external callback

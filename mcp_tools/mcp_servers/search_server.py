@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Tavily API client factory (lazy-initialized)
 # ---------------------------------------------------------------------------
 
+
 def _get_tavily_client() -> TavilyClient:
     """Return a lazily-initialized TavilyClient singleton.
 
@@ -35,8 +36,7 @@ def _get_tavily_client() -> TavilyClient:
         key = settings.tavily_api_key
         if not key:
             raise RuntimeError(
-                "TAVILY_API_KEY is not set. Please set it in environment "
-                "variables or config YAML."
+                "TAVILY_API_KEY is not set. Please set it in environment variables or config YAML."
             )
         _tavily_client = TavilyClient(api_key=key)
     return _tavily_client
@@ -48,6 +48,7 @@ _tavily_client: TavilyClient | None = None
 # ---------------------------------------------------------------------------
 # Pydantic request models
 # ---------------------------------------------------------------------------
+
 
 class SearchRequest(BaseModel):
     query: str = Field(..., description="Search query")
@@ -66,6 +67,7 @@ class NewsSearchRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # FastAPI application
 # ---------------------------------------------------------------------------
+
 
 def create_search_app() -> object:
     """Create and configure the FastAPI search MCP server application."""

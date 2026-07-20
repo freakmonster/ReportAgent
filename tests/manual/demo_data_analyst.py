@@ -12,6 +12,7 @@
     - LLM 生成的洞察（需 API Key）
     - MCP 图表状态（需 Chart Server）
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -102,8 +103,10 @@ async def main() -> None:
     state["collection"]["raw_docs"] = SAMPLE_DOCS
     state["collection"]["source_urls"] = [d["url"] for d in SAMPLE_DOCS]
 
-    print(f"\n[Input] {len(SAMPLE_DOCS)} documents, "
-          f"{sum(len(d['content']) for d in SAMPLE_DOCS)} chars")
+    print(
+        f"\n[Input] {len(SAMPLE_DOCS)} documents, "
+        f"{sum(len(d['content']) for d in SAMPLE_DOCS)} chars"
+    )
 
     # -- Step 2: Call data_analyst.entry() --
     from agents.nodes.data_analyst import entry

@@ -21,11 +21,12 @@ from harness.handlers.base import HandlerDecision, HandlerResult, HarnessHandler
 @dataclass
 class DataClaim:
     """A data entity found in the text."""
-    text: str                           # The matched substring
-    entity_type: str                    # "percentage", "count", "date", "ratio", "currency"
-    position: int = 0                   # Character position in the output
-    has_citation: bool = False          # Whether a citation follows this claim
-    source: str = ""                    # Citation text if found
+
+    text: str  # The matched substring
+    entity_type: str  # "percentage", "count", "date", "ratio", "currency"
+    position: int = 0  # Character position in the output
+    has_citation: bool = False  # Whether a citation follows this claim
+    source: str = ""  # Citation text if found
 
 
 # ── Entity extraction patterns ────────────────────────────────────────
@@ -65,18 +66,20 @@ def extract_data_claims(text: str) -> list[DataClaim]:
             pos = match.start()
 
             # Check if this claim has a citation nearby (within 50 chars after)
-            post_text = text[pos + len(claim_text):pos + len(claim_text) + 50]
+            post_text = text[pos + len(claim_text) : pos + len(claim_text) + 50]
             citation_match = _CITATION_RE.search(post_text)
             has_citation = citation_match is not None
             source = citation_match.group(0) if citation_match else ""
 
-            claims.append(DataClaim(
-                text=claim_text,
-                entity_type=entity_type,
-                position=pos,
-                has_citation=has_citation,
-                source=source,
-            ))
+            claims.append(
+                DataClaim(
+                    text=claim_text,
+                    entity_type=entity_type,
+                    position=pos,
+                    has_citation=has_citation,
+                    source=source,
+                )
+            )
 
     return claims
 
@@ -118,7 +121,8 @@ class FactStage1Handler(HarnessHandler):
 
         uncited_claims_data: list[dict[str, Any]] = [
             {"text": c.text, "type": c.entity_type, "pos": c.position}
-            for c in claims if not c.has_citation
+            for c in claims
+            if not c.has_citation
         ]
 
         if uncited > 0:

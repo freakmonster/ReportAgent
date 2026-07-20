@@ -32,7 +32,10 @@ class TestFeatureFlagDefaults:
         mgr.load_yaml_defaults({"feature_flags": {"rag_enabled": False, "custom_flag": True}})
         assert mgr._defaults["rag_enabled"] is False
         # custom_flag not in DEFAULT_FLAGS doesn't get added
-        assert "custom_flag" not in mgr._defaults or mgr._defaults.get("custom_flag") in (True, False)
+        assert "custom_flag" not in mgr._defaults or mgr._defaults.get("custom_flag") in (
+            True,
+            False,
+        )
 
 
 class TestFeatureFlagGet:

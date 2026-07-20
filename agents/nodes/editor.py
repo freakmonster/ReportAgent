@@ -17,9 +17,8 @@ logger = logging.getLogger(__name__)
 
 # ── Citation extraction ───────────────────────────────────────────────
 
-def _extract_citations(
-    chapters: dict[str, str], source_urls: list[str]
-) -> list[str]:
+
+def _extract_citations(chapters: dict[str, str], source_urls: list[str]) -> list[str]:
     """Extract citation markers from all chapters and cross-validate with source_urls.
 
     Scans all chapter text for [N] patterns, validates that each N is within
@@ -38,9 +37,7 @@ def _extract_citations(
         return []
 
     all_text = "\n".join(chapters.values())
-    citation_numbers: set[int] = {
-        int(m) for m in re.findall(r"\[(\d+)\]", all_text)
-    }
+    citation_numbers: set[int] = {int(m) for m in re.findall(r"\[(\d+)\]", all_text)}
 
     # Validate: each citation number must be ≤ len(source_urls)
     max_idx = len(source_urls)
@@ -56,6 +53,7 @@ def _extract_citations(
 
 
 # ── Markdown normalization ────────────────────────────────────────────
+
 
 def _normalize_markdown(content: str) -> str:
     """Normalize markdown formatting without destroying structure.
@@ -98,6 +96,7 @@ def _normalize_markdown(content: str) -> str:
 
 
 # ── Main entry ───────────────────────────────────────────────────────
+
 
 async def entry(state: dict[str, Any]) -> dict[str, Any]:
     """Apply rule-based post-processing to chapter drafts.

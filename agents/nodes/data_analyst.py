@@ -19,7 +19,9 @@ _INSIGHTS_ERROR_PREFIX = "__INSIGHTS_ERR__:"
 _CHARTS_ERROR_PREFIX = "__CHARTS_ERR__:"
 
 
-async def _generate_insights(analysis: dict[str, Any], model: str = "deepseek-flash", max_retries: int = 2) -> list[str]:
+async def _generate_insights(
+    analysis: dict[str, Any], model: str = "deepseek-flash", max_retries: int = 2
+) -> list[str]:
     """Call LLM to generate data trend insights.
 
     Retries once on empty/unparseable output, then falls back to empty list.
@@ -65,6 +67,7 @@ async def _generate_insights(analysis: dict[str, Any], model: str = "deepseek-fl
             # Try to parse as JSON array
             if content.startswith("["):
                 import json
+
                 try:
                     insights = json.loads(content)
                     if insights:
@@ -90,7 +93,11 @@ async def _generate_insights(analysis: dict[str, Any], model: str = "deepseek-fl
                     return lines[:5]
 
             if attempt < max_retries - 1:
-                logger.info("LLM insights retry %d/%d — output was empty or unparseable", attempt + 1, max_retries - 1)
+                logger.info(
+                    "LLM insights retry %d/%d — output was empty or unparseable",
+                    attempt + 1,
+                    max_retries - 1,
+                )
 
         # All retries exhausted — return empty for caller to handle fallback
         return []
@@ -122,7 +129,7 @@ async def _generate_charts(analysis: dict[str, Any]) -> list[dict[str, Any]]:
         # Extract numeric values for charting
         numbers: list[tuple[str, float]] = []
         for m in metrics:
-            match = re.search(r'([\d.]+)', m)
+            match = re.search(r"([\d.]+)", m)
             if match:
                 val = float(match.group(1))
                 # Normalize: if value has 亿/万 suffix
@@ -164,7 +171,6 @@ async def _generate_charts(analysis: dict[str, Any]) -> list[dict[str, Any]]:
         return [_CHARTS_ERROR_PREFIX + str(exc)]
 
 
-
 async def entry(state: dict[str, Any]) -> dict[str, Any]:
     """Analyze collected data and append analytical conclusions.
 
@@ -188,7 +194,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     base: dict[str, Any] = state.get("base", {})
 
     # 1. Extract key metrics from all docs
-    pattern: str = r'\d+\.?\d*\s*%|\d+(?:\.\d+)?\s*(?:亿|万|美元|万元|亿元|%)'
+    pattern: str = r"\d+\.?\d*\s*%|\d+(?:\.\d+)?\s*(?:亿|万|美元|万元|亿元|%)"
     all_metrics: list[str] = []
     for doc in raw_docs:
         matches = re.findall(pattern, doc.get("content", ""))
@@ -221,11 +227,11 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         model: str = base.get("model", "deepseek-flash")
         insights_result = await _generate_insights(analysis.copy(), model=model)
         analysis["insights"] = [
-            i for i in insights_result
-            if not i.startswith(_INSIGHTS_ERROR_PREFIX)
+            i for i in insights_result if not i.startswith(_INSIGHTS_ERROR_PREFIX)
         ]
         error_msgs = [
-            i[len(_INSIGHTS_ERROR_PREFIX):] for i in insights_result
+            i[len(_INSIGHTS_ERROR_PREFIX) :]
+            for i in insights_result
             if i.startswith(_INSIGHTS_ERROR_PREFIX)
         ]
         if error_msgs:
@@ -235,9 +241,10 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         if not analysis["insights"] and not error_msgs and key_metrics:
             # Extract pure numbers for statistical summary
             import math
+
             pure_nums: list[float] = []
             for m in key_metrics:
-                match = re.search(r'([\d.]+)', m)
+                match = re.search(r"([\d.]+)", m)
                 if match:
                     pure_nums.append(float(match.group(1)))
             parts = [f"共分析{doc_count}篇文档，提取{len(key_metrics)}项关键指标"]
@@ -245,18 +252,20 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
                 parts.append(f"数值范围[{min(pure_nums):.1f}, {max(pure_nums):.1f}]")
                 if len(pure_nums) >= 3:
                     avg = sum(pure_nums) / len(pure_nums)
-                    parts.append(f"均值{avg:.1f}，中位数{sorted(pure_nums)[len(pure_nums)//2]:.1f}")
+                    parts.append(
+                        f"均值{avg:.1f}，中位数{sorted(pure_nums)[len(pure_nums) // 2]:.1f}"
+                    )
             parts.append(f"涵盖{'、'.join(key_metrics[:5])}等")
             analysis["insights"] = ["；".join(parts)]
 
     # 5. Generate MCP charts (Phase 4)
     charts_result = await _generate_charts(analysis.copy())
     analysis["charts"] = [
-        c for c in charts_result
-        if not isinstance(c, str) or not c.startswith(_CHARTS_ERROR_PREFIX)
+        c for c in charts_result if not isinstance(c, str) or not c.startswith(_CHARTS_ERROR_PREFIX)
     ]
     error_msgs = [
-        c[len(_CHARTS_ERROR_PREFIX):] for c in charts_result
+        c[len(_CHARTS_ERROR_PREFIX) :]
+        for c in charts_result
         if isinstance(c, str) and c.startswith(_CHARTS_ERROR_PREFIX)
     ]
     if error_msgs:

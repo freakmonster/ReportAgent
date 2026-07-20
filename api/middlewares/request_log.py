@@ -30,6 +30,7 @@ class RequestLogMiddleware:
                 nonlocal start
                 elapsed = (time.time() - start) * 1000
                 from infrastructure.observability.logger import get_logger
+
                 logger = get_logger("api.request")
                 logger.info(
                     "request",

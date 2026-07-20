@@ -24,6 +24,7 @@ class PreExecContext:
         state_snapshot: Shallow copy of the LangGraph state at this point
         timestamp: When the context was created (epoch seconds)
     """
+
     node_name: str = ""
     raw_input: str = ""
     user_id: str = ""
@@ -43,6 +44,7 @@ class PostExecContext:
         duration_ms: Node execution time in milliseconds
         token_usage: Estimated token count used (filled by token_monitor)
     """
+
     node_name: str = ""
     raw_output: str = ""
     state_snapshot: dict[str, Any] = field(default_factory=dict)

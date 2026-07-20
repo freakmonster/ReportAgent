@@ -36,13 +36,12 @@ async def close_redis() -> None:
 def get_redis() -> aioredis.Redis:
     """Return the shared Redis client instance."""
     if _redis_client is None:
-        raise RuntimeError(
-            "Redis not initialised. Call init_redis() before get_redis()."
-        )
+        raise RuntimeError("Redis not initialised. Call init_redis() before get_redis().")
     return _redis_client
 
 
 # ── Helper methods ──────────────────────────────────────────
+
 
 async def set_with_ttl(key: str, value: str, ttl: int) -> None:
     """Set a key with a time-to-live (seconds)."""

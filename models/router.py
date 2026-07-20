@@ -15,15 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class ModelTier(str, Enum):
-    LIGHT = "light"    # qwen3-8b
+    LIGHT = "light"  # qwen3-8b
     MEDIUM = "medium"  # qwen3-32b
-    HEAVY = "heavy"    # deepseek-v3 (primary) -> qwen-max (fallback)
+    HEAVY = "heavy"  # deepseek-v3 (primary) -> qwen-max (fallback)
 
 
 class CircuitState(str, Enum):
-    CLOSED = "closed"          # Normal operation
-    OPEN = "open"              # Circuit broken, all requests go to fallback
-    HALF_OPEN = "half_open"    # Probing if service recovered
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Circuit broken, all requests go to fallback
+    HALF_OPEN = "half_open"  # Probing if service recovered
 
 
 class ModelRouter:
@@ -59,30 +59,32 @@ class ModelRouter:
     def _get_deepseek(self) -> object:
         if self._deepseek is None:
             from models.llm_providers.deepseek_client import DeepSeekClient
+
             self._deepseek = DeepSeekClient()
         return self._deepseek
 
     def _get_qwen_light(self) -> object:
         if self._qwen_light is None:
             from models.llm_providers.qwen_client import QwenClient
+
             self._qwen_light = QwenClient(model_size="8b")
         return self._qwen_light
 
     def _get_qwen_medium(self) -> object:
         if self._qwen_medium is None:
             from models.llm_providers.qwen_client import QwenClient
+
             self._qwen_medium = QwenClient(model_size="32b")
         return self._qwen_medium
 
     def _get_qwen_max(self) -> object:
         if self._qwen_max is None:
             from models.llm_providers.qwen_client import QwenClient
+
             self._qwen_max = QwenClient(model_size="max")
         return self._qwen_max
 
-    async def route(
-        self, tier: ModelTier, user_id: str | None = None
-    ) -> tuple[str, object]:
+    async def route(self, tier: ModelTier, user_id: str | None = None) -> tuple[str, object]:
         """Route to appropriate model based on tier and circuit state.
 
         Args:
@@ -104,9 +106,7 @@ class ModelRouter:
         if tier == ModelTier.HEAVY:
             # Check user-level fallback first
             if user_id is not None and user_id in self._user_fallback:
-                logger.warning(
-                    "User %s in fallback mode (429), routing to qwen-max", user_id
-                )
+                logger.warning("User %s in fallback mode (429), routing to qwen-max", user_id)
                 return ("qwen-max (user fallback)", self._get_qwen_max())
 
             # Check global circuit breaker
@@ -142,9 +142,7 @@ class ModelRouter:
         # User-level 429 handling
         if status_code == 429 and user_id is not None:
             self._user_fallback.add(user_id)
-            logger.warning(
-                "User %s rate limited (429), added to fallback", user_id
-            )
+            logger.warning("User %s rate limited (429), added to fallback", user_id)
             return
 
         # Only track deepseek results for global circuit breaker
@@ -152,10 +150,7 @@ class ModelRouter:
             return
 
         # Clean old entries from sliding window
-        self._window = [
-            (ts, ok) for ts, ok in self._window
-            if now - ts <= self._window_duration
-        ]
+        self._window = [(ts, ok) for ts, ok in self._window if now - ts <= self._window_duration]
 
         # Record this result
         self._window.append((now, success))
@@ -164,11 +159,7 @@ class ModelRouter:
         total = len(self._window)
         errors = sum(1 for _, ok in self._window if not ok)
 
-        if (
-            total > 0
-            and errors / total >= 0.5
-            and self._circuit_state == CircuitState.CLOSED
-        ):
+        if total > 0 and errors / total >= 0.5 and self._circuit_state == CircuitState.CLOSED:
             self._circuit_state = CircuitState.OPEN
             self._circuit_opened_at = now
             logger.error(
@@ -184,9 +175,7 @@ class ModelRouter:
             elapsed = time.time() - self._circuit_opened_at
             if elapsed >= self._circuit_timeout:
                 self._circuit_state = CircuitState.HALF_OPEN
-                logger.info(
-                    "Circuit transitioned to HALF_OPEN after %.1fs", elapsed
-                )
+                logger.info("Circuit transitioned to HALF_OPEN after %.1fs", elapsed)
                 return CircuitState.HALF_OPEN
         return self._circuit_state
 

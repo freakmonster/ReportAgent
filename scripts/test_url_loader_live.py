@@ -15,7 +15,7 @@ from retrieval.loaders.url_loader import WebPage, fetch_multiple, fetch_url
 # ── Stable URLs (many sites block non-browser User-Agents) ──────────
 
 STABLE_URLS: list[str] = [
-    "https://www.example.com",                 # always up, allows any User-Agent
+    "https://www.example.com",  # always up, allows any User-Agent
 ]
 
 
@@ -81,7 +81,8 @@ async def test_search_then_fetch() -> list[WebPage]:
             r.raise_for_status()
             results = r.json().get("results", [])
             urls = [
-                item["url"] for item in results
+                item["url"]
+                for item in results
                 if item.get("url") and not item["url"].lower().endswith(".pdf")
             ]
     except httpx.HTTPStatusError:
@@ -114,6 +115,7 @@ async def test_search_then_fetch() -> list[WebPage]:
 
 
 # ── Main ─────────────────────────────────────────────────────────────
+
 
 async def main() -> None:
     print("=" * 65)

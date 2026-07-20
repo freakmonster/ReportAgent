@@ -19,15 +19,22 @@ class TestIntentClassifier:
     @pytest.mark.asyncio
     async def test_classifies_report(self) -> None:
         from agents.nodes.intent_classifier import entry
+
         state = create_initial_state("wf-1", "u1")
         state["base"]["user_input"] = "帮我写一份新能源汽车行业深度分析研报"
         result = await entry(state)
         assert result["base"]["intent"] == "report"
-        assert result["base"]["template_name"] in ("", "deep_report", "flash_news", "earnings_analysis")
+        assert result["base"]["template_name"] in (
+            "",
+            "deep_report",
+            "flash_news",
+            "earnings_analysis",
+        )
 
     @pytest.mark.asyncio
     async def test_classifies_chat(self) -> None:
         from agents.nodes.intent_classifier import entry
+
         state = create_initial_state("wf-2", "u2")
         state["base"]["user_input"] = "你好"
         result = await entry(state)
@@ -40,6 +47,7 @@ class TestResearchPlanner:
     @pytest.mark.asyncio
     async def test_plans_deep_report(self) -> None:
         from agents.nodes.research_planner import entry
+
         state = create_initial_state("wf-3", "u3", "deep_report")
         result = await entry(state)
         chapters = result["collection"]["chapter_plan"]
@@ -49,6 +57,7 @@ class TestResearchPlanner:
     @pytest.mark.asyncio
     async def test_plans_flash_news(self) -> None:
         from agents.nodes.research_planner import entry
+
         state = create_initial_state("wf-4", "u4", "flash_news")
         result = await entry(state)
         chapters = result["collection"]["chapter_plan"]
@@ -61,6 +70,7 @@ class TestDataCollector:
     @pytest.mark.asyncio
     async def test_collects_data(self) -> None:
         from agents.nodes.data_collector import entry
+
         state = create_initial_state("wf-5", "u5")
         state["base"]["user_input"] = "新能源"
         result = await entry(state)
@@ -77,6 +87,7 @@ class TestDataProcessor:
     @pytest.mark.asyncio
     async def test_compresses_data(self) -> None:
         from agents.nodes.data_processor import entry
+
         state = create_initial_state("wf-6", "u6")
         state["collection"]["raw_docs"] = [
             {"title": "T", "url": "U", "content": "新能源市场增长迅速，2026年销量突破500万辆。"}
@@ -88,6 +99,7 @@ class TestDataProcessor:
     @pytest.mark.asyncio
     async def test_empty_docs_ok(self) -> None:
         from agents.nodes.data_processor import entry
+
         state = create_initial_state("wf-99", "u99")
         result = await entry(state)
         assert isinstance(result, dict)
@@ -103,10 +115,9 @@ class TestWriter:
         mock_client = MagicMock()
         mock_client.chat = AsyncMock(return_value=mock_response)
 
-        with patch(
-            "agents.nodes.writer.DeepSeekClient", return_value=mock_client
-        ):
+        with patch("agents.nodes.writer.DeepSeekClient", return_value=mock_client):
             from agents.nodes.writer import entry
+
             state = create_initial_state("wf-7", "u7")
             state["collection"]["compressed_summary"] = {
                 "市场概况": "新能源汽车市场快速增长。",
@@ -127,6 +138,7 @@ class TestWriter:
     async def test_empty_compressed_returns_placeholder(self) -> None:
         """No compressed data → placeholder chapter."""
         from agents.nodes.writer import entry
+
         state = create_initial_state("wf-7e", "u7e")
         result = await entry(state)
         assert "摘要" in result["writing"]["chapter_drafts"]
@@ -134,17 +146,22 @@ class TestWriter:
     @pytest.mark.asyncio
     async def test_one_chapter_fails_others_still_generate(self) -> None:
         """Chapter 2 LLM fails → chapter 1 still generates normally."""
-        mock_response = {"choices": [{"message": {"content": "Good chapter content with enough length to pass the 50-char body threshold check for real content."}}]}
+        mock_response = {
+            "choices": [
+                {
+                    "message": {
+                        "content": "Good chapter content with enough length to pass the 50-char body threshold check for real content."
+                    }
+                }
+            ]
+        }
         mock_client = MagicMock()
         # First call succeeds, second raises exception
-        mock_client.chat = AsyncMock(
-            side_effect=[mock_response, RuntimeError("API timeout")]
-        )
+        mock_client.chat = AsyncMock(side_effect=[mock_response, RuntimeError("API timeout")])
 
-        with patch(
-            "agents.nodes.writer.DeepSeekClient", return_value=mock_client
-        ):
+        with patch("agents.nodes.writer.DeepSeekClient", return_value=mock_client):
             from agents.nodes.writer import entry
+
             state = create_initial_state("wf-7f", "u7f")
             state["collection"]["compressed_summary"] = {
                 "市场概况": "data for chapter 1",
@@ -168,6 +185,7 @@ class TestEditor:
     async def test_edits_chapters(self) -> None:
         """Editor normalizes markdown: adds ending punctuation, preserves structure."""
         from agents.nodes.editor import entry
+
         state = create_initial_state("wf-8", "u8")
         state["writing"]["chapter_drafts"] = {"ch1": "raw content", "ch2": "another one"}
         state["collection"]["source_urls"] = ["https://a.com"]
@@ -189,6 +207,7 @@ class TestEditorAdvanced:
     async def test_extracts_citations(self) -> None:
         """_extract_citations should parse [N] markers and map to source_urls."""
         from agents.nodes.editor import _extract_citations
+
         chapters = {"ch1": "Revenue grew 10%[1]. Profit up 5%[2].", "ch2": "Market share 20%[1]."}
         source_urls = ["https://a.com", "https://b.com"]
         result = _extract_citations(chapters, source_urls)
@@ -198,6 +217,7 @@ class TestEditorAdvanced:
     async def test_fallback_citations_from_source_urls(self) -> None:
         """_extract_citations falls back to source_urls when no [N] markers."""
         from agents.nodes.editor import _extract_citations
+
         chapters = {"ch1": "No citations here.", "ch2": "Still none."}
         source_urls = ["https://a.com", "https://b.com"]
         result = _extract_citations(chapters, source_urls)
@@ -206,6 +226,7 @@ class TestEditorAdvanced:
     def test_normalize_markdown_collapses_whitespace(self) -> None:
         """_normalize_markdown collapses >2 blank lines."""
         from agents.nodes.editor import _normalize_markdown
+
         content = "Paragraph one.\n\n\n\n\nParagraph two."
         result = _normalize_markdown(content)
         # Normalize should reduce excessive blank lines (5 \n → fewer)
@@ -216,6 +237,7 @@ class TestEditorAdvanced:
     def test_preserves_heading_structure(self) -> None:
         """_normalize_markdown preserves ## Title headings."""
         from agents.nodes.editor import _normalize_markdown
+
         content = "## Market Analysis\n\nThe market grew 10%.\n\n## Competition\nRivals at 5%"
         result = _normalize_markdown(content)
         assert "## Market Analysis" in result
@@ -228,6 +250,7 @@ class TestPublisher:
     @pytest.mark.asyncio
     async def test_publishes_report(self) -> None:
         from agents.nodes.publisher import entry
+
         state = create_initial_state("wf-9", "u9")
         state["writing"]["chapter_drafts"] = {"摘要": "内容", "风险提示": "风险"}
         state["writing"]["citation_list"] = ["来源1"]
@@ -240,6 +263,7 @@ class TestPublisher:
     @pytest.mark.asyncio
     async def test_sets_published_status(self) -> None:
         from agents.nodes.publisher import entry
+
         state = create_initial_state("wf-10", "u10")
         state["writing"]["chapter_drafts"] = {"ch": "c"}
         result = await entry(state)
@@ -252,6 +276,7 @@ class TestReviewer:
     @pytest.mark.asyncio
     async def test_reviews_content(self) -> None:
         from agents.nodes.reviewer import entry
+
         state = create_initial_state("wf-11", "u11")
         state["writing"]["final_content"] = "# 报告\n\n内容包括 风险提示\n\n数据来源。"
         result = await entry(state)
@@ -265,6 +290,7 @@ class TestHumanReview:
     async def test_approves_when_approved_decision(self) -> None:
         """When review.decision is 'approved', node bypasses interrupt."""
         from agents.nodes.human_review import entry
+
         state = create_initial_state("wf-12", "u12")
         state["review"]["decision"] = "approved"
         result = await entry(state)
@@ -274,6 +300,7 @@ class TestHumanReview:
     async def test_preserves_incoming_decision(self) -> None:
         """Bypass path preserves quality_scores and review_feedback."""
         from agents.nodes.human_review import entry
+
         state = create_initial_state("wf-12", "u12")
         state["review"]["decision"] = "approved"
         state["review"]["quality_scores"] = {"completeness": 0.85, "overall": 0.80}
@@ -287,6 +314,7 @@ class TestHumanReview:
     async def test_includes_quality_scores(self) -> None:
         """Bypass path propagates quality scores."""
         from agents.nodes.human_review import entry
+
         state = create_initial_state("wf-12", "u12")
         state["review"]["decision"] = "approved"
         state["review"]["quality_scores"] = {"completeness": 0.85, "overall": 0.80}
@@ -297,6 +325,7 @@ class TestHumanReview:
     async def test_adds_feedback_and_status(self) -> None:
         """Bypass path adds human_review_status and review_feedback."""
         from agents.nodes.human_review import entry
+
         state = create_initial_state("wf-12", "u12")
         state["review"]["decision"] = "approved"
         result = await entry(state)
@@ -314,8 +343,16 @@ class TestDataAnalyst:
 
         state = create_initial_state("wf-analyst-1", "u1")
         state["collection"]["raw_docs"] = [
-            {"title": "Doc 1", "url": "https://a.com", "content": "营收增长12%至100亿美元，利润50亿元"},
-            {"title": "Doc 2", "url": "https://b.com", "content": "毛利率下降3.5个百分点，用户数突破2亿"},
+            {
+                "title": "Doc 1",
+                "url": "https://a.com",
+                "content": "营收增长12%至100亿美元，利润50亿元",
+            },
+            {
+                "title": "Doc 2",
+                "url": "https://b.com",
+                "content": "毛利率下降3.5个百分点，用户数突破2亿",
+            },
             {"title": "Doc 3", "url": "https://c.com", "content": "无数字的纯文本描述"},
         ]
 

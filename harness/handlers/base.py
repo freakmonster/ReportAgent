@@ -18,9 +18,10 @@ from typing import Any
 
 class HandlerDecision(str, Enum):
     """Decision returned by a handler after checking pre/post context."""
-    PASS = "pass"        # All clear, continue to next handler
-    FAIL = "fail"        # Issue found but not critical (warning-level, continue)
-    REJECT = "reject"    # Critical issue, short-circuit the chain immediately
+
+    PASS = "pass"  # All clear, continue to next handler
+    FAIL = "fail"  # Issue found but not critical (warning-level, continue)
+    REJECT = "reject"  # Critical issue, short-circuit the chain immediately
 
 
 @dataclass
@@ -33,6 +34,7 @@ class HandlerResult:
         metrics: Arbitrary key-value data for observability (timing, counts, etc.)
         handler_name: Automatically set by the orchestrator
     """
+
     decision: HandlerDecision
     detail: str = ""
     metrics: dict[str, Any] = field(default_factory=dict)
@@ -53,7 +55,7 @@ class HarnessHandler(ABC):
     @abstractmethod
     async def handle(
         self,
-        pre_ctx: object,   # PreExecContext (from harness.orchestrator.context)
+        pre_ctx: object,  # PreExecContext (from harness.orchestrator.context)
         post_ctx: object,  # PostExecContext
     ) -> HandlerResult:
         """Execute governance check.

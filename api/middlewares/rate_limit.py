@@ -51,9 +51,7 @@ class RateLimitMiddleware:
             count = results[1]  # ZCARD result
 
             if count >= self._max_requests:
-                response = JSONResponse(
-                    status_code=429, content={"detail": "Rate limit exceeded"}
-                )
+                response = JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
                 await response(scope, receive, send)
                 return
 
@@ -67,21 +65,16 @@ class RateLimitMiddleware:
 
         await self.app(scope, receive, send)
 
-    async def _fallback_check(
-        self, scope, receive, send, user_id: str
-    ) -> None:
+    async def _fallback_check(self, scope, receive, send, user_id: str) -> None:
         """In-memory sliding window fallback when Redis is unreachable."""
         now = time.time()
         if user_id not in self._fallback_counters:
             self._fallback_counters[user_id] = []
         self._fallback_counters[user_id] = [
-            t for t in self._fallback_counters[user_id]
-            if now - t < self._window
+            t for t in self._fallback_counters[user_id] if now - t < self._window
         ]
         if len(self._fallback_counters[user_id]) >= self._max_requests:
-            response = JSONResponse(
-                status_code=429, content={"detail": "Rate limit exceeded"}
-            )
+            response = JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
             await response(scope, receive, send)
             return
         self._fallback_counters[user_id].append(now)

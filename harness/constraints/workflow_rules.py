@@ -16,10 +16,11 @@ from typing import Any
 @dataclass
 class WorkflowRuleCheck:
     """Result of checking a workflow rule."""
+
     passed: bool
     rule_name: str
     detail: str = ""
-    action: str = ""   # e.g. "force_human_review", "reject"
+    action: str = ""  # e.g. "force_human_review", "reject"
 
 
 # ── Rule definitions ────────────────────────────────────────────────

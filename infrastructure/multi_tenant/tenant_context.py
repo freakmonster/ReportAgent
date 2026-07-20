@@ -20,8 +20,8 @@ from typing import AsyncIterator
 logger = logging.getLogger(__name__)
 
 # ── Context variable: carries TenantContext through async call chains ──
-_current_tenant: contextvars.ContextVar["TenantContext | None"] = (
-    contextvars.ContextVar("current_tenant", default=None)
+_current_tenant: contextvars.ContextVar["TenantContext | None"] = contextvars.ContextVar(
+    "current_tenant", default=None
 )
 
 # Default tenant ID used when no tenant context is active

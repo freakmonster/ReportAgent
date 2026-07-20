@@ -26,9 +26,9 @@ def main():
     client = TavilyClient(api_key=key)
 
     urls = [
-        #"https://sichuan.scol.com.cn/ggxw/202511/83161448.html",
+        # "https://sichuan.scol.com.cn/ggxw/202511/83161448.html",
         "https://china.jdpower.com/zh-hans/press-releases/2026zhongguoxinnengyuanqichechanpinmeilizhishuyanjiu",
-        #"https://www.cada.cn/Trends/info_91_10496.html",
+        # "https://www.cada.cn/Trends/info_91_10496.html",
     ]
 
     # ── 1. Basic extract ────────────────────────────────────────────
@@ -77,7 +77,9 @@ def main():
     elapsed = time.time() - t0
 
     print(f"  Response time: {elapsed:.2f}s")
-    print(f"  Success: {len(response.get('results', []))}, Failed: {len(response.get('failed_results', []))}")
+    print(
+        f"  Success: {len(response.get('results', []))}, Failed: {len(response.get('failed_results', []))}"
+    )
     print()
 
     for i, r in enumerate(response.get("results", []), 1):

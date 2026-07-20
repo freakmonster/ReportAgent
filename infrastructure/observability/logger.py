@@ -26,9 +26,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # trace_id context variable (set by middleware later)
 # ---------------------------------------------------------------------------
-_trace_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "trace_id", default=None
-)
+_trace_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("trace_id", default=None)
 
 
 def set_trace_id(trace_id: str) -> None:
@@ -92,6 +90,7 @@ def _add_processor_fields(
 # ---------------------------------------------------------------------------
 # configured logger instance
 # ---------------------------------------------------------------------------
+
 
 def _build_logger() -> Any:
     """Build and return a configured structlog logger.

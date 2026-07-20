@@ -55,8 +55,7 @@ def _hash_prompt(
     canonical = json.dumps(
         {
             "messages": [
-                {"role": m.get("role", ""), "content": m.get("content", "")}
-                for m in messages
+                {"role": m.get("role", ""), "content": m.get("content", "")} for m in messages
             ],
             "temperature": round(temperature, 4),
             "max_tokens": max_tokens,
@@ -77,6 +76,7 @@ def _is_cache_enabled() -> bool:
     """Check if semantic cache is enabled via config."""
     try:
         from config.settings import settings
+
         return bool(getattr(settings, "llm_cache_enabled", False))
     except Exception:
         return False
@@ -86,6 +86,7 @@ def _ttl_seconds() -> int:
     """Read cache TTL from settings or default."""
     try:
         from config.settings import settings
+
         return int(getattr(settings, "llm_cache_ttl", _DEFAULT_TTL))
     except Exception:
         return _DEFAULT_TTL
@@ -95,6 +96,7 @@ async def _get_redis() -> Any | None:
     """Get Redis client (non-blocking, returns None if unavailable)."""
     try:
         from infrastructure.cache.redis_client import get_redis
+
         return get_redis()
     except Exception:
         return None
@@ -257,6 +259,7 @@ async def cache_flush() -> int:
 
 
 # ── Convenience: async context manager for cached LLM calls ──────────────
+
 
 class CachedLLMCall:
     """Async context manager that wraps an LLM call with semantic caching.

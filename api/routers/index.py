@@ -14,7 +14,9 @@ class IndexBuildRequest(BaseModel):
     """Request body for POST /index/build."""
 
     collection_name: str = Field(..., min_length=1, description="Target Qdrant collection name")
-    documents: list[dict[str, str]] = Field(..., description="List of documents, each with 'url' or 'text' key")
+    documents: list[dict[str, str]] = Field(
+        ..., description="List of documents, each with 'url' or 'text' key"
+    )
 
 
 @router.post("/index/build", status_code=202)

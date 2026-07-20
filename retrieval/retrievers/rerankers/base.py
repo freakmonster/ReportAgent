@@ -1,4 +1,5 @@
 """Reranker 策略接口。所有重排序器必须实现此抽象基类。"""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

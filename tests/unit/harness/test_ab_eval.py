@@ -35,7 +35,10 @@ from harness.sensors.eval_suite import EvalScores
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_scores(completeness: float, accuracy: float, citation_quality: float, logical_flow: float) -> EvalScores:
+
+def _make_scores(
+    completeness: float, accuracy: float, citation_quality: float, logical_flow: float
+) -> EvalScores:
     return EvalScores(
         completeness=completeness,
         accuracy=accuracy,
@@ -44,7 +47,9 @@ def _make_scores(completeness: float, accuracy: float, citation_quality: float, 
     )
 
 
-def _make_run(output: str = "", scores: EvalScores | None = None, latency: float = 1.0, idx: int = 0) -> RunResult:
+def _make_run(
+    output: str = "", scores: EvalScores | None = None, latency: float = 1.0, idx: int = 0
+) -> RunResult:
     return RunResult(
         output=output,
         scores=scores or EvalScores(),
@@ -53,13 +58,16 @@ def _make_run(output: str = "", scores: EvalScores | None = None, latency: float
     )
 
 
-def _make_group_result(runs: list[RunResult], config: GroupConfig | None = None) -> ExperimentResult:
+def _make_group_result(
+    runs: list[RunResult], config: GroupConfig | None = None
+) -> ExperimentResult:
     return ExperimentResult(config=config or GroupConfig(), runs=runs)
 
 
 # ---------------------------------------------------------------------------
 # ExperimentConfig
 # ---------------------------------------------------------------------------
+
 
 class TestExperimentConfig:
     def test_valid_config(self) -> None:
@@ -95,7 +103,9 @@ class TestExperimentConfig:
             cfg.validate()
 
     def test_group_config_to_dict(self) -> None:
-        gc = GroupConfig(model="x", temperature=0.5, retrieval_strategy="hybrid", prompt_version="v2")
+        gc = GroupConfig(
+            model="x", temperature=0.5, retrieval_strategy="hybrid", prompt_version="v2"
+        )
         d = gc.to_dict()
         assert d["model"] == "x"
         assert d["temperature"] == 0.5
@@ -106,6 +116,7 @@ class TestExperimentConfig:
 # ---------------------------------------------------------------------------
 # Experiment (runner) — async tests
 # ---------------------------------------------------------------------------
+
 
 class TestExperimentRun:
     async def test_runs_correct_number(self) -> None:
@@ -170,6 +181,7 @@ class TestExperimentRun:
 # ExperimentResult helpers
 # ---------------------------------------------------------------------------
 
+
 class TestExperimentResult:
     def test_mean_latency(self) -> None:
         runs = [
@@ -200,6 +212,7 @@ class TestExperimentResult:
 # ---------------------------------------------------------------------------
 # Statistical helpers
 # ---------------------------------------------------------------------------
+
 
 class TestStatsHelpers:
     def test_mean(self) -> None:
@@ -260,6 +273,7 @@ class TestStatsHelpers:
 # ---------------------------------------------------------------------------
 # ABComparator
 # ---------------------------------------------------------------------------
+
 
 class TestABComparator:
     def test_basic_comparison(self) -> None:
@@ -338,10 +352,15 @@ class TestABComparator:
 # generate_report
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateReport:
     def test_report_generation(self) -> None:
-        ctrl_runs = [_make_run(scores=_make_scores(0.5, 0.6, 0.7, 0.8), latency=1.0, idx=i) for i in range(5)]
-        treat_runs = [_make_run(scores=_make_scores(0.7, 0.8, 0.9, 1.0), latency=0.8, idx=i) for i in range(5)]
+        ctrl_runs = [
+            _make_run(scores=_make_scores(0.5, 0.6, 0.7, 0.8), latency=1.0, idx=i) for i in range(5)
+        ]
+        treat_runs = [
+            _make_run(scores=_make_scores(0.7, 0.8, 0.9, 1.0), latency=0.8, idx=i) for i in range(5)
+        ]
 
         ctrl = _make_group_result(ctrl_runs, GroupConfig(model="ctrl"))
         treat = _make_group_result(treat_runs, GroupConfig(model="treat"))
@@ -375,23 +394,39 @@ class TestGenerateReport:
 # MetricComparison
 # ---------------------------------------------------------------------------
 
+
 class TestMetricComparison:
     def test_winner_property(self) -> None:
         mc_treat = MetricComparison(
-            metric="test", control_mean=0.5, treatment_mean=0.8,
-            mean_difference=0.3, cohens_d=1.0, p_value=0.001, confidence="high",
+            metric="test",
+            control_mean=0.5,
+            treatment_mean=0.8,
+            mean_difference=0.3,
+            cohens_d=1.0,
+            p_value=0.001,
+            confidence="high",
         )
         assert mc_treat.winner == "treatment"
 
         mc_control = MetricComparison(
-            metric="test", control_mean=0.8, treatment_mean=0.5,
-            mean_difference=-0.3, cohens_d=-1.0, p_value=0.001, confidence="high",
+            metric="test",
+            control_mean=0.8,
+            treatment_mean=0.5,
+            mean_difference=-0.3,
+            cohens_d=-1.0,
+            p_value=0.001,
+            confidence="high",
         )
         assert mc_control.winner == "control"
 
         mc_tie = MetricComparison(
-            metric="test", control_mean=0.5, treatment_mean=0.55,
-            mean_difference=0.05, cohens_d=0.1, p_value=0.5, confidence="none",
+            metric="test",
+            control_mean=0.5,
+            treatment_mean=0.55,
+            mean_difference=0.05,
+            cohens_d=0.1,
+            p_value=0.5,
+            confidence="none",
         )
         assert mc_tie.winner is None
 
@@ -400,32 +435,56 @@ class TestMetricComparison:
 # ABComparisonResult.winner property
 # ---------------------------------------------------------------------------
 
+
 class TestABComparisonResultWinner:
     def test_treatment_winner(self) -> None:
         """When treatment wins more metrics, overall winner is treatment."""
         ctrl = _make_group_result([])
         treat = _make_group_result([])
         result = ABComparisonResult(
-            control=ctrl, treatment=treat,
+            control=ctrl,
+            treatment=treat,
             metrics={
                 "completeness": MetricComparison(
-                    metric="completeness", control_mean=0.5, treatment_mean=0.8,
-                    mean_difference=0.3, cohens_d=1.0, p_value=0.001, confidence="high",
+                    metric="completeness",
+                    control_mean=0.5,
+                    treatment_mean=0.8,
+                    mean_difference=0.3,
+                    cohens_d=1.0,
+                    p_value=0.001,
+                    confidence="high",
                 ),
                 "accuracy": MetricComparison(
-                    metric="accuracy", control_mean=0.8, treatment_mean=0.5,
-                    mean_difference=-0.3, cohens_d=-1.0, p_value=0.001, confidence="high",
+                    metric="accuracy",
+                    control_mean=0.8,
+                    treatment_mean=0.5,
+                    mean_difference=-0.3,
+                    cohens_d=-1.0,
+                    p_value=0.001,
+                    confidence="high",
                 ),
                 "citation_quality": MetricComparison(
-                    metric="citation_quality", control_mean=0.5, treatment_mean=0.8,
-                    mean_difference=0.3, cohens_d=1.0, p_value=0.001, confidence="high",
+                    metric="citation_quality",
+                    control_mean=0.5,
+                    treatment_mean=0.8,
+                    mean_difference=0.3,
+                    cohens_d=1.0,
+                    p_value=0.001,
+                    confidence="high",
                 ),
                 "logical_flow": MetricComparison(
-                    metric="logical_flow", control_mean=0.5, treatment_mean=0.55,
-                    mean_difference=0.05, cohens_d=0.1, p_value=0.5, confidence="none",
+                    metric="logical_flow",
+                    control_mean=0.5,
+                    treatment_mean=0.55,
+                    mean_difference=0.05,
+                    cohens_d=0.1,
+                    p_value=0.5,
+                    confidence="none",
                 ),
             },
-            win_count=3, loss_count=1, tie_count=1,
+            win_count=3,
+            loss_count=1,
+            tie_count=1,
         )
         # completeness=treatment, accuracy=control, citation_quality=treatment, logical_flow=tie
         # treatment 2, control 1
@@ -436,13 +495,21 @@ class TestABComparisonResultWinner:
         ctrl = _make_group_result([])
         treat = _make_group_result([])
         result = ABComparisonResult(
-            control=ctrl, treatment=treat,
+            control=ctrl,
+            treatment=treat,
             metrics={
                 "completeness": MetricComparison(
-                    metric="completeness", control_mean=0.5, treatment_mean=0.55,
-                    mean_difference=0.05, cohens_d=0.1, p_value=0.5, confidence="none",
+                    metric="completeness",
+                    control_mean=0.5,
+                    treatment_mean=0.55,
+                    mean_difference=0.05,
+                    cohens_d=0.1,
+                    p_value=0.5,
+                    confidence="none",
                 ),
             },
-            win_count=0, loss_count=0, tie_count=1,
+            win_count=0,
+            loss_count=0,
+            tie_count=1,
         )
         assert result.winner is None

@@ -23,6 +23,7 @@ class ReportStatus(str, Enum):
 @dataclass
 class ReportValidationResult:
     """Result of report structure and compliance validation."""
+
     status: ReportStatus
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -35,23 +36,43 @@ class ReportValidationResult:
 # Minimum required chapter keywords for a deep research report
 _REQUIRED_CHAPTERS: dict[str, list[str]] = {
     "deep_report": [
-        "摘要", "概述", "市场", "行业",
-        "分析", "数据", "趋势", "竞争",
-        "风险", "建议", "结论",
+        "摘要",
+        "概述",
+        "市场",
+        "行业",
+        "分析",
+        "数据",
+        "趋势",
+        "竞争",
+        "风险",
+        "建议",
+        "结论",
     ],
     "flash_news": [
-        "摘要", "要点", "数据",
+        "摘要",
+        "要点",
+        "数据",
     ],
     "earnings_analysis": [
-        "财务", "收入", "利润", "现金流",
-        "资产负债", "风险", "展望",
+        "财务",
+        "收入",
+        "利润",
+        "现金流",
+        "资产负债",
+        "风险",
+        "展望",
     ],
 }
 
 # Mandatory risk keywords (at least one must appear as a chapter heading)
 _RISK_KEYWORDS: list[str] = [
-    "风险提示", "风险警示", "风险因素", "风险分析",
-    "风险管理", "风险", "免责声明",
+    "风险提示",
+    "风险警示",
+    "风险因素",
+    "风险分析",
+    "风险管理",
+    "风险",
+    "免责声明",
 ]
 
 # Maximum allowed data age in days
@@ -103,21 +124,16 @@ def validate_report_structure(
             missing.append(keyword)
 
     if missing:
-        result.warnings.append(
-            f"Missing recommended chapters: {', '.join(missing)}"
-        )
+        result.warnings.append(f"Missing recommended chapters: {', '.join(missing)}")
 
     # ── Risk warning (MANDATORY) ─────────────────────────────────────
-    has_risk = any(
-        kw in text_lower for kw in _RISK_KEYWORDS
-    )
+    has_risk = any(kw in text_lower for kw in _RISK_KEYWORDS)
     result.risk_section_present = has_risk
 
     if not has_risk:
         result.status = ReportStatus.MISSING_RISK
         result.errors.append(
-            "Missing mandatory risk warning section. "
-            "Every research report must include 风险提示."
+            "Missing mandatory risk warning section. Every research report must include 风险提示."
         )
 
     # ── Data freshness ───────────────────────────────────────────────
@@ -150,10 +166,7 @@ def is_report_publishable(result: ReportValidationResult) -> bool:
     Returns:
         True if the report is VALID and has the risk section.
     """
-    return (
-        result.status == ReportStatus.VALID
-        and result.risk_section_present is True
-    )
+    return result.status == ReportStatus.VALID and result.risk_section_present is True
 
 
 def get_minimum_chapter_count(report_type: str = "deep_report") -> int:

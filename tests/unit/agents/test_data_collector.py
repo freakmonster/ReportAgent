@@ -17,19 +17,23 @@ class TestDataCollector:
     @pytest.mark.asyncio
     async def test_successful_search_and_extract(self):
         """Full Tavily path: search → extract → raw_docs."""
-        mock_search = MagicMock(return_value={
-            "results": [
-                {"title": "Title 1", "url": "https://a.com/1"},
-                {"title": "Title 2", "url": "https://a.com/2"},
-            ]
-        })
-        mock_extract = MagicMock(return_value={
-            "results": [
-                {"url": "https://a.com/1", "raw_content": "Content 1"},
-                {"url": "https://a.com/2", "raw_content": "Content 2"},
-            ],
-            "failed_results": [],
-        })
+        mock_search = MagicMock(
+            return_value={
+                "results": [
+                    {"title": "Title 1", "url": "https://a.com/1"},
+                    {"title": "Title 2", "url": "https://a.com/2"},
+                ]
+            }
+        )
+        mock_extract = MagicMock(
+            return_value={
+                "results": [
+                    {"url": "https://a.com/1", "raw_content": "Content 1"},
+                    {"url": "https://a.com/2", "raw_content": "Content 2"},
+                ],
+                "failed_results": [],
+            }
+        )
 
         with (
             patch("agents.nodes.data_collector.TavilyClient") as mock_client_cls,
@@ -58,15 +62,19 @@ class TestDataCollector:
     @pytest.mark.asyncio
     async def test_extract_failure_falls_back_to_url_loader(self):
         """When Tavily Extract fails, url_loader is used as fallback."""
-        mock_search = MagicMock(return_value={
-            "results": [
-                {"title": "Bad Site", "url": "https://bad.com/page"},
-            ]
-        })
-        mock_extract = MagicMock(return_value={
-            "results": [],
-            "failed_results": [{"url": "https://bad.com/page", "error": "timeout"}],
-        })
+        mock_search = MagicMock(
+            return_value={
+                "results": [
+                    {"title": "Bad Site", "url": "https://bad.com/page"},
+                ]
+            }
+        )
+        mock_extract = MagicMock(
+            return_value={
+                "results": [],
+                "failed_results": [{"url": "https://bad.com/page", "error": "timeout"}],
+            }
+        )
 
         mock_page = MagicMock()
         mock_page.url = "https://bad.com/page"

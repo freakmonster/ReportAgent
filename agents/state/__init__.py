@@ -16,6 +16,7 @@ class ReportState(TypedDict):
     V2.2 design: each phase gets its own TypedDict to avoid monolithic
     State anti-pattern (AGENTS.md §1.3).
     """
+
     base: BaseContext
     collection: CollectionContext
     writing: WritingContext

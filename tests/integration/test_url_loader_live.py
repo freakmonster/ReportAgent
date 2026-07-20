@@ -25,6 +25,7 @@ from retrieval.loaders.url_loader import WebPage, fetch_multiple, fetch_url
 # Helper: find a free port
 # ---------------------------------------------------------------------------
 
+
 def _free_port() -> int:
     """Return an available TCP port on localhost."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -35,6 +36,7 @@ def _free_port() -> int:
 # ---------------------------------------------------------------------------
 # Local test HTTP server
 # ---------------------------------------------------------------------------
+
 
 class _TestHandler(http.server.BaseHTTPRequestHandler):
     """Dynamic handler serving pre-configured routes.
@@ -83,7 +85,9 @@ class _TestHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
-def _start_server(routes: dict[str, tuple[int, dict[str, str], bytes]], port: int) -> http.server.HTTPServer:
+def _start_server(
+    routes: dict[str, tuple[int, dict[str, str], bytes]], port: int
+) -> http.server.HTTPServer:
     """Create and start a threaded HTTP server with *routes*."""
     # Build a handler subclass with the requested routes
     handler = type("_DynamicHandler", (_TestHandler,), {"ROUTES": routes})
@@ -110,9 +114,9 @@ _UTF8_HTML = """<!DOCTYPE html>
 </body></html>"""
 
 _GBK_HTML_BYTES = (
-    b'<!DOCTYPE html>\r\n'
+    b"<!DOCTYPE html>\r\n"
     b'<html><head><meta charset="gbk"><title>\xb5\xe7\xb3\xd8\xbc\xbc\xca\xf5</title></head>\r\n'
-    b'<body><article><p>\xc4\xfe\xb5\xc2\xca\xb1\xb4\xfa\xb5\xe7\xb3\xd8\xbc\xbc\xca\xf5\xcd\xbb\xc6\xc6</p></article></body></html>'
+    b"<body><article><p>\xc4\xfe\xb5\xc2\xca\xb1\xb4\xfa\xb5\xe7\xb3\xd8\xbc\xbc\xca\xf5\xcd\xbb\xc6\xc6</p></article></body></html>"
 )
 
 _NOISE_HTML_TEMPLATE = """<!DOCTYPE html>
@@ -141,6 +145,7 @@ _FALLBACK_HTML = """<!DOCTYPE html>
 # Fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def server():
     """Start a local HTTP server with multiple test routes.
@@ -156,8 +161,16 @@ def server():
         "/404": (404, {"Content-Type": "text/plain"}, b"Not Found"),
         "/slow": (200, {"Content-Type": "text/html"}, b"<html><body>slow</body></html>"),
         "/hang": (200, {"Content-Type": "text/html"}, b"<html><body>timeout target</body></html>"),
-        "/noise": (200, {"Content-Type": "text/html; charset=utf-8"}, _NOISE_HTML_TEMPLATE.encode("utf-8")),
-        "/fallback": (200, {"Content-Type": "text/html; charset=utf-8"}, _FALLBACK_HTML.encode("utf-8")),
+        "/noise": (
+            200,
+            {"Content-Type": "text/html; charset=utf-8"},
+            _NOISE_HTML_TEMPLATE.encode("utf-8"),
+        ),
+        "/fallback": (
+            200,
+            {"Content-Type": "text/html; charset=utf-8"},
+            _FALLBACK_HTML.encode("utf-8"),
+        ),
     }
     srv = _start_server(routes, port)
     base = f"http://127.0.0.1:{port}"
@@ -207,6 +220,7 @@ class TestFetchURLIntegration:
     async def test_fetch_404_raises_error(self, server: str) -> None:
         """HTTP 404 raises httpx.HTTPError."""
         import httpx
+
         with pytest.raises(httpx.HTTPError):
             await fetch_url(f"{server}/404", timeout=5)
 
@@ -224,6 +238,7 @@ class TestFetchURLIntegration:
         import httpx
 
         from retrieval.loaders.url_loader import _get_http_client, _http_client
+
         # Force the global client to be replaced with our short timeout
         if _http_client is not None:
             await _http_client.aclose()
@@ -241,8 +256,14 @@ class TestFetchURLIntegration:
         page = await fetch_url(f"{server}/noise", timeout=5)
         assert "核心内容在这里" in page.text
         for noise in (
-            "侧边栏广告", "横幅广告", "弹窗内容", "网友评论",
-            "首页 > 文章", "分享按钮", "相关文章", "第1页",
+            "侧边栏广告",
+            "横幅广告",
+            "弹窗内容",
+            "网友评论",
+            "首页 > 文章",
+            "分享按钮",
+            "相关文章",
+            "第1页",
         ):
             assert noise not in page.text, f"Noise '{noise}' was not removed"
 
@@ -290,6 +311,7 @@ class TestFetchURLIntegration:
     async def test_http_client_reuse(self, server: str) -> None:
         """Two consecutive requests reuse the shared HTTP client."""
         from retrieval.loaders.url_loader import _get_http_client
+
         client_before = _get_http_client()
         page1 = await fetch_url(f"{server}/utf8", timeout=5)
         client_after_first = _get_http_client()

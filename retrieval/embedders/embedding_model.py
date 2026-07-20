@@ -55,9 +55,11 @@ class EmbeddingModel:
         """
         if model_name is None:
             from config.settings import settings
+
             model_name = settings.embedding_model
         if backend is None:
             from config.settings import settings
+
             backend = getattr(settings, "embedding_backend", "sentence_transformers")
         if backend not in ("sentence_transformers", "fastembed"):
             raise ValueError(
@@ -112,7 +114,11 @@ class EmbeddingModel:
                 "Install with: pip install sentence-transformers"
             )
 
-        logger.info("Loading embedding model (sentence_transformers)", model=self._model_name, device=self._device)
+        logger.info(
+            "Loading embedding model (sentence_transformers)",
+            model=self._model_name,
+            device=self._device,
+        )
         self._model = SentenceTransformer(self._model_name, device=self._device)
         # get_sentence_embedding_dimension() → get_embedding_dimension() (v3.0+)
         self._dimension = (
@@ -120,7 +126,9 @@ class EmbeddingModel:
             if hasattr(self._model, "get_embedding_dimension")
             else self._model.get_sentence_embedding_dimension()
         )
-        logger.info("Embedding model loaded", dimension=self._dimension, backend="sentence_transformers")
+        logger.info(
+            "Embedding model loaded", dimension=self._dimension, backend="sentence_transformers"
+        )
 
     def _ensure_loaded_fastembed(self) -> None:
         """使用 fastembed 加载模型。"""
@@ -128,14 +136,14 @@ class EmbeddingModel:
             from fastembed import TextEmbedding
         except ImportError:
             raise ImportError(
-                "fastembed is required for embeddings. "
-                "Install with: pip install fastembed"
+                "fastembed is required for embeddings. Install with: pip install fastembed"
             )
 
         logger.info("Loading embedding model (fastembed)", model=self._model_name)
 
         # fastembed 支持本地路径：通过 specific_model_path 参数
         import os
+
         if os.path.isdir(self._model_name):
             # 本地路径：使用默认模型名但指定本地路径
             # fastembed 需要知道模型架构，所以用 model_name 指定架构，specific_model_path 指定路径
@@ -171,6 +179,7 @@ class EmbeddingModel:
     def _infer_fastembed_arch(local_path: str) -> str:
         """从本地路径推断 fastembed 支持的模型架构名。"""
         import os
+
         path_lower = local_path.lower().replace("\\", "/")
 
         # 常见中文模型映射
@@ -189,6 +198,7 @@ class EmbeddingModel:
         config_path = os.path.join(local_path, "config.json")
         if os.path.exists(config_path):
             import json
+
             try:
                 with open(config_path, "r") as f:
                     config = json.load(f)

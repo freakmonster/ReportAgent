@@ -28,6 +28,7 @@ client = TestClient(app)
 
 # ── SSE disconnect resilience ──────────────────────────────────────────
 
+
 class TestSSEDisconnectResilience:
     """SSE streams must handle client disconnects without resource leaks."""
 
@@ -94,6 +95,7 @@ class TestSSEDisconnectResilience:
 
 # ── Workflow abort / timeout resilience ─────────────────────────────────
 
+
 class TestWorkflowAbortResilience:
     """Workflow must handle forced termination without corrupting state."""
 
@@ -142,6 +144,7 @@ class TestWorkflowAbortResilience:
 
 # ── Checkpointer disconnect recovery ───────────────────────────────────
 
+
 class TestCheckpointerDisconnectRecovery:
     """Verifies state preservation across simulated disconnect/reconnect."""
 
@@ -155,8 +158,10 @@ class TestCheckpointerDisconnectRecovery:
         builder = WorkflowBuilder()
 
         with patch.object(builder, "_load_node_entry") as mock_load:
+
             async def _noop(state):  # noqa: E306
                 return state
+
             mock_load.return_value = _noop
 
             # First build: creates checkpoints
@@ -181,6 +186,7 @@ class TestCheckpointerDisconnectRecovery:
 
 
 # ── SSE event stream completeness ──────────────────────────────────────
+
 
 class TestSSEEventCompleteness:
     """Verify SSE event format is correct even under disconnect pressure."""

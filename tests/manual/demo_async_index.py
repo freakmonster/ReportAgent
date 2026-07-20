@@ -8,6 +8,7 @@
     - Qdrant 运行在 localhost:6333
     - PyTorch 环境正常（VC++ Redistributable）
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,6 +56,7 @@ async def step1_enqueue() -> tuple[str, str]:
     print("=" * 60)
 
     import uuid
+
     queue = TaskQueue(get_redis())
     task = IndexingTask(
         task_id=str(uuid.uuid4()),
@@ -85,6 +87,7 @@ async def step2_process_worker() -> None:
     print("=" * 60)
 
     from retrieval.pipelines.index_worker import IndexWorker
+
     worker = IndexWorker(consumer_name="demo_consumer")
 
     print("  启动 Worker (--once 模式)...")
@@ -101,6 +104,7 @@ async def step3_verify(task_id: str) -> None:
 
     # 验证任务状态
     from infrastructure.message_queue.task_queue import _get_queue
+
     queue = _get_queue()
     status = await queue.get_status(task_id)
     print(f"  任务状态: {status}")
@@ -125,7 +129,7 @@ async def step3_verify(task_id: str) -> None:
     results = await retriever.search(query, top_k=3)
     print(f"  检索 '{query}': 返回 {len(results)} 条结果")
     for i, r in enumerate(results):
-        print(f"    [{i+1}] RRF={r['score']:.4f} | {r['text'][:80]}...")
+        print(f"    [{i + 1}] RRF={r['score']:.4f} | {r['text'][:80]}...")
 
     dlq_depth = await get_dlq_depth()
     print(f"  死信队列深度: {dlq_depth} (预期=0)")
@@ -138,6 +142,7 @@ async def step3_verify(task_id: str) -> None:
 async def get_task_error(queue: TaskQueue, task_id: str) -> str:
     """获取任务错误信息。"""
     import redis.asyncio
+
     try:
         key = f"indexing:status:{task_id}"
         raw = await queue._redis.hget(key, "error_message")

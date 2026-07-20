@@ -28,6 +28,7 @@ class WorkflowBuilder:
 
     def __init__(self) -> None:
         from agents.workflows.templates.loader import template_loader
+
         self._loader = template_loader
 
     def build(
@@ -68,7 +69,9 @@ class WorkflowBuilder:
                     node_name, entry_func, harness_orchestrator
                 )
             entry_func = functools.partial(
-                _timed_entry, node_name=node_name, inner=entry_func,
+                _timed_entry,
+                node_name=node_name,
+                inner=entry_func,
             )
             graph.add_node(node_name, entry_func)
 
@@ -123,8 +126,7 @@ class WorkflowBuilder:
             return getattr(module, "entry")
         except (ImportError, AttributeError) as exc:
             raise ValueError(
-                f"Node '{node_name}' not found. Expected {module_path}.entry(). "
-                f"Error: {exc}"
+                f"Node '{node_name}' not found. Expected {module_path}.entry(). Error: {exc}"
             ) from exc
 
     def _build_router(self, from_node: str, routes: dict[str, Any]) -> Any:
@@ -180,9 +182,7 @@ class WorkflowBuilder:
             )
             pre_results = await orchestrator.execute_pre(pre_ctx)  # type: ignore[union-attr]
 
-            has_reject = any(
-                r.decision == "reject" for r in pre_results
-            )
+            has_reject = any(r.decision == "reject" for r in pre_results)
             if has_reject:
                 logger.warning(
                     "Harness pre-check REJECTED for node '%s': %s",
@@ -198,11 +198,13 @@ class WorkflowBuilder:
             except Exception as exc:
                 # Re-raise LangGraph interrupts — they are control-flow, not errors
                 from langgraph.types import Interrupt
+
                 if isinstance(exc, Interrupt):
                     raise
                 logger.error(
                     "Node '%s' raised exception during harness wrap: %s",
-                    node_name, exc,
+                    node_name,
+                    exc,
                 )
                 return state
             duration_ms = (time.perf_counter() - t0) * 1000.0
@@ -237,6 +239,7 @@ def _extract_raw_output(state: dict[str, Any]) -> str:
 
 
 # ── Node timing wrapper (module-level) ────────────────────────────
+
 
 async def _timed_entry(
     state: dict[str, Any],

@@ -3,6 +3,7 @@
 仅在 `reranker_enabled: true` 时由工厂函数创建。
 模型懒加载，首次调用 `rerank()` 时才加载到内存。
 """
+
 from __future__ import annotations
 
 from typing import Any

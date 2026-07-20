@@ -18,6 +18,7 @@ logger = get_logger(__name__)
 
 # ── BM25 实现 ────────────────────────────────────────────────────
 
+
 class BM25Scorer:
     """轻量 BM25 评分器（用于与语义搜索融合）。"""
 
@@ -66,9 +67,7 @@ class BM25Scorer:
     def _compute_idf(self, df: dict[str, int]) -> None:
         """计算 IDF 值。"""
         for term, freq in df.items():
-            self._idf[term] = math.log(
-                (self._doc_count - freq + 0.5) / (freq + 0.5) + 1.0
-            )
+            self._idf[term] = math.log((self._doc_count - freq + 0.5) / (freq + 0.5) + 1.0)
 
     def score(self, query: str, doc_index: int) -> float:
         """对单个文档评分。"""
@@ -90,7 +89,9 @@ class BM25Scorer:
             score += idf * numerator / denominator
         return score
 
-    def score_all(self, query: str, doc_indices: list[int] | None = None) -> list[tuple[int, float]]:
+    def score_all(
+        self, query: str, doc_indices: list[int] | None = None
+    ) -> list[tuple[int, float]]:
         """对多个文档评分，返回 [(doc_index, score), ...] 按分数降序。"""
         if doc_indices is None:
             doc_indices = list(range(self._doc_count))
@@ -106,18 +107,21 @@ class BM25Scorer:
         英文使用 \\w+ 正则分词，保持零开销。
         """
         import re
+
         # 检测是否含中文
-        if any('\u4e00' <= c <= '\u9fff' for c in text):
+        if any("\u4e00" <= c <= "\u9fff" for c in text):
             from jieba import cut_for_search
+
             tokens = cut_for_search(text)
             # 过滤单字符和纯标点 token，并转小写
-            return [t.lower() for t in tokens if len(t.strip()) > 1 and re.search(r'\w', t)]
+            return [t.lower() for t in tokens if len(t.strip()) > 1 and re.search(r"\w", t)]
         # 英文路径：原有逻辑
         tokens = re.findall(r"\w+", text.lower())
         return [t for t in tokens if len(t) > 1]
 
 
 # ── RRF 融合 ────────────────────────────────────────────────────
+
 
 def rrf_fusion(
     ranked_lists: list[list[tuple[int, float]]],
@@ -143,6 +147,7 @@ def rrf_fusion(
 
 
 # ── 混合检索器 ──────────────────────────────────────────────────
+
 
 class HybridRetriever:
     """混合检索器：BM25 + 语义搜索 + RRF 融合 + 可选重排序。"""
@@ -317,13 +322,15 @@ class HybridRetriever:
             doc_id = self._doc_ids[doc_idx]
             text = self._documents[doc_idx]
             sem_score = sem_map.get(doc_idx, 0.0)
-            results.append({
-                "id": doc_id,
-                "text": text,
-                "score": rrf_score,
-                "semantic_score": sem_score,
-                "bm25_score": self.bm25.score(query, doc_idx),
-            })
+            results.append(
+                {
+                    "id": doc_id,
+                    "text": text,
+                    "score": rrf_score,
+                    "semantic_score": sem_score,
+                    "bm25_score": self.bm25.score(query, doc_idx),
+                }
+            )
 
         if rerank and self.reranker is not None and len(results) > top_k:
             results = await self.reranker.rerank(query, results, top_k)

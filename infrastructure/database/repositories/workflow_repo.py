@@ -28,7 +28,9 @@ class WorkflowStateRecord:
     """Deserialised row from the ``workflow_states`` table."""
 
     workflow_id: str
-    status: str  # init | collecting | writing | reviewing | pending | approved | rejected | published
+    status: (
+        str  # init | collecting | writing | reviewing | pending | approved | rejected | published
+    )
     state_data: dict[str, Any]  # serialized LangGraph State
     user_id: str
     template_name: str
@@ -165,9 +167,7 @@ def get_workflow_repo() -> WorkflowRepository:
     Raises ``RuntimeError`` if ``init_workflow_repo()`` was not called first.
     """
     if _workflow_repo is None:
-        raise RuntimeError(
-            "WorkflowRepository not initialised. Call init_workflow_repo() first."
-        )
+        raise RuntimeError("WorkflowRepository not initialised. Call init_workflow_repo() first.")
     return _workflow_repo
 
     async def reject_with_lock(self, workflow_id: str, reason: str) -> bool:

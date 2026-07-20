@@ -26,6 +26,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     # ── Run evaluation suite ──────────────────────────────────────────
     try:
         from harness.sensors.eval_suite import evaluate_report
+
         scores = evaluate_report(final_content)
         quality_scores = scores.to_dict()
     except ImportError:

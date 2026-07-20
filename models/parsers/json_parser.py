@@ -112,12 +112,7 @@ class JSONParser:
                         string_char = ch
                     elif ch == string_char:
                         in_string = False
-                elif (
-                    not in_string
-                    and ch == "/"
-                    and i + 1 < len(line)
-                    and line[i + 1] == "/"
-                ):
+                elif not in_string and ch == "/" and i + 1 < len(line) and line[i + 1] == "/":
                     if i == 0 or line[i - 1] != ":":
                         line = line[:i]
                         break

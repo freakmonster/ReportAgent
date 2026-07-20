@@ -97,9 +97,7 @@ class DeadLetterQueue:
     # Public API
     # ------------------------------------------------------------------
 
-    async def push(
-        self, collection_name: str, error_traceback: str, payload: dict
-    ) -> str:
+    async def push(self, collection_name: str, error_traceback: str, payload: dict) -> str:
         """Push a DLQMessage to the Redis Stream via XADD.
 
         Returns the Redis message ID (e.g. ``"1689000000000-0"``).
@@ -219,9 +217,7 @@ def init_dead_letter_queue(redis_client: Redis) -> None:
     _dlq = DeadLetterQueue(redis_client)
 
 
-async def push_to_dlq(
-    collection_name: str, error_traceback: str, payload: dict
-) -> str:
+async def push_to_dlq(collection_name: str, error_traceback: str, payload: dict) -> str:
     """Push a failure to the Dead Letter Queue.
 
     Returns the Redis message ID.

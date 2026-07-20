@@ -54,10 +54,10 @@ def router() -> ModelRouter:
 
     # Replace lazy getters so they return our module-level mocks without
     # actually importing the real provider classes.
-    r._get_deepseek = MagicMock(return_value=_mock_deepseek)       # type: ignore[method-assign]
-    r._get_qwen_light = MagicMock(return_value=_mock_qwen_light)   # type: ignore[method-assign]
-    r._get_qwen_medium = MagicMock(return_value=_mock_qwen_medium) # type: ignore[method-assign]
-    r._get_qwen_max = MagicMock(return_value=_mock_qwen_max)       # type: ignore[method-assign]
+    r._get_deepseek = MagicMock(return_value=_mock_deepseek)  # type: ignore[method-assign]
+    r._get_qwen_light = MagicMock(return_value=_mock_qwen_light)  # type: ignore[method-assign]
+    r._get_qwen_medium = MagicMock(return_value=_mock_qwen_medium)  # type: ignore[method-assign]
+    r._get_qwen_max = MagicMock(return_value=_mock_qwen_max)  # type: ignore[method-assign]
 
     return r
 
@@ -125,9 +125,7 @@ async def test_user_level_429_fallback(router: ModelRouter) -> None:
     """Verify only the user with 429 errors gets fallback, others get primary."""
     # Simulate 429 rate limit for user-A
     for _ in range(3):
-        await router.record_result(
-            "deepseek-v3", success=False, status_code=429, user_id="user-A"
-        )
+        await router.record_result("deepseek-v3", success=False, status_code=429, user_id="user-A")
 
     # user-A should get fallback
     model_name_a, client_a = await router.route(ModelTier.HEAVY, "user-A")

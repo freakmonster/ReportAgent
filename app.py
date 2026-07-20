@@ -44,6 +44,7 @@ async def lifespan(app: FastAPI):
         from sqlalchemy import text
 
         from infrastructure.database.connection import _get_session_factory, get_db, init_db
+
         await init_db()
         async with get_db() as session:
             await session.execute(text("SELECT 1"))
@@ -51,16 +52,19 @@ async def lifespan(app: FastAPI):
         from infrastructure.database.repositories.workflow_repo import (
             init_workflow_repo,
         )
+
         init_workflow_repo(_get_session_factory())
         # Initialise session repository singleton
         from infrastructure.database.repositories.session_repo import (
             init_session_repo,
         )
+
         init_session_repo(_get_session_factory())
         # Initialise usage repository singleton
         from infrastructure.database.repositories.usage_repo import (
             init_usage_repo,
         )
+
         init_usage_repo(_get_session_factory())
         logger.info("lifespan.postgresql.connected")
     except Exception as exc:
@@ -70,6 +74,7 @@ async def lifespan(app: FastAPI):
     # Redis
     try:
         from infrastructure.cache.redis_client import get_redis, init_redis
+
         await init_redis()
         await get_redis().ping()
         logger.info("lifespan.redis.connected")
@@ -84,6 +89,7 @@ async def lifespan(app: FastAPI):
     # Message queues (Redis Streams)
     try:
         from infrastructure.cache.redis_client import get_redis as _get_redis
+
         redis = _get_redis()
         init_task_queue(redis)
         init_dead_letter_queue(redis)
@@ -94,6 +100,7 @@ async def lifespan(app: FastAPI):
     # Qdrant
     try:
         from infrastructure.vector_db.qdrant_client import get_qdrant, init_qdrant
+
         await init_qdrant()
         await get_qdrant().get_collections()
         logger.info("lifespan.qdrant.connected")
@@ -122,6 +129,7 @@ async def lifespan(app: FastAPI):
     # Harness Orchestrator (governance handler chain)
     try:
         from harness.orchestrator.main import HarnessOrchestrator
+
         app.state.harness_orchestrator = HarnessOrchestrator()
         logger.info(
             "lifespan.harness.initialized",
@@ -136,6 +144,7 @@ async def lifespan(app: FastAPI):
 
     try:
         from retrieval.embedders.embedding_model import EmbeddingModel
+
         model = EmbeddingModel.get_instance()
         _ = model.dimension  # triggers _ensure_loaded(), loads PyTorch model
         logger.info("lifespan.embedding.warmed_up", dim=model.dimension)
@@ -144,6 +153,7 @@ async def lifespan(app: FastAPI):
 
     try:
         from models.prompts.prompt_manager import get_prompt_manager
+
         get_prompt_manager()  # pre-loads all .jinja2 templates
         logger.info("lifespan.prompts.warmed_up")
     except Exception as exc:
@@ -156,6 +166,7 @@ async def lifespan(app: FastAPI):
 
     try:
         from mcp_tools.mcp_servers.search_server import app as search_app
+
         search_config = uvicorn.Config(search_app, host="0.0.0.0", port=8001, log_level="info")
         search_server = uvicorn.Server(search_config)
         mcp_tasks.append(asyncio.create_task(search_server.serve(), name="mcp-search"))
@@ -165,6 +176,7 @@ async def lifespan(app: FastAPI):
 
     try:
         from mcp_tools.mcp_servers.chart_server import app as chart_app
+
         chart_config = uvicorn.Config(chart_app, host="0.0.0.0", port=8003, log_level="info")
         chart_server = uvicorn.Server(chart_config)
         mcp_tasks.append(asyncio.create_task(chart_server.serve(), name="mcp-chart"))
@@ -218,7 +230,11 @@ app.add_middleware(
 )
 app.add_middleware(RequestLogMiddleware)
 app.add_middleware(AuthMiddleware)
-app.add_middleware(RateLimitMiddleware, max_requests=settings.rate_limit_requests, window_seconds=settings.rate_limit_window)
+app.add_middleware(
+    RateLimitMiddleware,
+    max_requests=settings.rate_limit_requests,
+    window_seconds=settings.rate_limit_window,
+)
 
 # ── Routers ───────────────────────────────────────────────────────────────
 
@@ -234,4 +250,5 @@ app.include_router(session_router)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app:app", host=settings.host, port=settings.port, reload=settings.debug)

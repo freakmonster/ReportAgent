@@ -12,14 +12,13 @@ async def check_postgres() -> tuple[bool, str]:
     """Check PostgreSQL connectivity + research_agent database."""
     try:
         import asyncpg
+
         conn = await asyncpg.connect(
             "postgresql://postgres:postgres@localhost:5432/postgres",
             timeout=5,
         )
         ver = await conn.fetchval("SELECT version()")
-        dbs = await conn.fetch(
-            "SELECT datname FROM pg_database WHERE datname = 'research_agent'"
-        )
+        dbs = await conn.fetch("SELECT datname FROM pg_database WHERE datname = 'research_agent'")
         await conn.close()
 
         db_ok = bool(dbs)
@@ -36,6 +35,7 @@ async def check_redis() -> tuple[bool, str]:
     """Check Redis connectivity."""
     try:
         import redis.asyncio as aioredis
+
         r = aioredis.Redis(host="localhost", port=6379, protocol=2)
         await r.ping()
         await r.aclose()
@@ -48,6 +48,7 @@ async def check_qdrant() -> tuple[bool, str]:
     """Check Qdrant connectivity."""
     try:
         from qdrant_client import QdrantClient
+
         c = QdrantClient(host="localhost", port=6333, timeout=5)
         collections = c.get_collections()
         count = len(collections.collections)

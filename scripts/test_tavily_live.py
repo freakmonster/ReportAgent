@@ -1,4 +1,5 @@
 """Quick integration test for Tavily search server."""
+
 import asyncio
 
 import httpx
@@ -40,11 +41,14 @@ async def main():
 
         # 3. News search
         print("=== NEWS SEARCH: 新能源汽车 电池技术 突破 ===")
-        r = await c.post("http://127.0.0.1:8001/tools/news_search", json={
-            "query": "新能源汽车 电池技术 突破",
-            "days": 30,
-            "max_results": 3,
-        })
+        r = await c.post(
+            "http://127.0.0.1:8001/tools/news_search",
+            json={
+                "query": "新能源汽车 电池技术 突破",
+                "days": 30,
+                "max_results": 3,
+            },
+        )
         print(f"Status: {r.status_code}")
         data = r.json()
         if r.status_code == 200:

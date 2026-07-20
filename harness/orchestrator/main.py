@@ -52,8 +52,7 @@ class HarnessOrchestrator:
 
     def __init__(self, config_path: str | None = None) -> None:
         self._config_path = config_path or str(
-            Path(__file__).resolve().parent.parent.parent
-            / "config" / "handler_chain.yaml"
+            Path(__file__).resolve().parent.parent.parent / "config" / "handler_chain.yaml"
         )
         self._handlers: list[HarnessHandler] = []
         self._reload_requested: bool = False
@@ -207,18 +206,12 @@ class HarnessOrchestrator:
                 results.append(result)
 
                 if result.decision == HandlerDecision.REJECT:
-                    logger.warning(
-                        "Handler '%s' REJECTED: %s", handler.name, result.detail
-                    )
+                    logger.warning("Handler '%s' REJECTED: %s", handler.name, result.detail)
                     break
                 if result.decision == HandlerDecision.FAIL:
-                    logger.info(
-                        "Handler '%s' FAILED: %s", handler.name, result.detail
-                    )
+                    logger.info("Handler '%s' FAILED: %s", handler.name, result.detail)
             except Exception as exc:
-                logger.error(
-                    "Handler '%s' raised exception: %s", handler.name, exc
-                )
+                logger.error("Handler '%s' raised exception: %s", handler.name, exc)
                 results.append(
                     HandlerResult(
                         decision=HandlerDecision.FAIL,

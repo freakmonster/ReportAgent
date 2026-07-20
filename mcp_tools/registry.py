@@ -28,13 +28,15 @@ ToolHandler = Callable[[dict[str, Any]], Coroutine[Any, Any, Any]]
 
 class ToolStatus(str, Enum):
     """Status of a registered tool."""
-    ACTIVE = "active"          # Tool is registered and available
-    DEGRADED = "degraded"     # Tool is registered but marked as fallback
+
+    ACTIVE = "active"  # Tool is registered and available
+    DEGRADED = "degraded"  # Tool is registered but marked as fallback
     UNAVAILABLE = "unavailable"  # Tool is registered but currently unavailable
 
 
 class ToolSource(str, Enum):
     """Source of a tool: internal or MCP server."""
+
     INTERNAL = "internal"
     MCP = "mcp"
 
@@ -42,6 +44,7 @@ class ToolSource(str, Enum):
 @dataclass
 class ToolEntry:
     """Metadata and handler for a registered tool."""
+
     name: str
     handler: ToolHandler
     source: ToolSource = ToolSource.INTERNAL
@@ -55,6 +58,7 @@ class ToolEntry:
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
+
 
 class ToolRegistry:
     """Dynamic tool registry with discovery and health check support.
@@ -180,14 +184,16 @@ class ToolRegistry:
                 continue
             if tag is not None and tag not in entry.tags:
                 continue
-            result.append({
-                "name": entry.name,
-                "source": entry.source.value,
-                "status": entry.status.value,
-                "description": entry.description,
-                "server_url": entry.server_url,
-                "tags": entry.tags,
-            })
+            result.append(
+                {
+                    "name": entry.name,
+                    "source": entry.source.value,
+                    "status": entry.status.value,
+                    "description": entry.description,
+                    "server_url": entry.server_url,
+                    "tags": entry.tags,
+                }
+            )
         return result
 
     def count(self) -> int:
@@ -260,6 +266,7 @@ registry = ToolRegistry()
 # Auto-registration of internal tools (called once at first import)
 # ---------------------------------------------------------------------------
 
+
 def _register_internal_tools() -> None:
     """Register all built-in internal tools.
 
@@ -275,6 +282,7 @@ def _register_internal_tools() -> None:
             news_search_tool,
             web_search_tool,
         )
+
         registry.register(
             name="web_search",
             handler=web_search_tool,
@@ -297,6 +305,7 @@ def _register_internal_tools() -> None:
             read_report_tool,
             save_report_tool,
         )
+
         registry.register(
             name="save_report",
             handler=save_report_tool,
@@ -317,6 +326,7 @@ def _register_internal_tools() -> None:
 
 # ── Register MCP server tools ──────────────────────────────────────────
 
+
 def register_mcp_tools() -> None:
     """Register MCP server tools from configuration.
 
@@ -334,7 +344,9 @@ def register_mcp_tools() -> None:
     if settings.mcp_search_url:
         registry.register(
             name="mcp_web_search",
-            handler=_make_mcp_proxy(mcp_client, settings.mcp_search_url, "web_search", "mcp-search"),
+            handler=_make_mcp_proxy(
+                mcp_client, settings.mcp_search_url, "web_search", "mcp-search"
+            ),
             source=ToolSource.MCP,
             description="MCP web search via Tavily API",
             server_url=settings.mcp_search_url,
@@ -343,7 +355,9 @@ def register_mcp_tools() -> None:
         )
         registry.register(
             name="mcp_news_search",
-            handler=_make_mcp_proxy(mcp_client, settings.mcp_search_url, "news_search", "mcp-search"),
+            handler=_make_mcp_proxy(
+                mcp_client, settings.mcp_search_url, "news_search", "mcp-search"
+            ),
             source=ToolSource.MCP,
             description="MCP news search via Tavily API",
             server_url=settings.mcp_search_url,
@@ -358,7 +372,9 @@ def register_mcp_tools() -> None:
         for chart_type in ("generate_line_chart", "generate_bar_chart", "generate_pie_chart"):
             registry.register(
                 name=f"mcp_{chart_type}",
-                handler=_make_mcp_proxy(mcp_client, settings.mcp_chart_url, chart_type, "mcp-chart"),
+                handler=_make_mcp_proxy(
+                    mcp_client, settings.mcp_chart_url, chart_type, "mcp-chart"
+                ),
                 source=ToolSource.MCP,
                 description=f"MCP {chart_type.replace('_', ' ')}",
                 server_url=settings.mcp_chart_url,
@@ -408,6 +424,7 @@ def _make_mcp_proxy(
     Returns:
         Async callable suitable for registry registration.
     """
+
     async def proxy(arguments: dict[str, Any]) -> dict[str, Any]:
         result = await client.call(  # type: ignore[union-attr]
             server_url=server_url,
