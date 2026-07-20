@@ -46,6 +46,8 @@ workflow_info = Table(
     Column("retry_count", Integer, nullable=False, default=0),
     Column("quality_score", Float, default=0.0),
     Column("session_id", String(36), nullable=True),
+    Column("started_at", DateTime(timezone=True), nullable=True),
+    Column("duration_seconds", Float, default=0.0),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
     Column("updated_at", DateTime(timezone=True), server_default=func.now()),
     # Indexes

@@ -85,6 +85,20 @@ CREATE TABLE IF NOT EXISTS usage_daily (
     UNIQUE (date, model)
 );
 
+CREATE TABLE IF NOT EXISTS workflow_info (
+    workflow_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    template_name TEXT NOT NULL DEFAULT 'deep_report',
+    status TEXT NOT NULL DEFAULT 'init',
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    quality_score FLOAT DEFAULT 0.0,
+    session_id VARCHAR(36),
+    started_at TIMESTAMPTZ,
+    duration_seconds FLOAT DEFAULT 0.0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 ALTER TABLE workflow_info
     ADD COLUMN IF NOT EXISTS session_id VARCHAR(36);
 """

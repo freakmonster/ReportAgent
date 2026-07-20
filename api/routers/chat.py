@@ -84,6 +84,22 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
             if report:
                 complete_data["report"] = report
 
+            # 写入 workflow_info 表（运营面板数据源）
+            try:
+                from infrastructure.database.repositories.usage_repo import get_usage_repo
+                await get_usage_repo().record_workflow_info(
+                    workflow_id=workflow_id,
+                    user_id=user_id,
+                    template_name=template,
+                    status="completed",
+                    session_id=session_id or None,
+                    started_at=t_start,
+                    duration_seconds=elapsed,
+                )
+                print(f"[chat] workflow_info recorded | {workflow_id}", file=sys.stderr, flush=True)
+            except Exception as rec_err:
+                print(f"[chat] failed to record workflow_info: {rec_err}", file=sys.stderr, flush=True)
+
             # 记录工作流耗时到 Redis 统计
             try:
                 from infrastructure.memory.stats import record_workflow_duration

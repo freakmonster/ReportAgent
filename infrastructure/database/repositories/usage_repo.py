@@ -27,6 +27,47 @@ class UsageRepository:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
+    # ── Write ──────────────────────────────────────────────────────────
+
+    async def record_workflow_info(
+        self,
+        workflow_id: str,
+        user_id: str,
+        template_name: str,
+        status: str = "completed",
+        session_id: str | None = None,
+        started_at: float = 0.0,
+        duration_seconds: float = 0.0,
+    ) -> None:
+        """Insert / upsert a workflow execution record into ``workflow_info``."""
+        from datetime import datetime as _dt, timezone as _tz
+        from sqlalchemy import text
+
+        async with self._session_factory() as session:
+            await session.execute(
+                text(
+                    """INSERT INTO workflow_info
+                    (workflow_id, user_id, template_name, status,
+                     session_id, started_at, duration_seconds, created_at, updated_at)
+                    VALUES (:wid, :uid, :tmpl, :st, :sid, :sat, :dur, :now, :now)
+                    ON CONFLICT (workflow_id) DO UPDATE SET
+                        status = EXCLUDED.status,
+                        duration_seconds = EXCLUDED.duration_seconds,
+                        updated_at = EXCLUDED.updated_at"""
+                ),
+                {
+                    "wid": workflow_id,
+                    "uid": user_id,
+                    "tmpl": template_name,
+                    "st": status,
+                    "sid": session_id,
+                    "sat": _dt.fromtimestamp(started_at, tz=_tz.utc) if started_at else None,
+                    "dur": duration_seconds,
+                    "now": _dt.now(_tz.utc),
+                },
+            )
+            await session.commit()
+
     # ── Aggregation ────────────────────────────────────────────────────
 
     async def get_overview(self, days: int = 7) -> dict[str, Any]:
@@ -78,12 +119,7 @@ class UsageRepository:
             avg_dur_row = (
                 await session.execute(
                     select(
-                        func.avg(
-                            func.extract(
-                                "epoch",
-                                workflow_info.c.updated_at - workflow_info.c.created_at,
-                            )
-                        )
+                        func.avg(workflow_info.c.duration_seconds)
                     ).where(workflow_info.c.created_at >= cutoff_dt)
                 )
             ).first()
@@ -98,12 +134,7 @@ class UsageRepository:
                     select(
                         workflow_info.c.template_name,
                         func.count().label("count"),
-                        func.avg(
-                            func.extract(
-                                "epoch",
-                                workflow_info.c.updated_at - workflow_info.c.created_at,
-                            )
-                        ).label("avg_duration"),
+                        func.avg(workflow_info.c.duration_seconds).label("avg_duration"),
                     )
                     .where(workflow_info.c.created_at >= cutoff_dt)
                     .group_by(workflow_info.c.template_name)
@@ -159,11 +190,12 @@ class UsageRepository:
 
             return [
                 {
-                    "workflow_id": row.workflow_id,
+                    "id": row.workflow_id,
                     "user_id": row.user_id,
-                    "template_name": row.template_name,
+                    "query": row.template_name,
+                    "model": row.template_name,
                     "status": row.status,
-                    "duration_ms": round(float(row.duration_seconds) * 1000, 0)
+                    "duration": round(float(row.duration_seconds), 1)
                     if row.duration_seconds
                     else 0,
                     "created_at": row.created_at.isoformat()
