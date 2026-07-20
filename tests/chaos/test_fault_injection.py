@@ -279,10 +279,10 @@ class TestDeepSeekRetry:
     @pytest.mark.asyncio
     async def test_chat_timeout_exhausts_retries(self) -> None:
         """连续超时耗尽重试次数后应抛出 RetryError。"""
-        from models.llm_providers.deepseek_client import DeepSeekClient
+        import tenacity
         from openai import APITimeoutError
 
-        import tenacity
+        from models.llm_providers.deepseek_client import DeepSeekClient
 
         client_instance = DeepSeekClient()
         with patch.object(client_instance, "_client") as mock_openai:

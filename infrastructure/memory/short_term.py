@@ -6,8 +6,8 @@ ZSET ordered from oldest (rank 0) to newest (rank -1).
 """
 
 import json
-import time
 import logging
+import time
 
 from infrastructure.cache.redis_client import get_redis
 

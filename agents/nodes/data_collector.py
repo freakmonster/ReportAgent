@@ -33,7 +33,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     memory_context = ""
     if session_id and settings.rag_enabled:
         try:
-            from infrastructure.memory.short_term import load_memory, format_context
+            from infrastructure.memory.short_term import format_context, load_memory
             entries = await load_memory(user_input, session_id)
             if entries:
                 memory_context = await format_context(entries)
@@ -175,7 +175,6 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     print(f"[data_collector] total docs collected: {len(raw_docs)} ({len(supplementary_docs)} rag + {len(raw_docs) - len(supplementary_docs)} tavily)", file=sys.stderr, flush=True)
 
     source_urls: list[str] = []
-    rag_counter = 0
     seen_urls: set[str] = set()
     for d in raw_docs:
         url = d.get("url", "")

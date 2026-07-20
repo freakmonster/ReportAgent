@@ -102,8 +102,9 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
 
             # 记录工作流耗时到 Redis 统计
             try:
-                from infrastructure.memory.stats import record_workflow_duration
                 import asyncio as _asyncio
+
+                from infrastructure.memory.stats import record_workflow_duration
                 model = state.get("base", {}).get("model", "deepseek-flash")
                 _asyncio.create_task(record_workflow_duration(model, elapsed))
                 print(f"[chat] workflow duration recorded | model={model} | {elapsed:.1f}s", file=sys.stderr, flush=True)

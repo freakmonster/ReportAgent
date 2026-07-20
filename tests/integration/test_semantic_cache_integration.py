@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 import pytest  # noqa: E402
 
-
 # ── Shared fixtures ────────────────────────────────────────────────────────
 
 _SAMPLE_MESSAGES: list[dict[str, str]] = [
@@ -224,7 +223,7 @@ class TestCacheSerialisation:
         assert parsed["choices"][0]["message"]["content"] == "缓存响应内容"
 
     def test_cache_key_prefix(self) -> None:
-        from models.semantic_cache import _cache_key, _CACHE_KEY_PREFIX
+        from models.semantic_cache import _CACHE_KEY_PREFIX, _cache_key
         key = _cache_key("abc123")
         assert key.startswith(_CACHE_KEY_PREFIX)
         assert key == f"{_CACHE_KEY_PREFIX}abc123"
@@ -239,6 +238,7 @@ class TestCrossModelIsolation:
     def test_cache_get_with_model_parameter(self) -> None:
         """cache_get signature accepts model parameter."""
         import inspect
+
         from models.semantic_cache import cache_get
         sig = inspect.signature(cache_get)
         assert "model" in sig.parameters
@@ -246,6 +246,7 @@ class TestCrossModelIsolation:
     def test_cache_set_with_model_parameter(self) -> None:
         """cache_set signature accepts model parameter."""
         import inspect
+
         from models.semantic_cache import cache_set
         sig = inspect.signature(cache_set)
         assert "model" in sig.parameters
@@ -253,6 +254,7 @@ class TestCrossModelIsolation:
     def test_cache_invalidate_with_model_parameter(self) -> None:
         """cache_invalidate signature accepts model parameter."""
         import inspect
+
         from models.semantic_cache import cache_invalidate
         sig = inspect.signature(cache_invalidate)
         assert "model" in sig.parameters

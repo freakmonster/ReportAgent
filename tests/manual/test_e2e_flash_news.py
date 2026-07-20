@@ -1,7 +1,8 @@
 """Manual end-to-end test: flash_news workflow."""
-import httpx
 import json
 import sys
+
+import httpx
 
 body = {
     "query": "2026年7月AI行业重要动态",

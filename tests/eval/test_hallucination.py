@@ -24,7 +24,6 @@ from harness.handlers.hallucination_handler import (  # noqa: E402
 )
 from harness.orchestrator.context import PostExecContext  # noqa: E402
 
-
 # ── Prediction detection ──────────────────────────────────────────────
 
 class TestPredictionDetection:

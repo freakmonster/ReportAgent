@@ -2,6 +2,7 @@
 import http.client
 import json
 
+
 def main():
     body = json.dumps({
         "query": "2026年7月AI行业重要动态",

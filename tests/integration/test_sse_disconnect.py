@@ -20,8 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import app  # noqa: E402
 from agents.state import ReportState, create_initial_state  # noqa: E402
+from app import app  # noqa: E402
 
 client = TestClient(app)
 

@@ -19,7 +19,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 import pytest  # noqa: E402
 
-
 # ── MCP Client ─────────────────────────────────────────────────────────
 
 class TestMCPClient:
@@ -177,8 +176,8 @@ class TestDLQ:
 
     def test_dlq_classes_and_functions(self) -> None:
         from infrastructure.message_queue.dlq import (
-            DLQMessage,
             DeadLetterQueue,
+            DLQMessage,
             get_dlq_depth,
             init_dead_letter_queue,
             push_to_dlq,

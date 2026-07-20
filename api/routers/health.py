@@ -23,6 +23,7 @@ async def health_check() -> HealthResponse:
     # PostgreSQL
     try:
         from sqlalchemy import text
+
         from infrastructure.database.connection import get_db
         async with get_db() as session:
             await session.execute(text("SELECT 1"))

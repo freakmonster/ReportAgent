@@ -21,7 +21,6 @@ from harness.handlers.fact_stage2_handler import (  # noqa: E402
 )
 from harness.orchestrator.context import PostExecContext  # noqa: E402
 
-
 # ── Stage 1.5: Relation Extractor ─────────────────────────────────────
 
 class TestRelationExtractor:

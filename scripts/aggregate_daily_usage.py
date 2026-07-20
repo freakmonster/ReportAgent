@@ -10,7 +10,6 @@ import asyncio
 import sys
 from datetime import datetime, timedelta, timezone
 
-
 # ── Date parsing ─────────────────────────────────────────────────────────
 
 
@@ -51,10 +50,11 @@ async def aggregate(target_date: str) -> None:
     and cleans up the Redis keys.
     """
     # Lazy imports to avoid global-side side effects
+    from sqlalchemy import text
+
     from config.settings import settings
     from infrastructure.cache.redis_client import close_redis, get_redis, init_redis
     from infrastructure.database.connection import _get_session_factory, close_db, init_db
-    from sqlalchemy import text
 
     # Initialize connections
     await init_redis()

@@ -30,7 +30,6 @@ from models.semantic_cache import (
     cache_set,
 )
 
-
 # ── Prompt hashing ─────────────────────────────────────────────────────
 
 class TestPromptHashing:

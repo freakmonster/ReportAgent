@@ -68,8 +68,8 @@ async def _verify_claim_via_mcp(claim: dict[str, str]) -> dict[str, Any]:
     query = f"{claim['subject']} {claim['relation']} {claim['object']}"
 
     try:
-        from mcp_tools.mcp_client import mcp_client
         from config.settings import settings
+        from mcp_tools.mcp_client import mcp_client
 
         search_url = getattr(settings, "mcp_search_url", "")
         if not search_url:

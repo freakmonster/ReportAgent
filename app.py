@@ -181,11 +181,12 @@ async def lifespan(app: FastAPI):
         yield
         # checkpointer context exit → connection pool closed
     # ── Shutdown MCP servers ───────────────────────────────────────────
-    for task in getattr(app.state, "mcp_tasks", []):
-        task.cancel()
-    for task in getattr(app.state, "mcp_tasks", []):
+    mcp_tasks: list[asyncio.Task] = getattr(app.state, "mcp_tasks", [])
+    for t in mcp_tasks:
+        t.cancel()
+    for t in mcp_tasks:
         try:
-            await task
+            await t
         except asyncio.CancelledError:
             logger.info("lifespan.mcp_server.cancelled", name=task.get_name())
     shutdown_tracer()

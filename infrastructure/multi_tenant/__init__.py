@@ -13,14 +13,6 @@ Exports the core building blocks for tenant-aware operations:
 
 from __future__ import annotations
 
-from infrastructure.multi_tenant.tenant_context import (
-    DEFAULT_TENANT_ID,
-    TenantContext,
-    get_current_tenant,
-    reset_current_tenant,
-    set_current_tenant,
-    tenant_scope,
-)
 from infrastructure.multi_tenant.qdrant_tenant import (
     ensure_tenant_collection,
     ensure_tenant_collection_from_ctx,
@@ -34,6 +26,14 @@ from infrastructure.multi_tenant.rate_limiter import (
     build_rate_limit_key,
     get_tenant_quota,
     get_tenant_quota_from_ctx,
+)
+from infrastructure.multi_tenant.tenant_context import (
+    DEFAULT_TENANT_ID,
+    TenantContext,
+    get_current_tenant,
+    reset_current_tenant,
+    set_current_tenant,
+    tenant_scope,
 )
 
 __all__ = [

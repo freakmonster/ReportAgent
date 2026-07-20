@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from api.schemas.session import CreateSessionRequest, SessionResponse, SessionListResponse
+from api.schemas.session import CreateSessionRequest, SessionListResponse, SessionResponse
 
 
 def test_create_session_request_with_title():

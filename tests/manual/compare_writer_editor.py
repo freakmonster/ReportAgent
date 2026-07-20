@@ -2,7 +2,7 @@
 在 writer 完成后和 editor 完成后分别捕获 chapter_drafts，并排打印差异。
 
 Usage:
-    .\.venv\Scripts\Activate.ps1
+    ./.venv/Scripts/Activate.ps1
     python tests/manual/compare_writer_editor.py
 """
 
@@ -21,10 +21,10 @@ async def main():
     workflow_id = f"compare-{int(time.time())}"
     template = "deep_report"
     user_id = "compare-user"
-    print(f"=" * 70)
+    print("=" * 70)
     print(f"  Writer vs Editor 对比测试 — {template}")
     print(f"  workflow_id = {workflow_id}")
-    print(f"=" * 70)
+    print("=" * 70)
 
     # ── Build workflow ────────────────────────────────────────────────
     builder = WorkflowBuilder()

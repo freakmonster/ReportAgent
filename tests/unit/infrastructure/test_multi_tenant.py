@@ -11,14 +11,6 @@ from __future__ import annotations
 
 import pytest
 
-from infrastructure.multi_tenant.tenant_context import (
-    DEFAULT_TENANT_ID,
-    TenantContext,
-    get_current_tenant,
-    reset_current_tenant,
-    set_current_tenant,
-    tenant_scope,
-)
 from infrastructure.multi_tenant.qdrant_tenant import (
     make_tenant_collection_name,
     make_tenant_collection_name_from_ctx,
@@ -29,7 +21,14 @@ from infrastructure.multi_tenant.rate_limiter import (
     build_rate_limit_key,
     get_tenant_quota,
 )
-
+from infrastructure.multi_tenant.tenant_context import (
+    DEFAULT_TENANT_ID,
+    TenantContext,
+    get_current_tenant,
+    reset_current_tenant,
+    set_current_tenant,
+    tenant_scope,
+)
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TenantContext — collection names

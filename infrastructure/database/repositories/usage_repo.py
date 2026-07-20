@@ -40,7 +40,9 @@ class UsageRepository:
         duration_seconds: float = 0.0,
     ) -> None:
         """Insert / upsert a workflow execution record into ``workflow_info``."""
-        from datetime import datetime as _dt, timezone as _tz
+        from datetime import datetime as _dt
+        from datetime import timezone as _tz
+
         from sqlalchemy import text
 
         async with self._session_factory() as session:

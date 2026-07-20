@@ -12,12 +12,12 @@ if str(_project_root) not in sys.path:
 import pytest  # noqa: E402
 
 from harness.eval import (
+    ABComparator,
     Experiment,
     ExperimentConfig,
     ExperimentResult,
     GroupConfig,
     RunResult,
-    ABComparator,
     generate_report,
 )
 from harness.eval.comparator import (
@@ -30,7 +30,6 @@ from harness.eval.comparator import (
     _std,
 )
 from harness.sensors.eval_suite import EvalScores
-
 
 # ---------------------------------------------------------------------------
 # Helpers

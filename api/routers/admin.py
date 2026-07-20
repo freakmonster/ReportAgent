@@ -162,7 +162,6 @@ async def _has_redis_override(name: str) -> bool:
     """Check if a flag has a Redis override set."""
     try:
         from config.feature_flags import FeatureFlagManager
-
         from infrastructure.cache.redis_client import get_redis
         redis = get_redis()
         val = await redis.get(FeatureFlagManager._key(name))

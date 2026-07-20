@@ -4,7 +4,7 @@ Usage:
     python tests/manual/test_e2e_all.py
 
 Requires the server to be ALREADY RUNNING on port 8010:
-    .\.venv\Scripts\Activate.ps1
+    ./.venv/Scripts/Activate.ps1
     python app.py
 
 Each deep_report / earnings_analysis round takes ~6 min. Total ~40 min.

@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-
 # ── Rate limit key builder ──────────────────────────────────────────────
 
 
@@ -68,8 +67,9 @@ def _load_tenant_quotas_from_yaml() -> dict[str, TenantRateQuota]:
         Dict of tenant_id → TenantRateQuota.
     """
     import os
-    import yaml
     from pathlib import Path
+
+    import yaml
 
     try:
         env = os.getenv("ENVIRONMENT", "dev")

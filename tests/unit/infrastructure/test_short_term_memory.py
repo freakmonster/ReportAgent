@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from infrastructure.memory.short_term import format_context
 
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 def test_data_collector_has_memory_injection():
     """验证 data_collector.py 中有短期记忆注入代码"""
     import inspect
+
     import agents.nodes.data_collector as data_collector
 
     source = inspect.getsource(data_collector.entry)
@@ -19,6 +20,7 @@ def test_data_collector_has_memory_injection():
 def test_data_collector_fallback_behavior():
     """验证 data_collector 在异常时降级不崩溃"""
     import inspect
+
     import agents.nodes.data_collector as data_collector
 
     source = inspect.getsource(data_collector.entry)

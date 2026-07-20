@@ -12,10 +12,10 @@ import pytest  # noqa: E402
 
 from mcp_tools.search_backends.base import BaseSearchBackend  # noqa: E402
 from mcp_tools.search_backends.mock_backend import (  # noqa: E402
-    MockSearchBackend,
     _MOCK_ACADEMIC,
     _MOCK_NEWS,
     _MOCK_RESULTS,
+    MockSearchBackend,
 )
 from mcp_tools.search_backends.tavily_backend import TavilySearchBackend  # noqa: E402
 
@@ -117,8 +117,7 @@ class TestSearchBackendFactory:
         assert isinstance(backend, (MockSearchBackend, TavilySearchBackend))
 
     def test_factory_returns_same_instance(self) -> None:
-        from mcp_tools.search_backends import get_search_backend
-        from mcp_tools.search_backends import _cached_get_backend
+        from mcp_tools.search_backends import _cached_get_backend, get_search_backend
 
         _cached_get_backend.cache_clear()
         b1 = get_search_backend()
@@ -128,7 +127,7 @@ class TestSearchBackendFactory:
     @pytest.mark.asyncio
     async def test_backend_implements_full_interface(self) -> None:
         """Any backend returned by the factory must implement all three search methods."""
-        from mcp_tools.search_backends import get_search_backend, _cached_get_backend
+        from mcp_tools.search_backends import _cached_get_backend, get_search_backend
 
         _cached_get_backend.cache_clear()
         backend = get_search_backend()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Awaitable, Callable
 
+from harness.eval.comparator import ABComparator, ABComparisonResult
 from harness.eval.experiment import (
     Experiment,
     ExperimentConfig,
@@ -11,7 +12,6 @@ from harness.eval.experiment import (
     GroupConfig,
     RunResult,
 )
-from harness.eval.comparator import ABComparator, ABComparisonResult
 from harness.eval.reporter import ABReport, generate_report
 
 __all__ = [
