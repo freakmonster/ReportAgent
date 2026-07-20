@@ -114,7 +114,7 @@ jobs:
           done
 
       - name: Init database
-        run: python scripts/init_db.py --dsn postgresql+asyncpg://postgres:postgres@localhost:5432/research_agent
+        run: python scripts/init_db.py --dsn postgresql://postgres:postgres@localhost:5432/research_agent
         env:
           PG_HOST: localhost
           PG_PORT: 5432
