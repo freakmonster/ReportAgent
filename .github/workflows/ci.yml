@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install ".[tests]"
+          pip install -e ".[tests]"
 
       - name: Run unit tests
         run: pytest tests/unit/ -v --tb=short
@@ -89,7 +89,7 @@ jobs:
         ports:
           - 6333:6333
         options: >-
-          --health-cmd "curl -f http://localhost:6333/healthz || exit 1"
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:6333/healthz || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -106,7 +106,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install ".[tests]"
+          pip install -e ".[tests]"
 
       - name: Init database
         run: python scripts/init_db.py --dsn postgresql+asyncpg://postgres:postgres@localhost:5432/research_agent
