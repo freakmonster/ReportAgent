@@ -167,10 +167,10 @@ async def lifespan(app: FastAPI):
     try:
         from mcp_tools.mcp_servers.search_server import app as search_app
 
-        search_config = uvicorn.Config(search_app, host="0.0.0.0", port=8001, log_level="info")
+        search_config = uvicorn.Config(search_app, host="0.0.0.0", port=8005, log_level="info")
         search_server = uvicorn.Server(search_config)
         mcp_tasks.append(asyncio.create_task(search_server.serve(), name="mcp-search"))
-        logger.info("lifespan.mcp_search.starting", port=8001)
+        logger.info("lifespan.mcp_search.starting", port=8005)
     except Exception as exc:
         logger.warning("lifespan.mcp_search.failed", detail=str(exc))
 

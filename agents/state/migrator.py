@@ -27,6 +27,8 @@ def upgrade_v1_to_v2(old_state: dict[str, Any]) -> ReportState:
     base = BaseContext(
         workflow_id=str(old_state.get("workflow_id", "")),
         user_id=str(old_state.get("user_id", "")),
+        session_id=str(old_state.get("session_id", "")),
+        tenant_id=str(old_state.get("tenant_id", "default")),
         retry_count=int(old_state.get("retry_count", 0)),
         version=1,
         status=safe_status(old_state.get("status", "init")),

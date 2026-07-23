@@ -35,6 +35,7 @@ async def init_db() -> None:
         max_overflow=10,
         pool_recycle=3600,
         echo=settings.debug,
+        connect_args={"timeout": 10, "command_timeout": 30},
     )
 
     _async_session_factory = async_sessionmaker(

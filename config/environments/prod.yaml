@@ -43,7 +43,7 @@ qwen_light_model: "qwen3-8b"
 qwen_medium_model: "qwen3-32b"
 
 # MCP Sidecar endpoints — production
-mcp_search_url: "http://mcp-search:8001"
+mcp_search_url: "http://mcp-search:8005"
 mcp_database_url: "http://mcp-database:8002"
 mcp_chart_url: "http://mcp-chart:8003"
 mcp_email_url: "http://mcp-email:8004"

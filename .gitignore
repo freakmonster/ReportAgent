@@ -42,4 +42,6 @@ ProjectExternalReliance.md
 
 .trae\
 *.md
+*.txt
+!requirements.txt
 !README.md

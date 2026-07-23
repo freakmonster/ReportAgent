@@ -101,6 +101,17 @@ CREATE TABLE IF NOT EXISTS workflow_info (
 
 ALTER TABLE workflow_info
     ADD COLUMN IF NOT EXISTS session_id VARCHAR(36);
+
+ALTER TABLE workflow_info
+    ADD COLUMN IF NOT EXISTS query TEXT;
+
+ALTER TABLE workflow_info
+    ADD COLUMN IF NOT EXISTS report_content TEXT;
+
+ALTER TABLE workflow_info
+    ADD COLUMN IF NOT EXISTS citations JSONB DEFAULT '[]';
+
+CREATE INDEX IF NOT EXISTS idx_workflow_session ON workflow_info(session_id);
 """
 
 

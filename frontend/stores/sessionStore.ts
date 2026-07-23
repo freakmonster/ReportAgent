@@ -4,11 +4,21 @@ import { create } from 'zustand';
 import { get as apiGet, post as apiPost, del as apiDel } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface Session {
-  id: string;
+  session_id: string;
   title: string;
   created_at: string;
   report_count: number;
@@ -17,6 +27,7 @@ export interface Session {
 interface SessionState {
   sessions: Session[];
   loading: boolean;
+  userId: string;
   loadSessions: (userId: string) => Promise<void>;
   createSession: (userId: string, title?: string) => Promise<string | null>;
   deleteSession: (id: string) => Promise<void>;
@@ -29,16 +40,23 @@ interface SessionState {
 export const useSessionStore = create<SessionState>((set, get) => ({
   sessions: [],
   loading: false,
+  userId: '',
 
   loadSessions: async (userId: string) => {
-    set({ loading: true });
+    set({ loading: true, userId });
     try {
       const data = await apiGet('/session/sessions', { user_id: userId });
-      const sessions: Session[] = Array.isArray(data)
+      const raw: Record<string, unknown>[] = Array.isArray(data)
         ? data
         : Array.isArray((data as Record<string, unknown>)?.sessions)
-          ? (data as Record<string, unknown>).sessions as Session[]
+          ? (data as Record<string, unknown>).sessions as Record<string, unknown>[]
           : [];
+      const sessions: Session[] = raw.map((item) => ({
+        session_id: typeof item.session_id === 'string' ? item.session_id : '',
+        title: typeof item.title === 'string' ? item.title : '',
+        created_at: typeof item.created_at === 'string' ? item.created_at : '',
+        report_count: typeof item.report_count === 'number' ? item.report_count : 0,
+      }));
       set({ sessions, loading: false });
     } catch (err) {
       console.error('[sessionStore] 加载会话列表失败:', err);
@@ -53,11 +71,11 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         title: title || '新会话',
       });
       const session = data as Record<string, unknown>;
-      const id = typeof session?.id === 'string' ? session.id : null;
-      if (id) {
+      const sessionId = typeof session?.session_id === 'string' ? session.session_id : null;
+      if (sessionId) {
         await get().loadSessions(userId);
       }
-      return id;
+      return sessionId;
     } catch (err) {
       console.error('[sessionStore] 创建会话失败:', err);
       return null;
@@ -65,12 +83,11 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   deleteSession: async (id: string) => {
+    const { userId } = get();
     try {
-      await apiDel(`/session/session/${id}`);
-      // 重新加载列表（使用匿名用户作为默认 userId，或者不提供 userId 让后端处理）
-      // 如果当前没有 userId 上下文，则直接从前端列表中移除
+      await apiDel(`/session/session/${id}`, { user_id: userId || 'anonymous' });
       set((state) => ({
-        sessions: state.sessions.filter((s) => s.id !== id),
+        sessions: state.sessions.filter((s) => s.session_id !== id),
       }));
     } catch (err) {
       console.error('[sessionStore] 删除会话失败:', err);

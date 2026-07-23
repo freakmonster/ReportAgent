@@ -50,7 +50,7 @@ writer_llm_provider: "deepseek"
 
 
 # MCP Sidecar endpoints — local dev
-mcp_search_url: "http://localhost:8001"
+mcp_search_url: "http://localhost:8005"
 mcp_database_url: "http://localhost:8002"
 mcp_chart_url: "http://localhost:8003"
 mcp_email_url: "http://localhost:8004"

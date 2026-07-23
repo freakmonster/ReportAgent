@@ -154,6 +154,6 @@ def main() -> None:
     uvicorn.run(
         "mcp_tools.mcp_servers.search_server:app",
         host="0.0.0.0",
-        port=8001,
+        port=8005,
         log_level=settings.log_level.lower(),
     )

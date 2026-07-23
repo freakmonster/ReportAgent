@@ -46,6 +46,9 @@ workflow_info = Table(
     Column("retry_count", Integer, nullable=False, default=0),
     Column("quality_score", Float, default=0.0),
     Column("session_id", String(36), nullable=True),
+    Column("query", Text, nullable=True),
+    Column("report_content", Text, nullable=True),
+    Column("citations", JSONB, nullable=False, server_default="'[]'"),
     Column("started_at", DateTime(timezone=True), nullable=True),
     Column("duration_seconds", Float, default=0.0),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
@@ -54,6 +57,7 @@ workflow_info = Table(
     Index("idx_workflow_user", "user_id"),
     Index("idx_workflow_status", "status"),
     Index("idx_workflow_created", "created_at"),
+    Index("idx_workflow_session", "session_id"),
 )
 
 workflow_states = Table(

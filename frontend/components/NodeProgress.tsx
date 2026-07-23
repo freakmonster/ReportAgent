@@ -1,22 +1,25 @@
 'use client';
 
-import { NODE_ORDER } from '@/types/api';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { NODE_ORDER_BY_TEMPLATE } from '@/types/api';
 import { NodeCard } from './NodeCard';
 
 export function NodeProgress() {
   const nodes = useWorkflowStore(s => s.nodes);
   const isRunning = useWorkflowStore(s => s.isRunning);
+  const reportType = useWorkflowStore(s => s.reportType);
+
+  const nodeOrder = NODE_ORDER_BY_TEMPLATE[reportType] || NODE_ORDER_BY_TEMPLATE.deep_report;
 
   // 找到第一个 running 或最后一个 completed 之后的节点作为 current
   let currentIdx = -1;
-  for (let i = 0; i < NODE_ORDER.length; i++) {
-    const s = nodes[NODE_ORDER[i]]?.status;
+  for (let i = 0; i < nodeOrder.length; i++) {
+    const s = nodes[nodeOrder[i]]?.status;
     if (s === 'running') { currentIdx = i; break; }
   }
   if (currentIdx === -1) {
-    for (let i = NODE_ORDER.length - 1; i >= 0; i--) {
-      if (nodes[NODE_ORDER[i]]?.status === 'completed') { currentIdx = i + 1; break; }
+    for (let i = nodeOrder.length - 1; i >= 0; i--) {
+      if (nodes[nodeOrder[i]]?.status === 'completed') { currentIdx = i + 1; break; }
     }
   }
 
@@ -26,7 +29,7 @@ export function NodeProgress() {
         Agent 执行进度
       </h3>
       <div className="space-y-0.5">
-        {NODE_ORDER.map((name, idx) => (
+        {nodeOrder.map((name, idx) => (
           <NodeCard
             key={name}
             nodeName={name}

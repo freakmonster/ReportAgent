@@ -302,7 +302,7 @@ class Settings(BaseSettings):
     qwen_medium_model: str = Field(default="qwen3-32b")
 
     # ── MCP ──────────────────────────────────────────────────────────
-    mcp_search_url: str = Field(default="http://localhost:8001")
+    mcp_search_url: str = Field(default="http://localhost:8005")
     mcp_database_url: str = Field(default="http://localhost:8002")
     mcp_chart_url: str = Field(default="http://localhost:8003")
     mcp_email_url: str = Field(default="http://localhost:8004")

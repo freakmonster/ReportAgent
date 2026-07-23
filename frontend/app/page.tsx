@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { TaskForm } from '@/components/TaskForm';
 import { NodeProgress } from '@/components/NodeProgress';
-import { ReportContent } from '@/components/ReportContent';
-import { CitationList } from '@/components/CitationList';
-import { OutputToolbar } from '@/components/OutputToolbar';
+import { ReportBubble } from '@/components/ReportBubble';
 
 const NAV_LINKS = [
   { href: '/', label: '工作台' },
@@ -19,12 +18,32 @@ export default function Home() {
   const pathname = usePathname();
   const isRunning = useWorkflowStore((s) => s.isRunning);
   const report = useWorkflowStore((s) => s.report);
-  const citations = useWorkflowStore((s) => s.citations);
+  const sessionId = useWorkflowStore((s) => s.sessionId);
   const workflowId = useWorkflowStore((s) => s.workflowId);
   const totalElapsed = useWorkflowStore((s) => s.totalElapsed);
+  const reportHistory = useWorkflowStore((s) => s.reportHistory);
+  const loadSessionHistory = useWorkflowStore((s) => s.loadSessionHistory);
+
+  // --- 切换会话时加载历史 ---
+  const prevSessionRef = useRef(sessionId);
+  useEffect(() => {
+    if (sessionId && sessionId !== prevSessionRef.current) {
+      loadSessionHistory(sessionId);
+      prevSessionRef.current = sessionId;
+    }
+  }, [sessionId, loadSessionHistory]);
+
+  // --- 页面首次加载时加载当前会话历史 ---
+  const initialLoadDone = useRef(false);
+  useEffect(() => {
+    if (sessionId && !initialLoadDone.current) {
+      loadSessionHistory(sessionId);
+      initialLoadDone.current = true;
+    }
+  }, [sessionId, loadSessionHistory]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Header */}
       <header className="h-12 flex items-center px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shrink-0">
         <h1 className="text-sm font-bold tracking-wide text-gray-800 dark:text-gray-200">
@@ -61,49 +80,36 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Body: 三栏布局 */}
+      {/* Body: 两栏布局 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 左栏: 输入区域 */}
-        <aside className="w-[380px] shrink-0 border-r border-gray-200 dark:border-gray-800 p-6 overflow-y-auto bg-gray-50/50 dark:bg-gray-950/50">
+        <aside className="w-[380px] shrink-0 border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-950/50 flex flex-col overflow-hidden">
           <TaskForm />
-        </aside>
-
-        {/* 中栏: 节点进度 */}
-        <aside className="w-[260px] shrink-0 border-r border-gray-200 dark:border-gray-800 p-4 overflow-y-auto">
-          <NodeProgress />
         </aside>
 
         {/* 右栏: 报告预览 */}
         <main className="flex-1 overflow-y-auto p-6">
-          {!report && !isRunning && (
+          {/* 空闲状态 */}
+          {!report && !isRunning && reportHistory.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-600">
               <div className="text-5xl mb-4">📄</div>
-              <p className="text-sm">输入研报主题并点击&ldquo;开始生成报告&rdquo;</p>
+              <p className="text-sm">在左侧输入研报主题并点击发送</p>
               <p className="text-xs mt-1">实时查看 Agent 执行进度和生成的研报</p>
             </div>
           )}
 
-          {/* 生成中骨架屏 */}
-          {isRunning && !report && (
-            <div className="space-y-4 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/3" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-4/6" />
-              <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/4 mt-6" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-              <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6" />
+          {/* 历史气泡列表 */}
+          {reportHistory.length > 0 && (
+            <div className="space-y-4">
+              {reportHistory.map((entry, i) => (
+                <ReportBubble key={entry.workflowId || i} entry={entry} index={i} />
+              ))}
             </div>
           )}
 
-          {/* 报告内容 */}
-          {report && !isRunning && (
-            <div>
-              <ReportContent content={report} />
-              <CitationList citations={citations} />
-              <OutputToolbar report={report} workflowId={workflowId} />
-            </div>
+          {/* 执行中：显示 Agent 执行进度 */}
+          {isRunning && (
+            <NodeProgress />
           )}
         </main>
       </div>

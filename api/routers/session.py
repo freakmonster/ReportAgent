@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 
 from api.schemas.session import (
     CreateSessionRequest,
     SessionListResponse,
     SessionResponse,
+    SessionReportsResponse,
+    SessionReportItem,
 )
 from infrastructure.database.repositories.session_repo import get_session_repo
 from infrastructure.memory.short_term import delete_memory
@@ -102,3 +104,23 @@ async def delete_session(
         pass
 
     return response
+
+
+@router.get("/{session_id}/reports", response_model=SessionReportsResponse)
+async def get_session_reports(
+    session_id: str,
+    user_id: str = Query("anonymous", description="User identifier"),
+) -> SessionReportsResponse:
+    """Return all completed reports for a session, newest first."""
+    repo = get_session_repo()
+
+    # Verify session exists
+    record = await repo.get_by_id(session_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found")
+
+    reports = await repo.get_reports_by_session(session_id, user_id)
+    return SessionReportsResponse(
+        session_id=session_id,
+        reports=[SessionReportItem(**r) for r in reports],
+    )

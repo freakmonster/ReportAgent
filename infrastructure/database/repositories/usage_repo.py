@@ -34,28 +34,38 @@ class UsageRepository:
         workflow_id: str,
         user_id: str,
         template_name: str,
-        status: str = "completed",
+        status: str = "published",
         session_id: str | None = None,
         started_at: float = 0.0,
         duration_seconds: float = 0.0,
+        query: str = "",
+        report_content: str = "",
+        citations: list = None,
     ) -> None:
         """Insert / upsert a workflow execution record into ``workflow_info``."""
         from datetime import datetime as _dt
         from datetime import timezone as _tz
-
+        import json as _json
         from sqlalchemy import text
+
+        citations_json = _json.dumps(citations or [], ensure_ascii=False)
 
         async with self._session_factory() as session:
             await session.execute(
                 text(
                     """INSERT INTO workflow_info
                     (workflow_id, user_id, template_name, status,
-                     session_id, started_at, duration_seconds, created_at, updated_at)
-                    VALUES (:wid, :uid, :tmpl, :st, :sid, :sat, :dur, :now, :now)
+                     session_id, query, report_content, citations,
+                     started_at, duration_seconds, created_at, updated_at)
+                    VALUES (:wid, :uid, :tmpl, :st, :sid, :q, :rc, :cit,
+                            :sat, :dur, :now, :now)
                     ON CONFLICT (workflow_id) DO UPDATE SET
                         status = EXCLUDED.status,
                         duration_seconds = EXCLUDED.duration_seconds,
-                        updated_at = EXCLUDED.updated_at"""
+                        updated_at = EXCLUDED.updated_at,
+                        query = EXCLUDED.query,
+                        report_content = EXCLUDED.report_content,
+                        citations = EXCLUDED.citations"""
                 ),
                 {
                     "wid": workflow_id,
@@ -63,12 +73,19 @@ class UsageRepository:
                     "tmpl": template_name,
                     "st": status,
                     "sid": session_id,
+                    "q": query,
+                    "rc": report_content,
+                    "cit": citations_json,
                     "sat": _dt.fromtimestamp(started_at, tz=_tz.utc) if started_at else None,
                     "dur": duration_seconds,
                     "now": _dt.now(_tz.utc),
                 },
             )
             await session.commit()
+            print(
+                f"[usage_repo] record_workflow_info | {workflow_id} status={status} template={template_name} dur={duration_seconds}s",
+                flush=True,
+            )
 
     # ── Aggregation ────────────────────────────────────────────────────
 
@@ -84,6 +101,19 @@ class UsageRepository:
         cutoff_date = cutoff_dt.date()
 
         async with self._session_factory() as session:
+            # ── Diagnose: raw row count ──
+            raw_count = await session.scalar(
+                select(func.count()).select_from(workflow_info)
+            )
+            raw_in_window = await session.scalar(
+                select(func.count()).select_from(workflow_info)
+                .where(workflow_info.c.created_at >= cutoff_dt)
+            )
+            print(
+                f"[dashboard] workflow_info total={raw_count} | in_window={raw_in_window} | days={days} | cutoff={cutoff_dt.isoformat()}",
+                flush=True,
+            )
+            
             # ── usage_daily ─────────────────────────────────────────
             usage_row = (
                 await session.execute(
@@ -148,13 +178,21 @@ class UsageRepository:
                     "avg_duration": round(float(row.avg_duration), 2) if row.avg_duration else 0.0,
                 }
 
-            return {
-                "total_requests": int(usage_row.total_requests) if usage_row else 0,
+            result = {
+                "total_requests": total_count,
                 "success_rate": round(success_count / total_count, 4) if total_count > 0 else 0.0,
+                # NOTE: total_tokens requires usage_daily populated by aggregate_daily_usage.py cron job
                 "total_tokens": int(usage_row.total_tokens) if usage_row else 0,
                 "avg_duration_seconds": round(avg_duration, 2),
                 "by_template": by_template,
             }
+            print(
+                f"[dashboard] overview result | requests={result['total_requests']} "
+                f"rate={result['success_rate']} tokens={result['total_tokens']} "
+                f"avg_dur={result['avg_duration_seconds']}s templates={len(result['by_template'])}",
+                flush=True,
+            )
+            return result
 
     # ── Recent activity ────────────────────────────────────────────────
 

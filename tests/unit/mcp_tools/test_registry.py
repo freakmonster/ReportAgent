@@ -78,14 +78,14 @@ class TestToolRegistry:
             name="mcp_search",
             handler=proxy,
             source=ToolSource.MCP,
-            server_url="http://search:8001",
+            server_url="http://search:8005",
             mcp_tool_name="web_search",
             tags=["mcp", "search"],
         )
         info = fresh_registry.get_tool_info("mcp_search")
         assert info is not None
         assert info["source"] == "mcp"
-        assert info["server_url"] == "http://search:8001"
+        assert info["server_url"] == "http://search:8005"
 
     # ── Unregistration ────────────────────────────────────────────────
 
@@ -326,7 +326,7 @@ class TestRegisterMCPTools:
         with patch("mcp_tools.registry.registry", test_reg):
             mock_mcp = MagicMock()
             mock_settings = MagicMock()
-            mock_settings.mcp_search_url = "http://search:8001"
+            mock_settings.mcp_search_url = "http://search:8005"
             mock_settings.mcp_chart_url = ""
             mock_settings.mcp_email_url = ""
             mock_settings.mcp_database_url = ""

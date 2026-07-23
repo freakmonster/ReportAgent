@@ -1,6 +1,7 @@
 'use client';
 
 import type { ModelOption, NodeStatus, ReportType } from '@/types/api';
+import { NODE_ORDER_BY_TEMPLATE } from '@/types/api';
 import { create } from 'zustand';
 import { useReportStore } from './reportStore';
 
@@ -33,24 +34,35 @@ interface WorkflowState {
   citations: string[];
   totalElapsed: number;
 
+  // --- 历史记录 ---
+  reportHistory: ReportEntry[];
+
   // --- 动作 ---
   setForm: (partial: Partial<Pick<WorkflowState, 'query' | 'reportType' | 'model' | 'sessionId'>>) => void;
   startWorkflow: () => Promise<void>;
   updateNode: (nodeName: string, status: NodeStatus, durationMs: number) => void;
   setRunning: (running: boolean) => void;
   reset: () => void;
+  loadSessionHistory: (sessionId: string) => Promise<void>;
+}
+
+export interface ReportEntry {
+  query: string;
+  reportType: ReportType;
+  report: string;
+  citations: string[];
+  elapsed: number;
+  workflowId: string;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** 解析一条完整的 SSE 事件块（以 \n\n 分隔）
- *  后端 sse_starlette 的 EventSourceResponse 将事件包装为：
- *    data: {"event":"progress","node":"xxx","data":{...},"timestamp":"..."}
- *  同时兼容标准 SSE 格式：
+/** 解析一条完整的 SSE 事件块（以 \n\n 分隔）。
+ *  后端 sse-starlette 使用 dict 格式 yield，产生标准 SSE 格式：
  *    event: progress
- *    data: {...}
+ *    data: {"status":"completed","node":"intent_classifier"}
  */
 function parseSSEBlock(block: string): { event: string; data: string } | null {
   const lines = block.split('\n');
@@ -65,28 +77,7 @@ function parseSSEBlock(block: string): { event: string; data: string } | null {
     }
   }
 
-  // 标准格式：event + data 同时存在
   if (eventType && dataStr) return { event: eventType, data: dataStr };
-
-  // 只有 data 行时，尝试从 JSON 中提取 event 字段（后端 sse_starlette 格式）
-  if (!eventType && dataStr) {
-    try {
-      const parsed = JSON.parse(dataStr);
-      if (parsed.event) {
-        // 后端格式：{ event, data, node, timestamp }
-        // progress: { event:"progress", node:"data_collector", data:{status:"completed"} }
-        // complete:  { event:"complete",  node:"done",         data:{workflow_id,report,...} }
-        // error:     { event:"error",     node:"error",        data:{message:"..."} }
-        const payload: Record<string, unknown> = { ...(parsed.data ?? {}) };
-        // 把外层的 node 字段合并进 payload（progress 事件需要 payload.node）
-        if (parsed.node) payload.node = parsed.node;
-        return { event: parsed.event, data: JSON.stringify(payload) };
-      }
-    } catch {
-      // 非 JSON data，忽略
-    }
-  }
-
   return null;
 }
 
@@ -130,12 +121,15 @@ function processSSEPart(
       const citations: string[] = Array.isArray(payload.citations) ? payload.citations : [];
       const elapsed: number = typeof payload.elapsed_seconds === 'number' ? payload.elapsed_seconds : 0;
 
+      const { query, reportType, reportHistory } = get();
+
       set({
         report,
         citations,
         totalElapsed: elapsed,
         workflowId,
         isRunning: false,
+        reportHistory: [...reportHistory, { query, reportType, report, citations, elapsed, workflowId }],
       });
 
       if (workflowId) {
@@ -167,6 +161,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   report: '',
   citations: [],
   totalElapsed: 0,
+  reportHistory: [],
 
   // --- 表单更新 ---
   setForm: (partial) => set(partial),
@@ -190,10 +185,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       workflowId: null,
     });
 
-    // 标记已有节点为 idle（避免 NodeProgress 初始空白）
+    // 根据报告模板动态初始化节点列表（首个节点置为 running）
+    const templateNodes = NODE_ORDER_BY_TEMPLATE[reportType] || NODE_ORDER_BY_TEMPLATE.deep_report;
     const initNodes: Record<string, NodeState> = {};
-    ['intent_classifier', 'research_planner', 'data_collector', 'data_processor', 'data_analyst', 'writer', 'editor', 'reviewer', 'publisher'].forEach((name) => {
-      initNodes[name] = { status: 'idle', durationMs: 0 };
+    templateNodes.forEach((name, idx) => {
+      initNodes[name] = { status: idx === 0 ? 'running' : 'idle', durationMs: 0 };
     });
     set({ nodes: initNodes });
 
@@ -208,6 +204,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
 
       // 直连后端，绕过 Next.js 代理缓冲（Next.js 会缓冲所有 SSE 流）
       const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8010';
+      console.log('[SSE] 正在连接后端:', `${backendBase}/chat/stream`);
       const response = await fetch(`${backendBase}/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,7 +233,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
           console.log('[SSE] stream done | buffer_remaining=', buffer.length, 'bytes');
           // 处理剩余 buffer 中可能存在的完整 SSE 块
           if (buffer.trim()) {
-            const remainingParts = buffer.split('\n\n');
+            let remainingParts = buffer.split('\r\n\r\n');
+            if (remainingParts.length === 1) remainingParts = buffer.split('\n\n');
             for (const part of remainingParts) {
               const trimmed = part.trim();
               if (!trimmed) continue;
@@ -251,8 +249,10 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         console.log('[SSE] raw chunk | size=', value?.length, '| preview=', chunk.slice(0, 100).replace(/\n/g, '\\n'));
         buffer += chunk;
 
-        // 按 \n\n 分割 SSE 事件块
-        const parts = buffer.split('\n\n');
+        // 按 SSE 事件边界分割（sse-starlette v3 默认 \r\n 分隔符）
+        // 优先 \r\n\r\n，回退到 \n\n 兼容旧格式
+        let parts = buffer.split('\r\n\r\n');
+        if (parts.length === 1) parts = buffer.split('\n\n');
         buffer = parts.pop() || '';
 
         for (const part of parts) {
@@ -267,7 +267,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         error: msg,
         isRunning: false,
       });
-      console.error('[SSE] 连接失败:', err);
+      console.error('[SSE] 连接失败 (type=' + (err instanceof TypeError ? 'NETWORK' : 'HTTP') + '):', err);
     }
   },
 
@@ -296,5 +296,28 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       report: '',
       citations: [],
       totalElapsed: 0,
+      reportHistory: [],
     }),
+
+  // --- 从后端加载当前会话的历史 ---
+  loadSessionHistory: async (sessionId: string) => {
+    if (!sessionId) return;
+    try {
+      const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8010';
+      const res = await fetch(`${backendBase}/session/${sessionId}/reports?user_id=anonymous`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { session_id: string; reports: Array<{ workflow_id: string; query: string; template_name: string; report: string; citations: string[]; elapsed_seconds: number; created_at: string }> };
+      const history: ReportEntry[] = (data.reports || []).map((r) => ({
+        query: r.query || '',
+        reportType: r.template_name as ReportType,
+        report: r.report || '',
+        citations: r.citations || [],
+        elapsed: r.elapsed_seconds || 0,
+        workflowId: r.workflow_id,
+      }));
+      set({ reportHistory: history, report: '', citations: [] });
+    } catch (err) {
+      console.warn('[loadSessionHistory] 加载失败:', err);
+    }
+  },
 }));

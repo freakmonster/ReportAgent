@@ -69,7 +69,7 @@ QWEN_API_KEY=你的通义千问密钥          # https://dashscope.aliyun.com
 ```powershell
 python app.py
 # 后端运行在 http://localhost:8010
-# MCP search_server → http://localhost:8001
+# MCP search_server → http://localhost:8005
 # MCP chart_server  → http://localhost:8003
 ```
 

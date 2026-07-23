@@ -247,7 +247,7 @@ class MCPClient:
         """Call an MCP tool on a remote server with circuit breaker protection.
 
         Args:
-            server_url: Base URL of the MCP server (e.g. http://localhost:8001).
+            server_url: Base URL of the MCP server (e.g. http://localhost:8005).
             tool_name: Name of the tool to call on the server.
             arguments: Tool-specific arguments.
             server_name: Human-readable server name for logging/debugging.

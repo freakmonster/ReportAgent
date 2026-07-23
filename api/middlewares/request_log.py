@@ -24,6 +24,20 @@ class RequestLogMiddleware:
         request.state.trace_id = trace_id
         start = time.time()
 
+        # Log request arrival immediately (before DB query can hang)
+        try:
+            from infrastructure.observability.logger import get_logger
+
+            _logger = get_logger("api.request")
+            _logger.info(
+                "request_in",
+                trace_id=trace_id,
+                method=request.method,
+                path=request.url.path,
+            )
+        except Exception:
+            pass
+
         # Wrap send to capture response status
         async def _send(message):
             if message["type"] == "http.response.start":

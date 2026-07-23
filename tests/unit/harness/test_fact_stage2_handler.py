@@ -84,7 +84,7 @@ class TestMCPVerification:
             return_value=mock_result,
         ):
             with patch("config.settings.settings") as mock_settings:
-                mock_settings.mcp_search_url = "http://localhost:8001"
+                mock_settings.mcp_search_url = "http://localhost:8005"
                 result = await _verify_claim_via_mcp(claim)
 
         assert result["verified"] is True
@@ -113,7 +113,7 @@ class TestMCPVerification:
             return_value=mock_result,
         ):
             with patch("config.settings.settings") as mock_settings:
-                mock_settings.mcp_search_url = "http://localhost:8001"
+                mock_settings.mcp_search_url = "http://localhost:8005"
                 result = await _verify_claim_via_mcp(claim)
 
         assert result["verified"] is False
@@ -142,7 +142,7 @@ class TestMCPVerification:
             side_effect=Exception("Connection refused"),
         ):
             with patch("config.settings.settings") as mock_settings:
-                mock_settings.mcp_search_url = "http://localhost:8001"
+                mock_settings.mcp_search_url = "http://localhost:8005"
                 result = await _verify_claim_via_mcp(claim)
 
         assert result["verified"] is False

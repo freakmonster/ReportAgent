@@ -23,6 +23,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     base: dict[str, Any] = state.get("base", {})
     collection: dict[str, Any] = state.get("collection", {})
     user_input = base.get("user_input", "")
+    user_id = base.get("user_id", "")
     template_name = base.get("template_name", "deep_report")
 
     if not user_input:
@@ -35,7 +36,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         try:
             from infrastructure.memory.short_term import format_context, load_memory
 
-            entries = await load_memory(user_input, session_id)
+            entries = await load_memory(user_id, session_id)
             if entries:
                 memory_context = await format_context(entries)
                 print(
@@ -253,8 +254,8 @@ def _search_params(template_name: str) -> dict[str, Any]:
     """Return search parameters tuned for the report template."""
     # Tavily 获取条数
     if template_name == "flash_news":
-        return {"topic": "news", "max_results": 5}
-    return {"search_depth": "advanced", "max_results": 7}
+        return {"topic": "news", "max_results": 3}
+    return {"search_depth": "advanced", "max_results": 5}
 
 
 async def _index_tavily_docs_to_qdrant(

@@ -36,3 +36,22 @@ class SessionListResponse(BaseModel):
 
     sessions: list[SessionResponse]
     total: int
+
+
+class SessionReportItem(BaseModel):
+    """A single report entry within a session history."""
+
+    workflow_id: str
+    query: str = ""
+    template_name: str
+    report: str = ""
+    citations: list = Field(default_factory=list)
+    elapsed_seconds: float = 0.0
+    created_at: str | None = None
+
+
+class SessionReportsResponse(BaseModel):
+    """Response body for GET /session/{session_id}/reports."""
+
+    session_id: str
+    reports: list[SessionReportItem]

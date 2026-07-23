@@ -106,9 +106,13 @@ async def system_status() -> AdminStatusResponse:
     services: dict[str, str] = {}
     # Quick health probes
     try:
-        from infrastructure.database.connection import engine
+        from sqlalchemy import text
 
-        services["postgresql"] = "connected" if engine else "unknown"
+        from infrastructure.database.connection import get_db
+
+        async with get_db() as session:
+            await session.execute(text("SELECT 1"))
+        services["postgresql"] = "connected"
     except Exception:
         services["postgresql"] = "unavailable"
 

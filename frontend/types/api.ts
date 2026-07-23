@@ -26,18 +26,43 @@ export interface ChatRequest {
 // --- 节点状态 ---
 export type NodeStatus = 'idle' | 'running' | 'completed' | 'error';
 
-// --- 工作流节点定义顺序 ---
-export const NODE_ORDER: string[] = [
-  'intent_classifier',
-  'research_planner',
-  'data_collector',
-  'data_processor',
-  'data_analyst',
-  'writer',
-  'editor',
-  'reviewer',
-  'publisher',
-];
+// --- 工作流节点定义顺序（按模板类型） ---
+export const NODE_ORDER_BY_TEMPLATE: Record<ReportType, string[]> = {
+  deep_report: [
+    'intent_classifier',
+    'research_planner',
+    'data_collector',
+    'data_processor',
+    'data_analyst',
+    'writer',
+    'editor',
+    'reviewer',
+    'human_review',
+    'publisher',
+  ],
+  flash_news: [
+    'intent_classifier',
+    'research_planner',
+    'data_collector',
+    'writer',
+    'editor',
+    'publisher',
+  ],
+  earnings_analysis: [
+    'intent_classifier',
+    'research_planner',
+    'data_collector',
+    'data_analyst',
+    'writer',
+    'editor',
+    'reviewer',
+    'human_review',
+    'publisher',
+  ],
+};
+
+/** Legacy — prefer NODE_ORDER_BY_TEMPLATE. */
+export const NODE_ORDER: string[] = NODE_ORDER_BY_TEMPLATE.deep_report;
 
 // --- 节点名称 → 中文映射 ---
 export const NODE_LABELS: Record<string, string> = {
@@ -49,6 +74,7 @@ export const NODE_LABELS: Record<string, string> = {
   writer: '报告撰写',
   editor: '编辑润色',
   reviewer: '质量审核',
+  human_review: '人工审核',
   publisher: '发布输出',
 };
 

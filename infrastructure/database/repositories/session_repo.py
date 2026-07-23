@@ -7,13 +7,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import select, update
 
-from infrastructure.database.models import sessions
+from infrastructure.database.models import sessions, workflow_info
 
 # ── Record ─────────────────────────────────────────────────────────────
 
@@ -141,6 +141,22 @@ class SessionRepository:
 
     # ── Increment ─────────────────────────────────────────────────────
 
+    async def update_title_if_placeholder(self, session_id: str, new_title: str) -> None:
+        """Set the session title only if it's still a placeholder.
+
+        Placeholders: empty, "新会话", "未命名会话".
+        """
+        async with self._session_factory() as session:
+            await session.execute(
+                update(sessions)
+                .where(
+                    sessions.c.session_id == session_id,
+                    sessions.c.title.in_([None, "", "新会话", "未命名会话"]),
+                )
+                .values(title=new_title, updated_at=func.now())
+            )
+            await session.commit()
+
     async def increment_report_count(self, session_id: str) -> None:
         """Increment ``report_count`` by 1 and touch ``updated_at``."""
         async with self._session_factory() as session:
@@ -153,6 +169,46 @@ class SessionRepository:
                 )
             )
             await session.commit()
+
+    # ── Reports by session ────────────────────────────────────────────
+
+    async def get_reports_by_session(
+        self, session_id: str, user_id: str = "anonymous"
+    ) -> list[dict[str, Any]]:
+        """Return all completed reports for a session, newest first.
+
+        Each dict contains: workflow_id, query, template_name, report, citations,
+        elapsed_seconds, created_at.
+        """
+        from sqlalchemy import text
+
+        async with self._session_factory() as session:
+            result = await session.execute(
+                text(
+                    """SELECT
+                        workflow_id, query, template_name, report_content,
+                        citations, duration_seconds, created_at
+                    FROM workflow_info
+                    WHERE session_id = :sid
+                      AND user_id = :uid
+                      AND status = 'published'
+                    ORDER BY created_at DESC"""
+                ),
+                {"sid": session_id, "uid": user_id},
+            )
+            rows = result.fetchall()
+            return [
+                {
+                    "workflow_id": row[0],
+                    "query": row[1] or "",
+                    "template_name": row[2],
+                    "report": row[3] or "",
+                    "citations": row[4] if isinstance(row[4], list) else [],
+                    "elapsed_seconds": round(float(row[5]), 1) if row[5] else 0.0,
+                    "created_at": row[6].isoformat() if row[6] else None,
+                }
+                for row in rows
+            ]
 
 
 # ── Singleton ──────────────────────────────────────────────────────────

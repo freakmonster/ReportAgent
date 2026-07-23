@@ -47,7 +47,7 @@ if (-not $MainOnly) {
     Write-Host "[3/4] Starting MCP sidecar services..." -ForegroundColor Yellow
 
     $servers = @(
-        @{Name="mcp-search"; Port=8001; Module="mcp_tools.mcp_servers.search_server:app"},
+        @{Name="mcp-search"; Port=8005; Module="mcp_tools.mcp_servers.search_server:app"},
         @{Name="mcp-chart";  Port=8003; Module="mcp_tools.mcp_servers.chart_server:app"},
         @{Name="mcp-email";  Port=8004; Module="mcp_tools.mcp_servers.email_server:app"}
     )
@@ -72,7 +72,7 @@ Write-Host "  App:        http://localhost:8000" -ForegroundColor Green
 Write-Host "  Health:     http://localhost:8000/health" -ForegroundColor Green
 Write-Host "  API docs:   http://localhost:8000/docs" -ForegroundColor Green
 if (-not $MainOnly) {
-    Write-Host "  MCP Search: http://localhost:8001" -ForegroundColor Green
+    Write-Host "  MCP Search: http://localhost:8005" -ForegroundColor Green
     Write-Host "  MCP Chart:  http://localhost:8003" -ForegroundColor Green
     Write-Host "  MCP Email:  http://localhost:8004" -ForegroundColor Green
 }

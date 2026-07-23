@@ -32,6 +32,11 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
 
     async def event_generator():
         t_start = time.time()
+        print(
+            f"[CHAT_START] workflow_id={workflow_id} | user={user_id} | template={template} | model={body.model}",
+            file=sys.stderr,
+            flush=True,
+        )
         try:
             from agents.workflows.builder import WorkflowBuilder
 
@@ -62,7 +67,7 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                         file=sys.stderr,
                         flush=True,
                     )
-                    yield _event_str("progress", node_name, {"status": "completed"})
+                    yield _event_dict("progress", node_name, {"status": "completed"})
                     # Deep-merge the node output into the accumulator
                     for key in ("writing", "base"):
                         if key in node_output:
@@ -82,7 +87,12 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                 try:
                     from infrastructure.database.repositories.session_repo import get_session_repo
 
-                    await get_session_repo().increment_report_count(session_id)
+                    repo = get_session_repo()
+                    await repo.increment_report_count(session_id)
+                    # Auto-title: first 30 chars of user query if still placeholder
+                    await repo.update_title_if_placeholder(
+                        session_id, body.query[:30].strip()
+                    )
                     print(
                         f"[SSE] session report_count incremented | session={session_id}",
                         file=sys.stderr,
@@ -103,24 +113,43 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
             if report:
                 complete_data["report"] = report
 
-            # 写入 workflow_info 表（运营面板数据源）
+            # 写入 workflow_info 表（运营面板数据源 + 会话历史）
             try:
+                import json as _json
+
                 from infrastructure.database.repositories.usage_repo import get_usage_repo
+
+                query_text = str(state.get("base", {}).get("user_input", ""))
+                citations_raw = merged.get("writing", {}).get("citation_list", [])
+                citations_list = citations_raw if isinstance(citations_raw, list) else []
+                # 确保 report_content 是字符串
+                report_content = report if isinstance(report, str) else _json.dumps(report, ensure_ascii=False) if report else ""
+
+                print(
+                    f"[chat] writing workflow_info | wid={workflow_id} qlen={len(query_text)} rlen={len(report_content)} cit={len(citations_list)}",
+                    file=sys.stderr, flush=True,
+                )
 
                 await get_usage_repo().record_workflow_info(
                     workflow_id=workflow_id,
                     user_id=user_id,
                     template_name=template,
-                    status="completed",
+                    status="published",
                     session_id=session_id or None,
                     started_at=t_start,
                     duration_seconds=elapsed,
+                    query=query_text,
+                    report_content=report_content,
+                    citations=citations_list,
                 )
                 print(f"[chat] workflow_info recorded | {workflow_id}", file=sys.stderr, flush=True)
             except Exception as rec_err:
+                import traceback
                 print(
-                    f"[chat] failed to record workflow_info: {rec_err}", file=sys.stderr, flush=True
+                    f"[chat] failed to record workflow_info: {rec_err}",
+                    file=sys.stderr, flush=True,
                 )
+                traceback.print_exc(file=sys.stderr)
 
             # 记录工作流耗时到 Redis 统计
             try:
@@ -138,22 +167,29 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
             except Exception:
                 pass
 
-            yield _event_str("complete", "done", complete_data)
+            yield _event_dict("complete", "done", complete_data)
 
         except Exception as exc:
+            print(
+                f"[CHAT_ERROR] workflow_id={workflow_id} | error={exc}",
+                file=sys.stderr,
+                flush=True,
+            )
             logger.exception("Workflow failed: %s", workflow_id)
-            yield _event_str("error", "error", {"message": str(exc)})
+            yield _event_dict("error", "error", {"message": str(exc)})
 
     return EventSourceResponse(event_generator(), media_type="text/event-stream")
 
 
-def _event_str(event: str, node: str, data: dict) -> str:
-    """Build a JSON SSE event string."""
-    return json.dumps(
-        {
-            "event": event,
-            "node": node,
-            "data": data,
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
-    )
+def _event_dict(event: str, node: str, data: dict) -> dict:
+    """Build an SSE event dict for sse-starlette native handling.
+
+    sse-starlette v3+ treats yielded dicts as ServerSentEvent parameters,
+    producing standard SSE format: ``event: <type>\\ndata: <json>\\n\\n``.
+    """
+    payload = dict(data)
+    payload["node"] = node
+    return {
+        "event": event,
+        "data": json.dumps(payload, ensure_ascii=False),
+    }
