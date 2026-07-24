@@ -92,3 +92,15 @@ templates:
               false_dest: human_review
     entry_point: intent_classifier
     finish_point: publisher
+
+  # General QA — direct LLM answer, no search / analysis / review
+  qa:
+    description: "General Q&A — direct LLM answer for casual questions"
+    nodes:
+      - intent_classifier
+      - qa_responder
+    edges:
+      linear:
+        - [intent_classifier, qa_responder]
+    entry_point: intent_classifier
+    finish_point: qa_responder

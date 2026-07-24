@@ -30,6 +30,7 @@ class TemplateLoader:
         "reviewer",
         "human_review",
         "publisher",
+        "qa_responder",
     }
 
     def __init__(self, config_path: str | None = None) -> None:

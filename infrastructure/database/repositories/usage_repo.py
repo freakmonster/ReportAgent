@@ -211,10 +211,7 @@ class UsageRepository:
                         workflow_info.c.user_id,
                         workflow_info.c.template_name,
                         workflow_info.c.status,
-                        func.extract(
-                            "epoch",
-                            workflow_info.c.updated_at - workflow_info.c.created_at,
-                        ).label("duration_seconds"),
+                        workflow_info.c.duration_seconds,
                         workflow_info.c.created_at,
                     )
                     .order_by(workflow_info.c.created_at.desc())

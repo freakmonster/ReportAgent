@@ -20,3 +20,9 @@ workflow_overrides:
       - permission_handler
       - structural_handler
       - audit_handler
+
+  qa:
+    handler_chain:
+      - input_safety_handler
+      - structural_handler
+      - audit_handler

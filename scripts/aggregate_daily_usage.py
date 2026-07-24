@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 # ── Date parsing ─────────────────────────────────────────────────────────
 
@@ -98,7 +98,7 @@ async def aggregate(target_date: str) -> None:
                     """
                 ),
                 {
-                    "date": target_date,
+                    "date": datetime.strptime(target_date, "%Y-%m-%d").date(),
                     "model": model,
                     "req": request_count,
                     "tokens": total_tokens,

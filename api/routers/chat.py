@@ -27,11 +27,32 @@ router = APIRouter(tags=["chat"])
 async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depends(auth_dependency)):
     """SSE streaming endpoint for real-time report generation."""
     workflow_id = body.conversation_id or str(uuid4())
-    template = body.report_type or "deep_report"
     session_id = body.session_id or ""
 
     async def event_generator():
         t_start = time.time()
+        # ── Pre-classify intent (regex-only, ms-level) ───────────
+        template = body.report_type or ""  # empty means auto-detect
+        if not body.report_type:
+            from services.intent_service import quick_classify_async
+
+            pre_intent = await quick_classify_async(body.query)
+            print(
+                f"[PRE_CLASSIFY] category={pre_intent.category} confidence={pre_intent.confidence} "
+                f"reason={pre_intent.reason} | query={body.query[:60]}",
+                file=sys.stderr,
+                flush=True,
+            )
+            if pre_intent.category == "invalid":
+                yield _event_dict(
+                    "error", "input_safety", {"message": "输入包含不安全内容，请重新输入"}
+                )
+                return
+            elif pre_intent.category == "chat":
+                template = "qa"
+            else:
+                template = pre_intent.report_type or "deep_report"
+
         print(
             f"[CHAT_START] workflow_id={workflow_id} | user={user_id} | template={template} | model={body.model}",
             file=sys.stderr,
@@ -105,6 +126,14 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                         flush=True,
                     )
 
+            # Read charts from the accumulated state (populated by publisher)
+            charts_data_raw = merged.get("writing", {}).get("charts", [])
+            charts_data = charts_data_raw if isinstance(charts_data_raw, list) else []
+            print(
+                f"[SSE] charts_count={len(charts_data)} | workflow={workflow_id}",
+                file=sys.stderr, flush=True,
+            )
+
             complete_data = {
                 "workflow_id": workflow_id,
                 "report_type": template,
@@ -112,6 +141,8 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
             }
             if report:
                 complete_data["report"] = report
+            if charts_data:
+                complete_data["charts"] = charts_data
 
             # 写入 workflow_info 表（运营面板数据源 + 会话历史）
             try:

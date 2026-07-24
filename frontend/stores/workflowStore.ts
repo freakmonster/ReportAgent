@@ -25,6 +25,7 @@ interface WorkflowState {
   // --- 运行状态 ---
   isRunning: boolean;
   workflowId: string | null;
+  detectedTemplate: string;  // SSE 推断的模板类型 ('' / 'qa' / 'report')
 
   // --- 节点进度 ---
   nodes: Record<string, NodeState>;
@@ -46,6 +47,12 @@ interface WorkflowState {
   loadSessionHistory: (sessionId: string) => Promise<void>;
 }
 
+export interface ChartEntry {
+  chart_type: string;
+  title: string;
+  image_base64: string;
+}
+
 export interface ReportEntry {
   query: string;
   reportType: ReportType;
@@ -53,6 +60,8 @@ export interface ReportEntry {
   citations: string[];
   elapsed: number;
   workflowId: string;
+  type: 'report' | 'qa';
+  charts?: ChartEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +113,11 @@ function processSSEPart(
       const durationMs: number = typeof payload.duration_ms === 'number' ? payload.duration_ms : 0;
       get().updateNode(nodeName, status, durationMs);
 
+      // 从第 2 个节点推断模板类型（intent_classifier 后第一个节点区分 qa/report）
+      if (!get().detectedTemplate && nodeName !== 'intent_classifier') {
+        set({ detectedTemplate: nodeName === 'qa_responder' ? 'qa' : 'report' });
+      }
+
       // 标记下一个节点为 running（如果还没完成）
       const allNodeNames = Object.keys(get().nodes);
       const currentIdx = allNodeNames.indexOf(nodeName);
@@ -120,8 +134,11 @@ function processSSEPart(
       const report: string = payload.report || '';
       const citations: string[] = Array.isArray(payload.citations) ? payload.citations : [];
       const elapsed: number = typeof payload.elapsed_seconds === 'number' ? payload.elapsed_seconds : 0;
+      const template: string = payload.report_type || payload.template || 'deep_report';
+      const entryType: 'report' | 'qa' = template === 'qa' ? 'qa' : 'report';
+      const charts: ChartEntry[] = Array.isArray(payload.charts) ? payload.charts : [];
 
-      const { query, reportType, reportHistory } = get();
+      const { query, reportHistory } = get();
 
       set({
         report,
@@ -129,11 +146,11 @@ function processSSEPart(
         totalElapsed: elapsed,
         workflowId,
         isRunning: false,
-        reportHistory: [...reportHistory, { query, reportType, report, citations, elapsed, workflowId }],
+        reportHistory: [...reportHistory, { query, reportType: template as ReportType, report, citations, elapsed, workflowId, type: entryType, charts }],
       });
 
       if (workflowId) {
-        useReportStore.getState().saveReport(workflowId, report, citations, get().query, get().reportType);
+        useReportStore.getState().saveReport(workflowId, report, citations, get().query, template);
       }
     }
   } catch {
@@ -148,13 +165,14 @@ function processSSEPart(
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   // --- 初始值 ---
   query: '',
-  reportType: 'deep_report',
+  reportType: 'auto',
   model: 'deepseek-flash',
   sessionId: '',
   error: null,
 
   isRunning: false,
   workflowId: null,
+  detectedTemplate: '',
 
   nodes: {},
 
@@ -183,6 +201,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       citations: [],
       totalElapsed: 0,
       workflowId: null,
+      detectedTemplate: '',
     });
 
     // 根据报告模板动态初始化节点列表（首个节点置为 running）
@@ -196,7 +215,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     try {
       const body: Record<string, unknown> = {
         query,
-        report_type: reportType,
+        report_type: reportType || '',
         model,
         user_id: 'anonymous',
       };
@@ -289,10 +308,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       isRunning: false,
       error: null,
       query: '',
-      reportType: 'deep_report',
+      reportType: 'auto',
       model: 'deepseek-flash',
       sessionId: '',
       workflowId: null,
+      detectedTemplate: '',
       report: '',
       citations: [],
       totalElapsed: 0,
@@ -314,6 +334,8 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         citations: r.citations || [],
         elapsed: r.elapsed_seconds || 0,
         workflowId: r.workflow_id,
+        type: r.template_name === 'qa' ? 'qa' : 'report',
+        charts: (r as Record<string, unknown>).charts as ChartEntry[] | [],
       }));
       set({ reportHistory: history, report: '', citations: [] });
     } catch (err) {

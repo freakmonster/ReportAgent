@@ -1,46 +1,49 @@
 'use client';
 
 import { useWorkflowStore } from '@/stores/workflowStore';
-import { NODE_ORDER_BY_TEMPLATE } from '@/types/api';
-import { NodeCard } from './NodeCard';
+import { NODE_LABELS, NODE_ORDER_BY_TEMPLATE } from '@/types/api';
 
 export function NodeProgress() {
   const nodes = useWorkflowStore(s => s.nodes);
-  const isRunning = useWorkflowStore(s => s.isRunning);
   const reportType = useWorkflowStore(s => s.reportType);
 
   const nodeOrder = NODE_ORDER_BY_TEMPLATE[reportType] || NODE_ORDER_BY_TEMPLATE.deep_report;
 
-  // 找到第一个 running 或最后一个 completed 之后的节点作为 current
-  let currentIdx = -1;
-  for (let i = 0; i < nodeOrder.length; i++) {
-    const s = nodes[nodeOrder[i]]?.status;
-    if (s === 'running') { currentIdx = i; break; }
-  }
-  if (currentIdx === -1) {
-    for (let i = nodeOrder.length - 1; i >= 0; i--) {
-      if (nodes[nodeOrder[i]]?.status === 'completed') { currentIdx = i + 1; break; }
-    }
-  }
+  const runningNode = nodeOrder.find(n => nodes[n]?.status === 'running');
+  const completedNodes = nodeOrder.filter(n => nodes[n]?.status === 'completed');
 
   return (
-    <div className="space-y-1">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm p-4">
       <h3 className="text-sm font-semibold mb-3 text-gray-600 dark:text-gray-400 uppercase tracking-wide">
         Agent 执行进度
       </h3>
-      <div className="space-y-0.5">
-        {nodeOrder.map((name, idx) => (
-          <NodeCard
-            key={name}
-            nodeName={name}
-            status={nodes[name]?.status || 'idle'}
-            durationMs={nodes[name]?.durationMs || 0}
-            isCurrent={idx === currentIdx && isRunning}
-          />
-        ))}
-      </div>
-      {isRunning && (
-        <p className="text-xs text-blue-500 mt-2 animate-pulse">执行中...</p>
+
+      {/* 当前节点：大字 + 脉冲动画 */}
+      {runningNode ? (
+        <p className="text-lg font-semibold text-blue-600 dark:text-blue-400 animate-pulse mb-2">
+          {NODE_LABELS[runningNode] || runningNode}中...
+        </p>
+      ) : (
+        <p className="text-lg font-semibold text-gray-400 dark:text-gray-500 mb-2">
+          执行中...
+        </p>
+      )}
+
+      {/* 已完成节点面包屑 */}
+      {completedNodes.length > 0 && (
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          {completedNodes.map(n => (
+            <span key={n} className="inline-flex items-center gap-0.5">
+              <span>✅ {NODE_LABELS[n] || n}</span>
+              <span className="mx-1 opacity-40">→</span>
+            </span>
+          ))}
+          {runningNode && (
+            <span className="inline-flex items-center gap-0.5 text-blue-500">
+              <span>⏳ {NODE_LABELS[runningNode] || runningNode}中...</span>
+            </span>
+          )}
+        </p>
       )}
     </div>
   );

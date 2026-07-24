@@ -97,6 +97,14 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("lifespan.message_queues.failed | %s", exc)
 
+    # ── Auto-aggregate background task ──────────────────────────────────
+    _aggregate_interval = 3600  # 1 hour
+    _aggregate_task = asyncio.create_task(
+        _auto_aggregate_loop(_aggregate_interval), name="auto-aggregate"
+    )
+    app.state.aggregate_task = _aggregate_task
+    logger.info("lifespan.aggregate.started", interval_seconds=_aggregate_interval)
+
     # Qdrant
     try:
         from infrastructure.vector_db.qdrant_client import get_qdrant, init_qdrant
@@ -194,6 +202,14 @@ async def lifespan(app: FastAPI):
         # checkpointer context exit → connection pool closed
     # ── Shutdown MCP servers ───────────────────────────────────────────
     mcp_tasks: list[asyncio.Task] = getattr(app.state, "mcp_tasks", [])
+    # Shutdown auto-aggregate task
+    agg_task: asyncio.Task | None = getattr(app.state, "aggregate_task", None)
+    if agg_task and not agg_task.done():
+        agg_task.cancel()
+        try:
+            await agg_task
+        except asyncio.CancelledError:
+            logger.info("lifespan.aggregate.cancelled")
     for t in mcp_tasks:
         t.cancel()
     for t in mcp_tasks:
@@ -210,6 +226,24 @@ def _handle_startup_error(service: str, exc: Exception) -> None:
         logger.critical("lifespan.service_failed", service=service, exc_info=True)
     else:
         logger.warning("lifespan.service_unavailable", service=service, detail=str(exc))
+
+
+async def _auto_aggregate_loop(interval_seconds: int) -> None:
+    """Background task: periodically aggregate Redis stats → PostgreSQL."""
+    from datetime import datetime, timezone
+
+    while True:
+        await asyncio.sleep(interval_seconds)
+        try:
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            from scripts.aggregate_daily_usage import aggregate
+
+            await aggregate(today)
+            logger.info("auto_aggregate.completed", date=today)
+        except asyncio.CancelledError:
+            break
+        except Exception as exc:
+            logger.warning("auto_aggregate.failed | %s", exc)
 
 
 app = FastAPI(

@@ -3,7 +3,7 @@
 // ============================================================
 
 // --- 报告类型 ---
-export type ReportType = 'deep_report' | 'flash_news' | 'earnings_analysis';
+export type ReportType = 'deep_report' | 'flash_news' | 'earnings_analysis' | 'auto';
 
 // --- 模型选项 ---
 export type ModelOption =
@@ -16,7 +16,7 @@ export type ModelOption =
 // --- 请求体 ---
 export interface ChatRequest {
   query: string;
-  report_type: ReportType;
+  report_type?: ReportType;
   model: ModelOption;
   user_id: string;
   session_id?: string;
@@ -27,7 +27,7 @@ export interface ChatRequest {
 export type NodeStatus = 'idle' | 'running' | 'completed' | 'error';
 
 // --- 工作流节点定义顺序（按模板类型） ---
-export const NODE_ORDER_BY_TEMPLATE: Record<ReportType, string[]> = {
+export const NODE_ORDER_BY_TEMPLATE: Record<string, string[]> = {
   deep_report: [
     'intent_classifier',
     'research_planner',
@@ -59,6 +59,19 @@ export const NODE_ORDER_BY_TEMPLATE: Record<ReportType, string[]> = {
     'human_review',
     'publisher',
   ],
+  qa: ['intent_classifier', 'qa_responder'],
+  auto: [
+    'intent_classifier',
+    'research_planner',
+    'data_collector',
+    'data_processor',
+    'data_analyst',
+    'writer',
+    'editor',
+    'reviewer',
+    'human_review',
+    'publisher',
+  ],
 };
 
 /** Legacy — prefer NODE_ORDER_BY_TEMPLATE. */
@@ -76,6 +89,7 @@ export const NODE_LABELS: Record<string, string> = {
   reviewer: '质量审核',
   human_review: '人工审核',
   publisher: '发布输出',
+  qa_responder: '智能问答',
 };
 
 // --- 模型选项 → 显示名称 ---
@@ -89,6 +103,7 @@ export const MODEL_LABELS: Record<ModelOption, string> = {
 
 // --- 报告类型 → 显示名称 ---
 export const REPORT_TYPE_LABELS: Record<ReportType, string> = {
+  auto: '自动识别',
   deep_report: '深度研报',
   flash_news: '快讯',
   earnings_analysis: '财报分析',
@@ -108,4 +123,5 @@ export interface SSECompleteEvent {
   elapsed: number;
   workflow_id: string;
   template?: ReportType;
+  report_type?: ReportType;
 }

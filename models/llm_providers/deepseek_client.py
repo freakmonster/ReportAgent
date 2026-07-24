@@ -54,6 +54,7 @@ class DeepSeekClient:
             resolved = _DEEPSEEK_TIER_MAP.get(tier)
             if resolved:
                 self._model: str = resolved
+                self._stats_model: str = f"deepseek-{tier}"
             else:
                 logger.warning(
                     "Unknown DeepSeek tier '%s', falling back to '%s'",
@@ -61,8 +62,10 @@ class DeepSeekClient:
                     settings.deepseek_model,
                 )
                 self._model = settings.deepseek_model
+                self._stats_model = settings.deepseek_model
         else:
             self._model = settings.deepseek_model
+            self._stats_model = settings.deepseek_model
         self._client: AsyncOpenAI | None = None
 
     def _get_client(self) -> AsyncOpenAI:
@@ -115,6 +118,11 @@ class DeepSeekClient:
 
         cached = await cache_get(messages, temperature, max_tokens, self._model)
         if cached is not None:
+            # ── Async stats for cache hit too ──
+            try:
+                asyncio.create_task(_incr_stats(self._stats_model, cached))
+            except Exception:
+                pass
             return cached
 
         # ── Cache miss: make real API call ──
@@ -127,7 +135,7 @@ class DeepSeekClient:
 
         # ── Async stats (fire-and-forget) ──
         try:
-            asyncio.create_task(_incr_stats(self._model, result))
+            asyncio.create_task(_incr_stats(self._stats_model, result))
         except Exception:
             pass
 

@@ -26,14 +26,26 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
   }, [loadSessions]);
 
   // --- 无会话时自动创建一个（加载完成后触发一次）---
+  // --- 加载完成后：清理空会话 + 自动选中最新非空会话 ---
   useEffect(() => {
-    if (!loading && firstLoadDone.current && sessions.length === 0 && !value && !_globalAutoCreated) {
+    if (!loading && firstLoadDone.current && sessions.length > 0 && !value && !_globalAutoCreated) {
       _globalAutoCreated = true;
-      createSession('anonymous').then((id) => {
-        if (id) onChange(id);
-      });
+      // 1. 清理所有空会话（fire-and-forget，不阻塞自动选中）
+      const emptyIds = sessions.filter((s) => s.report_count === 0).map((s) => s.session_id);
+      emptyIds.forEach((id) => { deleteSession(id); });
+
+      // 2. 选中第一个非空会话
+      const nonEmptyFirst = sessions.find((s) => s.report_count > 0);
+      if (nonEmptyFirst) {
+        onChange(nonEmptyFirst.session_id);
+      } else {
+        // 全部为空 → 创建新的
+        createSession('anonymous').then((id) => {
+          if (id) onChange(id);
+        });
+      }
     }
-  }, [loading, sessions.length, value, createSession, onChange]);
+  }, [loading, sessions, value, deleteSession, createSession, onChange]);
 
   // --- 新建会话 ---
   const handleCreate = useCallback(async () => {
@@ -81,7 +93,15 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
                   ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
-              onClick={() => !disabled && onChange(s.session_id)}
+              onClick={() => {
+                if (disabled) return;
+                // 切换前清理旧空会话
+                const oldSession = sessions.find((sess) => sess.session_id === value);
+                if (oldSession && oldSession.report_count === 0) {
+                  deleteSession(value);
+                }
+                onChange(s.session_id);
+              }}
               disabled={disabled}
             >
               <span className="truncate flex-1">{s.title}</span>

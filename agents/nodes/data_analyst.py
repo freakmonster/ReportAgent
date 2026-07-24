@@ -119,6 +119,10 @@ async def _generate_charts(analysis: dict[str, Any]) -> list[dict[str, Any]]:
     """
     metrics: list[str] = analysis.get("key_metrics", [])
     if not metrics or analysis.get("doc_count", 0) < 2:
+        logger.info(
+            "data_analyst: skip charts -- metrics_count=%d doc_count=%d",
+            len(metrics), analysis.get("doc_count", 0),
+        )
         return []
 
     try:
@@ -138,6 +142,10 @@ async def _generate_charts(analysis: dict[str, Any]) -> list[dict[str, Any]]:
                 numbers.append((m, val))
 
         if len(numbers) < 2:
+            logger.info(
+                "data_analyst: skip charts -- numeric_values=%d (need >=2)",
+                len(numbers),
+            )
             return []
 
         numbers = numbers[:8]  # top 8 for readability
@@ -159,6 +167,8 @@ async def _generate_charts(analysis: dict[str, Any]) -> list[dict[str, Any]]:
             data = response.json()
 
         if data:
+            img_len = len(data.get("image_base64", ""))
+            logger.info("data_analyst: chart generated -- base64_len=%d", img_len)
             chart_entry: dict[str, Any] = {
                 "chart_type": data.get("chart_type", "bar"),
                 "title": "Key Metrics Overview",

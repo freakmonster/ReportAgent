@@ -3,21 +3,19 @@
 import { SessionSelect } from '@/components/SessionSelect';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { ModelOption, ReportType } from '@/types/api';
-import { MODEL_LABELS, REPORT_TYPE_LABELS } from '@/types/api';
+import { MODEL_LABELS } from '@/types/api';
 import { useCallback, useRef, useState } from 'react';
 
 const MODELS: ModelOption[] = ['deepseek-flash', 'deepseek-pro', 'qwen-8b', 'qwen-32b', 'qwen-max'];
-const REPORT_TYPES: ReportType[] = ['deep_report', 'flash_news', 'earnings_analysis'];
 
 export function TaskForm() {
   const isRunning = useWorkflowStore((s) => s.isRunning);
   const error = useWorkflowStore((s) => s.error);
   const setForm = useWorkflowStore((s) => s.setForm);
   const startWorkflow = useWorkflowStore((s) => s.startWorkflow);
-  const reset = useWorkflowStore((s) => s.reset);
 
   const [query, setQuery] = useState('');
-  const [reportType, setReportType] = useState<ReportType>('deep_report');
+  const [selectFocused, setSelectFocused] = useState(false);
   const [model, setModel] = useState<ModelOption>('deepseek-flash');
   const [sessionId, setSessionId] = useState('');
 
@@ -46,16 +44,8 @@ export function TaskForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    setForm({ query, reportType, model, sessionId });
+    setForm({ query, reportType: '' as ReportType, model, sessionId });
     await startWorkflow();
-  };
-
-  const handleReset = () => {
-    reset();
-    setQuery('');
-    setReportType('deep_report');
-    setModel('deepseek-flash');
-    // sessionId 保持不变
   };
 
   const canSubmit = !isRunning && query.trim().length > 0 && sessionId.length > 0;
@@ -67,43 +57,27 @@ export function TaskForm() {
         {/* 关联会话 */}
         <div>
           <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-            关联会话
+            会话列表
           </label>
           <SessionSelect value={sessionId} onChange={handleSessionChange} disabled={isRunning} />
         </div>
 
-        {/* 报告类型 */}
-        <div>
-          <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-            报告类型
-          </label>
-          <div className="flex gap-2">
-            {REPORT_TYPES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`px-4 py-2 rounded-lg text-sm border transition ${
-                  reportType === t
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400'
-                } disabled:opacity-50`}
-                onClick={() => setReportType(t)}
-                disabled={isRunning}
-              >
-                {REPORT_TYPE_LABELS[t]}
-              </button>
-            ))}
+        {/* 错误提示 */}
+        {error && (
+          <div className="px-3 py-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
+            {error}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* AI 模型 */}
-        <div>
-          <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-            AI 模型
-          </label>
+      {/* ── 下半部分：固定输入栏 ── */}
+      <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 px-6 py-3 space-y-2">
+        {/* AI 模型 — 融入输入栏顶部 */}
+        <div className="relative">
           <select
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white disabled:opacity-50"
+            className="w-full px-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 text-gray-500 disabled:opacity-50 appearance-none pr-7"
             value={model}
+            onClick={() => setSelectFocused((prev) => !prev)}
             onChange={(e) => setModel(e.target.value as ModelOption)}
             disabled={isRunning}
           >
@@ -113,34 +87,25 @@ export function TaskForm() {
               </option>
             ))}
           </select>
+          {/* 箭头：焦点时向上，失焦时向下 */}
+          <svg
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points={selectFocused ? '18 15 12 9 6 15' : '18 9 12 15 6 9'} />
+          </svg>
         </div>
 
-        {/* 错误提示 + 重置 */}
-        <div className="flex items-center justify-between gap-3">
-          {error ? (
-            <div className="flex-1 px-3 py-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
-              {error}
-            </div>
-          ) : (
-            <div />
-          )}
-          {!isRunning && (
-            <button
-              type="button"
-              onClick={handleReset}
-              className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition shrink-0"
-            >
-              重置
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── 下半部分：固定输入栏 ── */}
-      <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex items-end gap-2">
+        {/* textarea + 发送按钮 */}
+        <div className="flex items-end gap-2">
         <textarea
           className="flex-1 h-17 px-3 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white disabled:opacity-50 text-sm"
-          placeholder="输入研报主题..."
+          placeholder="输入..."
           value={query}
           onChange={(e) => handleTextChange(e.target.value)}
           onCompositionStart={() => { isComposing.current = true; }}
@@ -171,6 +136,16 @@ export function TaskForm() {
             </svg>
           )}
         </button>
+        </div>
+
+        {/* 输入提示 */}
+        <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+          试试这样说：<br />
+          一般提问："最近黄金为什么涨"、"什么是深度学习"<br />
+          深度研报："分析腾讯的未来增长点"、"新能源汽车产业链分析"<br />
+          市场快讯："今日AI行业快讯"<br />
+          财报分析："分析腾讯Q4财报"
+        </p>
       </div>
     </form>
   );

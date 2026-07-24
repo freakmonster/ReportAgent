@@ -192,7 +192,7 @@ class SessionRepository:
                     WHERE session_id = :sid
                       AND user_id = :uid
                       AND status = 'published'
-                    ORDER BY created_at DESC"""
+                    ORDER BY created_at ASC"""
                 ),
                 {"sid": session_id, "uid": user_id},
             )

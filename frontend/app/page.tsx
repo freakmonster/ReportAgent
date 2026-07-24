@@ -19,10 +19,18 @@ export default function Home() {
   const isRunning = useWorkflowStore((s) => s.isRunning);
   const report = useWorkflowStore((s) => s.report);
   const sessionId = useWorkflowStore((s) => s.sessionId);
-  const workflowId = useWorkflowStore((s) => s.workflowId);
   const totalElapsed = useWorkflowStore((s) => s.totalElapsed);
   const reportHistory = useWorkflowStore((s) => s.reportHistory);
+  const detectedTemplate = useWorkflowStore((s) => s.detectedTemplate);
   const loadSessionHistory = useWorkflowStore((s) => s.loadSessionHistory);
+
+  // --- 自动滚动到右栏底部 ---
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [reportHistory.length, isRunning]);
 
   // --- 切换会话时加载历史 ---
   const prevSessionRef = useRef(sessionId);
@@ -102,15 +110,18 @@ export default function Home() {
           {reportHistory.length > 0 && (
             <div className="space-y-4">
               {reportHistory.map((entry, i) => (
-                <ReportBubble key={entry.workflowId || i} entry={entry} index={i} />
+                <ReportBubble key={entry.workflowId || i} entry={entry} index={i} defaultCollapsed={i < reportHistory.length - 1} />
               ))}
             </div>
           )}
 
-          {/* 执行中：显示 Agent 执行进度 */}
-          {isRunning && (
+          {/* 非 QA 执行中：显示 Agent 执行进度 */}
+          {isRunning && detectedTemplate !== 'qa' && (
             <NodeProgress />
           )}
+
+          {/* 哨兵元素：用于自动滚动到最底部 */}
+          <div ref={bottomRef} />
         </main>
       </div>
     </div>

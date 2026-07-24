@@ -45,6 +45,7 @@ class QwenClient:
         self._api_key: str = settings.qwen_api_key
         self._base_url: str = settings.qwen_base_url
         self._model: str = resolved
+        self._stats_model: str = f"qwen-{model_size}"
         self._client: AsyncOpenAI | None = None
 
     def _get_client(self) -> AsyncOpenAI:
@@ -78,6 +79,11 @@ class QwenClient:
 
         cached = await cache_get(messages, temperature, max_tokens, self._model)
         if cached is not None:
+            # ── Async stats for cache hit too ──
+            try:
+                asyncio.create_task(_incr_stats(self._stats_model, cached))
+            except Exception:
+                pass
             return cached
 
         # ── Cache miss: make real API call ──
@@ -98,7 +104,7 @@ class QwenClient:
 
         # ── Async stats (fire-and-forget) ──
         try:
-            asyncio.create_task(_incr_stats(self._model, result))
+            asyncio.create_task(_incr_stats(self._stats_model, result))
         except Exception:
             pass
 

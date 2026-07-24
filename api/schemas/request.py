@@ -20,8 +20,8 @@ class ChatRequest(BaseModel):
         ..., min_length=1, max_length=5000, description="User query for report generation"
     )
     report_type: str = Field(
-        default="deep_report",
-        pattern=r"^(deep_report|flash_news|earnings_analysis)$",
+        default="",
+        pattern=r"^(|deep_report|flash_news|earnings_analysis)$",
         description="Report template type",
     )
     model: str = Field(

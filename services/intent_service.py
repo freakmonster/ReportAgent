@@ -89,6 +89,19 @@ _CHAT_KEYWORDS: list[str] = [
     "怎么用",
     "怎么使用",
     "使用方法",
+    # Common Chinese question words / patterns
+    "哪里",
+    "什么",
+    "为什么",
+    "如何",
+    "怎么",
+    "哪个",
+    "什么时候",
+    "多少",
+    "谁",
+    "在哪",
+    "是谁",
+    "是什么意思",
 ]
 
 # Keywords indicating invalid / harmful input
@@ -399,3 +412,77 @@ def _detect_report_type(query: str) -> str:
         if kw in query:
             return rtype
     return ""
+
+
+async def quick_classify_async(query: str) -> IntentResult:
+    """预分类 — 正则层（Layer 1-5）+ LLM 兜底（Layer 6）。
+
+    用于 chat.py 在构建 LangGraph 图之前快速判断意图，
+    避免为 CHAT 意图构建 10 节点的 deep_report 图。
+    大多数查询在 Layer 1-5 毫秒级命中；
+    Layer 6 仅对关键词不匹配的长查询调用 qwen3-8b 兜底。
+    """
+    query_lower = query.lower()
+
+    # Layer 1: Injection detection
+    for pattern in _INJECTION_PATTERNS:
+        if pattern.search(query):
+            return IntentResult(
+                category=IntentCategory.INVALID,
+                confidence=0.95,
+                matched_rules=[pattern.pattern],
+                reason="Prompt injection detected",
+            )
+
+    # Layer 2: Invalid / harmful keywords
+    matched_invalid = [kw for kw in _INVALID_KEYWORDS if kw in query_lower]
+    if matched_invalid:
+        return IntentResult(
+            category=IntentCategory.INVALID,
+            confidence=0.9,
+            matched_rules=matched_invalid,
+            reason="Harmful content keywords",
+        )
+
+    # Layer 3: Report keywords
+    matched_report = [kw for kw in _REPORT_KEYWORDS if kw in query_lower]
+    if len(matched_report) >= 2:
+        return IntentResult(
+            category=IntentCategory.REPORT,
+            confidence=min(0.6 + 0.1 * len(matched_report), 0.95),
+            matched_rules=matched_report,
+            report_type=_detect_report_type(query),
+            reason=f"Matched {len(matched_report)} report keywords",
+        )
+    if len(matched_report) == 1:
+        return IntentResult(
+            category=IntentCategory.REPORT,
+            confidence=0.5,
+            matched_rules=matched_report,
+            report_type=_detect_report_type(query),
+            reason="Single report keyword match (ambiguous)",
+        )
+
+    # Layer 4: Chat keywords
+    matched_chat = [kw for kw in _CHAT_KEYWORDS if kw in query_lower]
+    if matched_chat:
+        return IntentResult(
+            category=IntentCategory.CHAT,
+            confidence=0.7,
+            matched_rules=matched_chat,
+            reason="Chat keywords detected",
+        )
+
+    # Layer 5: Length heuristic
+    if len(query) <= 6:
+        return IntentResult(
+            category=IntentCategory.CHAT,
+            confidence=0.4,
+            reason="Very short query, likely chat",
+        )
+
+    # Layer 6: LLM fallback (qwen3-8b) for ambiguous queries
+    try:
+        return await _llm_fallback_async(query)
+    except Exception:
+        return _fallback_default()
