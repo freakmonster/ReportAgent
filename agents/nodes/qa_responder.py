@@ -43,7 +43,8 @@ async def entry(state: ReportState) -> dict[str, Any]:
         memories = await load_memory(user_id, session_id)
         if memories:
             memory_context = "用户最近关注的主题：\n" + "\n".join(
-                f"- {m}" for m in memories[-5:]  # 最近 5 条
+                f"- {m}"
+                for m in memories[-5:]  # 最近 5 条
             )
     except Exception as exc:
         logger.warning("qa_responder: load_memory failed | %s", exc)
@@ -117,7 +118,9 @@ async def _try_llm_chat(
     except Exception as exc:
         logger.warning(
             "qa_responder: LLM call failed | model=%s temp=%s | %s",
-            model, temperature, exc,
+            model,
+            temperature,
+            exc,
         )
         return None
 

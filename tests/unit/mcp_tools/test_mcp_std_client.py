@@ -108,7 +108,9 @@ class TestMCPStdClientCallSuccess:
         mock_session_cls.return_value.__aenter__.return_value = mock_session
 
         mock_streamable.return_value.__aenter__.return_value = (
-            MagicMock(), MagicMock(), MagicMock()
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
         )
 
         result = await std_client.call(
@@ -185,7 +187,9 @@ class TestMCPStdClientCallFailure:
         mock_session_cls.return_value.__aenter__.return_value = mock_session
 
         mock_streamable.return_value.__aenter__.return_value = (
-            MagicMock(), MagicMock(), MagicMock()
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
         )
 
         result = await std_client.call(

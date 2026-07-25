@@ -63,9 +63,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
 
     # Unpack RAG result
     if isinstance(rag_result, Exception):
-        print(
-            f"[data_collector] RAG retrieval failed: {rag_result}", file=sys.stderr, flush=True
-        )
+        print(f"[data_collector] RAG retrieval failed: {rag_result}", file=sys.stderr, flush=True)
         supplementary_docs: list[dict[str, str]] = []
     else:
         supplementary_docs = rag_result
@@ -235,7 +233,7 @@ async def _index_tavily_docs_to_qdrant(
         embedder = EmbeddingModel.get_instance(_settings.embedding_model)
 
         all_chunks: list[str] = []
-        all_ids: list[str] = []       # 新增
+        all_ids: list[str] = []  # 新增
         all_sources: list[str] = []
         doc_count = 0
 
@@ -255,7 +253,7 @@ async def _index_tavily_docs_to_qdrant(
             await store.upsert(
                 collection="documents",
                 texts=all_chunks,
-                ids=all_ids,          # 新增这一行
+                ids=all_ids,  # 新增这一行
                 metas=[{"source": src, "chunk_index": i} for i, src in enumerate(all_sources)],
                 embedder=embedder,
             )
@@ -298,9 +296,7 @@ async def _run_rag_retrieval(rag_query: str, rag_enabled: bool) -> list[dict[str
         if rag_point_ids:
             try:
                 rag_payloads = await store.get_points("documents", rag_point_ids)
-                rag_source_map = {
-                    p["id"]: p["payload"].get("source", "") for p in rag_payloads
-                }
+                rag_source_map = {p["id"]: p["payload"].get("source", "") for p in rag_payloads}
             except Exception:
                 pass
 

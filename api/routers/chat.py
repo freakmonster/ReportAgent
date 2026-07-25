@@ -111,9 +111,7 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                     repo = get_session_repo()
                     await repo.increment_report_count(session_id)
                     # Auto-title: first 30 chars of user query if still placeholder
-                    await repo.update_title_if_placeholder(
-                        session_id, body.query[:30].strip()
-                    )
+                    await repo.update_title_if_placeholder(session_id, body.query[:30].strip())
                     print(
                         f"[SSE] session report_count incremented | session={session_id}",
                         file=sys.stderr,
@@ -131,7 +129,8 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
             charts_data = charts_data_raw if isinstance(charts_data_raw, list) else []
             print(
                 f"[SSE] charts_count={len(charts_data)} | workflow={workflow_id}",
-                file=sys.stderr, flush=True,
+                file=sys.stderr,
+                flush=True,
             )
 
             complete_data = {
@@ -154,11 +153,18 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                 citations_raw = merged.get("writing", {}).get("citation_list", [])
                 citations_list = citations_raw if isinstance(citations_raw, list) else []
                 # 确保 report_content 是字符串
-                report_content = report if isinstance(report, str) else _json.dumps(report, ensure_ascii=False) if report else ""
+                report_content = (
+                    report
+                    if isinstance(report, str)
+                    else _json.dumps(report, ensure_ascii=False)
+                    if report
+                    else ""
+                )
 
                 print(
                     f"[chat] writing workflow_info | wid={workflow_id} qlen={len(query_text)} rlen={len(report_content)} cit={len(citations_list)}",
-                    file=sys.stderr, flush=True,
+                    file=sys.stderr,
+                    flush=True,
                 )
 
                 await get_usage_repo().record_workflow_info(
@@ -177,9 +183,11 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                 print(f"[chat] workflow_info recorded | {workflow_id}", file=sys.stderr, flush=True)
             except Exception as rec_err:
                 import traceback
+
                 print(
                     f"[chat] failed to record workflow_info: {rec_err}",
-                    file=sys.stderr, flush=True,
+                    file=sys.stderr,
+                    flush=True,
                 )
                 traceback.print_exc(file=sys.stderr)
 

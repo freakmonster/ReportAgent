@@ -167,7 +167,10 @@ async def _plan_charts(
 
             content: str = response["choices"][0]["message"]["content"]
             content = content.strip()
-            print(f"[data_analyst] chart_plan LLM raw (attempt {attempt+1}): {content[:500]}", flush=True)
+            print(
+                f"[data_analyst] chart_plan LLM raw (attempt {attempt + 1}): {content[:500]}",
+                flush=True,
+            )
 
             # Extract JSON from possible markdown code fences
             import json
@@ -183,15 +186,21 @@ async def _plan_charts(
             start = json_str.find("{")
             end = json_str.rfind("}")
             if start >= 0 and end > start:
-                json_str = json_str[start:end + 1]
+                json_str = json_str[start : end + 1]
 
             try:
                 plan = json.loads(json_str)
             except json.JSONDecodeError:
                 if attempt < max_retries - 1:
-                    print(f"[data_analyst] chart_plan JSON parse FAILED (attempt {attempt+1}), retrying...", flush=True)
+                    print(
+                        f"[data_analyst] chart_plan JSON parse FAILED (attempt {attempt + 1}), retrying...",
+                        flush=True,
+                    )
                     continue
-                print(f"[data_analyst] chart_plan JSON parse FAILED after {max_retries} attempts", flush=True)
+                print(
+                    f"[data_analyst] chart_plan JSON parse FAILED after {max_retries} attempts",
+                    flush=True,
+                )
                 return []
 
             if not plan.get("should_generate", False):
@@ -209,25 +218,47 @@ async def _plan_charts(
 
             # Validate chart plans — build type → plan map
             type_to_plan: dict[str, dict[str, Any]] = {}
-            valid_types = {"bar", "pie", "line", "area", "scatter", "radar", "funnel", "dual_axes", "histogram"}
+            valid_types = {
+                "bar",
+                "pie",
+                "line",
+                "area",
+                "scatter",
+                "radar",
+                "funnel",
+                "dual_axes",
+                "histogram",
+            }
             for chart in charts:
                 ct = chart.get("type", "")
                 if ct not in valid_types:
-                    print(f"[data_analyst] chart_plan: INVALID chart type {ct!r}, skipping", flush=True)
+                    print(
+                        f"[data_analyst] chart_plan: INVALID chart type {ct!r}, skipping",
+                        flush=True,
+                    )
                     continue
                 raw_data = chart.get("data")
                 if isinstance(raw_data, dict):
                     if not raw_data:
-                        print(f"[data_analyst] chart_plan: chart {chart.get('title', '?')!r} has EMPTY data, skipping", flush=True)
+                        print(
+                            f"[data_analyst] chart_plan: chart {chart.get('title', '?')!r} has EMPTY data, skipping",
+                            flush=True,
+                        )
                         continue
                 elif isinstance(raw_data, list):
                     if not raw_data:
-                        print(f"[data_analyst] chart_plan: chart {chart.get('title', '?')!r} has EMPTY data, skipping", flush=True)
+                        print(
+                            f"[data_analyst] chart_plan: chart {chart.get('title', '?')!r} has EMPTY data, skipping",
+                            flush=True,
+                        )
                         continue
                     # Convert line-chart list to dict format for downstream processing
                     chart["data"] = {"series": raw_data}
                 else:
-                    print(f"[data_analyst] chart_plan: chart {chart.get('title', '?')!r} has INVALID data type {type(raw_data).__name__}, skipping", flush=True)
+                    print(
+                        f"[data_analyst] chart_plan: chart {chart.get('title', '?')!r} has INVALID data type {type(raw_data).__name__}, skipping",
+                        flush=True,
+                    )
                     continue
                 type_to_plan[ct] = chart
 
@@ -258,7 +289,6 @@ async def _plan_charts(
     except Exception as exc:
         print(f"[data_analyst] chart_plan LLM call FAILED: {exc}", flush=True)
         return []
-
 
 
 def _build_chart_args_from_plan(plan: dict[str, Any]) -> dict[str, Any]:
@@ -346,9 +376,14 @@ async def _generate_charts(
     plan_error: str | None = None
 
     if compressed_summary:
-        print(f"[data_analyst] Entering LLM chart planning phase (summary={len(compressed_summary)} chars, raw_excerpt={len(raw_docs_excerpt)} chars)", flush=True)
+        print(
+            f"[data_analyst] Entering LLM chart planning phase (summary={len(compressed_summary)} chars, raw_excerpt={len(raw_docs_excerpt)} chars)",
+            flush=True,
+        )
         try:
-            plan_charts = await _plan_charts(analysis, compressed_summary, raw_docs_excerpt, user_query, model)
+            plan_charts = await _plan_charts(
+                analysis, compressed_summary, raw_docs_excerpt, user_query, model
+            )
         except Exception as exc:
             plan_error = str(exc)
             print(f"[data_analyst] chart_plan exception: {exc}", flush=True)
@@ -368,26 +403,37 @@ async def _generate_charts(
                 tool_name = f"mcp_generate_{chart_type}_chart"
                 tool = await _registry.get_tool(tool_name)
                 if tool is None:
-                    print(f"[data_analyst] {tool_name} NOT available, skip chart {plan.get('title')!r}", flush=True)
+                    print(
+                        f"[data_analyst] {tool_name} NOT available, skip chart {plan.get('title')!r}",
+                        flush=True,
+                    )
                     continue
 
                 result_data = await tool(chart_args)
                 if isinstance(result_data, dict):
                     if result_data.get("error") or result_data.get("degraded"):
-                        print(f"[data_analyst] LLM-planned {chart_type} chart FAILED: {result_data.get('error', result_data)}", flush=True)
+                        print(
+                            f"[data_analyst] LLM-planned {chart_type} chart FAILED: {result_data.get('error', result_data)}",
+                            flush=True,
+                        )
                         continue
                     image_base64 = result_data.get("image_base64", "")
                 else:
                     image_base64 = ""
 
                 if image_base64:
-                    charts.append({
-                        "chart_type": chart_type,
-                        "title": plan.get("title", "Chart"),
-                        "image_base64": image_base64,
-                    })
+                    charts.append(
+                        {
+                            "chart_type": chart_type,
+                            "title": plan.get("title", "Chart"),
+                            "image_base64": image_base64,
+                        }
+                    )
             except Exception as exc:
-                print(f"[data_analyst] LLM-planned {chart_type} chart generation ERROR: {exc}", flush=True)
+                print(
+                    f"[data_analyst] LLM-planned {chart_type} chart generation ERROR: {exc}",
+                    flush=True,
+                )
                 continue
 
         if charts:
@@ -399,7 +445,10 @@ async def _generate_charts(
             return charts
 
         # LLM planned charts but all failed to generate → skip
-        print(f"[data_analyst] LLM planned {len(plan_charts)} charts but ALL FAILED, skipping", flush=True)
+        print(
+            f"[data_analyst] LLM planned {len(plan_charts)} charts but ALL FAILED, skipping",
+            flush=True,
+        )
         return []
 
     # LLM was consulted (compressed_summary was available) → respect its decision
@@ -410,7 +459,6 @@ async def _generate_charts(
     # LLM either never consulted (no compressed_summary) or had an error → skip
     print("[data_analyst] No charts generated (LLM path failed or unavailable)", flush=True)
     return []
-
 
 
 async def entry(state: dict[str, Any]) -> dict[str, Any]:
@@ -505,9 +553,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     # 5. Generate MCP charts (Phase 4)
     compressed = collection.get("compressed_summary", {})
     compressed_summary: str = (
-        "\n\n".join(
-            f"## {topic}\n{txt}" for topic, txt in compressed.items()
-        )
+        "\n\n".join(f"## {topic}\n{txt}" for topic, txt in compressed.items())
         if isinstance(compressed, dict)
         else str(compressed)
     )
@@ -522,9 +568,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
 
     # Build raw docs excerpt for LLM chart planning (compressed_summary may lose numbers)
     raw_docs = collection.get("raw_docs", [])
-    raw_excerpt = "\n\n---\n\n".join(
-        d.get("content", "")[:600] for d in raw_docs[:3]
-    )[:2500]
+    raw_excerpt = "\n\n---\n\n".join(d.get("content", "")[:600] for d in raw_docs[:3])[:2500]
     print(
         f"[data_analyst] raw_excerpt_len={len(raw_excerpt)} from {len(raw_docs)} raw docs "
         f"(trimmed to 2500)",

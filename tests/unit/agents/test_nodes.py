@@ -347,14 +347,23 @@ class TestDataAnalystChartRegistry:
         """_generate_charts() calls mcp_generate_bar_chart via registry (LLM plan path)."""
         from agents.nodes.data_analyst import _generate_charts
 
-        mock_handler = AsyncMock(return_value={
-            "chart_type": "bar",
-            "image_base64": "base64encodedimage",
-        })
-        mock_plan = AsyncMock(return_value=[{
-            "type": "bar", "title": "Test", "x_label": "X", "y_label": "Y",
-            "data": {"A": 100, "B": 200},
-        }])
+        mock_handler = AsyncMock(
+            return_value={
+                "chart_type": "bar",
+                "image_base64": "base64encodedimage",
+            }
+        )
+        mock_plan = AsyncMock(
+            return_value=[
+                {
+                    "type": "bar",
+                    "title": "Test",
+                    "x_label": "X",
+                    "y_label": "Y",
+                    "data": {"A": 100, "B": 200},
+                }
+            ]
+        )
 
         analysis: dict[str, Any] = {
             "key_metrics": ["营收100亿", "利润50亿", "增长率12%"],
@@ -377,10 +386,17 @@ class TestDataAnalystChartRegistry:
         """Registry returns None → _generate_charts() returns [] (all plans fail)."""
         from agents.nodes.data_analyst import _generate_charts
 
-        mock_plan = AsyncMock(return_value=[{
-            "type": "bar", "title": "Test", "x_label": "X", "y_label": "Y",
-            "data": {"A": 100, "B": 200},
-        }])
+        mock_plan = AsyncMock(
+            return_value=[
+                {
+                    "type": "bar",
+                    "title": "Test",
+                    "x_label": "X",
+                    "y_label": "Y",
+                    "data": {"A": 100, "B": 200},
+                }
+            ]
+        )
 
         analysis: dict[str, Any] = {
             "key_metrics": ["营收100亿", "利润50亿"],
@@ -425,7 +441,6 @@ class TestDataAnalystChartRegistry:
             assert result == []
 
 
-
 class TestDataAnalystChartLLMPlan:
     """LLM-driven chart planning (no regex fallback)."""
 
@@ -442,7 +457,13 @@ class TestDataAnalystChartLLMPlan:
             "data_quality": "fair",
             "insights": [],
         }
-        result = await _plan_charts(analysis, compressed_summary="", raw_docs_excerpt="", user_query="test", model="deepseek-flash")
+        result = await _plan_charts(
+            analysis,
+            compressed_summary="",
+            raw_docs_excerpt="",
+            user_query="test",
+            model="deepseek-flash",
+        )
         assert result == []
 
     @pytest.mark.asyncio
@@ -456,7 +477,13 @@ class TestDataAnalystChartLLMPlan:
             "data_quality": "poor",
             "insights": [],
         }
-        result = await _plan_charts(analysis, compressed_summary="some content", raw_docs_excerpt="", user_query="test", model="deepseek-flash")
+        result = await _plan_charts(
+            analysis,
+            compressed_summary="some content",
+            raw_docs_excerpt="",
+            user_query="test",
+            model="deepseek-flash",
+        )
         assert result == []
 
     @pytest.mark.asyncio
@@ -465,9 +492,13 @@ class TestDataAnalystChartLLMPlan:
         from agents.nodes.data_analyst import _plan_charts
 
         mock_llm = MagicMock()
-        mock_llm.chat = AsyncMock(return_value={
-            "choices": [{"message": {"content": '{"should_generate": false, "reason": "no data"}'}}],
-        })
+        mock_llm.chat = AsyncMock(
+            return_value={
+                "choices": [
+                    {"message": {"content": '{"should_generate": false, "reason": "no data"}'}}
+                ],
+            }
+        )
 
         analysis: dict[str, Any] = {
             "doc_count": 5,
@@ -476,11 +507,13 @@ class TestDataAnalystChartLLMPlan:
             "insights": [],
         }
 
-        with patch(
-            "models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm
-        ):
+        with patch("models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm):
             result = await _plan_charts(
-                analysis, compressed_summary="文档摘要内容", raw_docs_excerpt="", user_query="分析营收", model="deepseek-flash"
+                analysis,
+                compressed_summary="文档摘要内容",
+                raw_docs_excerpt="",
+                user_query="分析营收",
+                model="deepseek-flash",
             )
             assert result == []
 
@@ -490,8 +523,12 @@ class TestDataAnalystChartLLMPlan:
         from agents.nodes.data_analyst import _plan_charts
 
         mock_llm = MagicMock()
-        mock_llm.chat = AsyncMock(return_value={
-            "choices": [{"message": {"content": '''{
+        mock_llm.chat = AsyncMock(
+            return_value={
+                "choices": [
+                    {
+                        "message": {
+                            "content": """{
                 "should_generate": true,
                 "reason": "Found revenue breakdown",
                 "charts": [
@@ -510,8 +547,12 @@ class TestDataAnalystChartLLMPlan:
                         "data": {"A": 37, "B": 16, "C": 47}
                     }
                 ]
-            }'''}}],
-        })
+            }"""
+                        }
+                    }
+                ],
+            }
+        )
 
         analysis: dict[str, Any] = {
             "doc_count": 5,
@@ -520,11 +561,13 @@ class TestDataAnalystChartLLMPlan:
             "insights": ["营收增长"],
         }
 
-        with patch(
-            "models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm
-        ):
+        with patch("models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm):
             result = await _plan_charts(
-                analysis, compressed_summary="文档摘要内容", raw_docs_excerpt="", user_query="分析营收", model="deepseek-flash"
+                analysis,
+                compressed_summary="文档摘要内容",
+                raw_docs_excerpt="",
+                user_query="分析营收",
+                model="deepseek-flash",
             )
             assert len(result) == 1
             assert result[0]["type"] in {"bar", "pie"}
@@ -535,18 +578,28 @@ class TestDataAnalystChartLLMPlan:
         from agents.nodes.data_analyst import _plan_charts
 
         mock_llm = MagicMock()
-        mock_llm.chat = AsyncMock(return_value={
-            "choices": [{"message": {"content": json.dumps({
-                "should_generate": True,
-                "reason": "test",
-                "suitable_types": ["bar", "pie"],
-                "charts": [
-                    {"type": "bar", "title": "OK", "data": {"a": 1}},
-                    {"type": "unknown_type", "title": "BAD", "data": {"x": 1}},
-                    {"type": "pie", "title": "OK2", "data": {"b": 2}},
+        mock_llm.chat = AsyncMock(
+            return_value={
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "should_generate": True,
+                                    "reason": "test",
+                                    "suitable_types": ["bar", "pie"],
+                                    "charts": [
+                                        {"type": "bar", "title": "OK", "data": {"a": 1}},
+                                        {"type": "unknown_type", "title": "BAD", "data": {"x": 1}},
+                                        {"type": "pie", "title": "OK2", "data": {"b": 2}},
+                                    ],
+                                }
+                            )
+                        }
+                    }
                 ],
-            })}}],
-        })
+            }
+        )
 
         analysis: dict[str, Any] = {
             "doc_count": 3,
@@ -555,11 +608,13 @@ class TestDataAnalystChartLLMPlan:
             "insights": [],
         }
 
-        with patch(
-            "models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm
-        ):
+        with patch("models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm):
             result = await _plan_charts(
-                analysis, compressed_summary="docs", raw_docs_excerpt="", user_query="test", model="deepseek-flash"
+                analysis,
+                compressed_summary="docs",
+                raw_docs_excerpt="",
+                user_query="test",
+                model="deepseek-flash",
             )
             assert len(result) == 1  # unknown_type filtered out, random picks from bar/pie
             assert result[0]["type"] in {"bar", "pie"}
@@ -581,9 +636,12 @@ class TestDataAnalystChartLLMPlan:
             },
         ]
 
-        mock_bar = AsyncMock(return_value={
-            "chart_type": "bar", "image_base64": "barimg",
-        })
+        mock_bar = AsyncMock(
+            return_value={
+                "chart_type": "bar",
+                "image_base64": "barimg",
+            }
+        )
 
         async def mock_get_tool(name: str):
             if "bar" in name:

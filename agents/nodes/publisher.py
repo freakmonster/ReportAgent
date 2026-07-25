@@ -67,7 +67,9 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
     user_input: str = base.get("user_input", "")
 
     # 动态标题（仅 deep_report 使用 H1 标题）
-    report_title = _extract_title(user_input, max_len=34) + "的深度研报" if user_input else "智能研报"
+    report_title = (
+        _extract_title(user_input, max_len=34) + "的深度研报" if user_input else "智能研报"
+    )
 
     # Build citation section
     citation_section = ""

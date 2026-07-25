@@ -107,11 +107,10 @@ class UsageRepository:
 
         async with self._session_factory() as session:
             # ── Diagnose: raw row count ──
-            raw_count = await session.scalar(
-                select(func.count()).select_from(workflow_info)
-            )
+            raw_count = await session.scalar(select(func.count()).select_from(workflow_info))
             raw_in_window = await session.scalar(
-                select(func.count()).select_from(workflow_info)
+                select(func.count())
+                .select_from(workflow_info)
                 .where(workflow_info.c.created_at >= cutoff_dt)
             )
             print(
