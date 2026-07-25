@@ -7,8 +7,7 @@ import re
 import sys
 from typing import Any
 
-
-#  标题提取 
+#  标题提取
 _TITLE_STRIP_PREFIXES = [
     r"^(?:请|帮我|帮我|请帮我|请为我)(?:分析|研究|撰写|生成|写一篇|写一份|总结|归纳|介绍|说明)",
     r"^(?:分析|研究|撰写|生成|总结|归纳|介绍|说明)",
@@ -77,7 +76,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
         for i, cite in enumerate(citations, 1):
             citation_section += f"- [{i}] {cite}\n"
 
-    #  Extract charts for downstream rendering 
+    #  Extract charts for downstream rendering
     collection: dict[str, Any] = state.get("collection", {})
     analysis: dict[str, Any] = collection.get("analysis", {})
     charts_data: list[dict[str, Any]] = analysis.get("charts", [])

@@ -8,6 +8,7 @@ Features:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -129,8 +130,6 @@ class DeepSeekClient:
         result = await self._chat_raw(messages, temperature, max_tokens, **kwargs)
 
         # ── Store in cache (fire-and-forget, non-blocking) ──
-        import asyncio
-
         asyncio.create_task(cache_set(messages, result, temperature, max_tokens, self._model))
 
         # ── Async stats (fire-and-forget) ──

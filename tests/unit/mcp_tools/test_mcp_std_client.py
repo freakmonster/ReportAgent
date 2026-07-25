@@ -13,7 +13,6 @@ import pytest  # noqa: E402
 from mcp_tools.mcp_client import MCPToolResult  # noqa: E402
 from mcp_tools.mcp_std_client import MCPStdClient  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

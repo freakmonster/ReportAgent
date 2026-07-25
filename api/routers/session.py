@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.schemas.session import (
     CreateSessionRequest,
     SessionListResponse,
-    SessionResponse,
-    SessionReportsResponse,
     SessionReportItem,
+    SessionReportsResponse,
+    SessionResponse,
 )
 from infrastructure.database.repositories.session_repo import get_session_repo
 from infrastructure.memory.short_term import delete_memory

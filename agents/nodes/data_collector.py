@@ -1,7 +1,7 @@
 """Data Collector node — Tavily Search → Extract, with url_loader fallback."""
 
 from __future__ import annotations
-import hashlib
+
 import asyncio
 import sys
 from typing import Any
@@ -219,6 +219,8 @@ async def _index_tavily_docs_to_qdrant(
         user_input: Original user query (for logging context).
     """
     try:
+        import hashlib
+
         from config.settings import settings as _settings
         from retrieval.chunkers.paragraph_chunker import chunk_text
         from retrieval.vectorstores.qdrant_store import QdrantStore
@@ -276,11 +278,10 @@ async def _run_rag_retrieval(rag_query: str, rag_enabled: bool) -> list[dict[str
     if not rag_enabled:
         return []
 
+    from config.settings import settings
     from retrieval.embedders.embedding_model import EmbeddingModel
     from retrieval.retrievers.hybrid_retriever import HybridRetriever
     from retrieval.vectorstores.qdrant_store import QdrantStore
-
-    from config.settings import settings
 
     store = QdrantStore(
         host=settings.qdrant_host,

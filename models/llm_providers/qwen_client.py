@@ -7,6 +7,7 @@ Features:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -98,8 +99,6 @@ class QwenClient:
         result = response.model_dump()
 
         # ── Store in cache (fire-and-forget, non-blocking) ──
-        import asyncio
-
         asyncio.create_task(cache_set(messages, result, temperature, max_tokens, self._model))
 
         # ── Async stats (fire-and-forget) ──

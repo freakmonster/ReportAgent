@@ -44,9 +44,10 @@ class UsageRepository:
         charts: list = None,
     ) -> None:
         """Insert / upsert a workflow execution record into ``workflow_info``."""
+        import json as _json
         from datetime import datetime as _dt
         from datetime import timezone as _tz
-        import json as _json
+
         from sqlalchemy import text
 
         citations_json = _json.dumps(citations or [], ensure_ascii=False)
@@ -117,7 +118,7 @@ class UsageRepository:
                 f"[dashboard] workflow_info total={raw_count} | in_window={raw_in_window} | days={days} | cutoff={cutoff_dt.isoformat()}",
                 flush=True,
             )
-            
+
             # ── usage_daily ─────────────────────────────────────────
             usage_row = (
                 await session.execute(
