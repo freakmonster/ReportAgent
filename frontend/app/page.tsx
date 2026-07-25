@@ -117,7 +117,9 @@ export default function Home() {
 
           {/* 非 QA 执行中：显示 Agent 执行进度 */}
           {isRunning && detectedTemplate !== 'qa' && (
-            <NodeProgress />
+            <div className="mt-6">
+              <NodeProgress />
+            </div>
           )}
 
           {/* 哨兵元素：用于自动滚动到最底部 */}

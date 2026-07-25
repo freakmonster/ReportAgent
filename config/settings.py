@@ -307,6 +307,14 @@ class Settings(BaseSettings):
     mcp_chart_url: str = Field(default="http://localhost:8003")
     mcp_email_url: str = Field(default="http://localhost:8004")
 
+    # ── Chart Backend ────────────────────────────────────────────────
+    # "matplotlib" (default): MCP chart server (localhost:8003)
+    # "bailian":              Alibaba Cloud Bailian MCP std service
+    # "antv":                 AntV visualization MCP (ModelScope / self-hosted)
+    chart_backend: str = Field(default="matplotlib")
+    mcp_std_chart_url: str = Field(default="")
+    mcp_antv_url: str = Field(default="")
+
     # ── Circuit Breaker ──────────────────────────────────────────────
     cb_failure_threshold: int = Field(default=3)
     cb_timeout: int = Field(default=30)

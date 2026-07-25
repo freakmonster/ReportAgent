@@ -55,6 +55,11 @@ mcp_database_url: "http://localhost:8002"
 mcp_chart_url: "http://localhost:8003"
 mcp_email_url: "http://localhost:8004"
 
+# Chart backend — "matplotlib" (default, local MCP chart server) | "bailian" (Aliyun Bailian MCP std) | "antv" (AntV visualization MCP)
+chart_backend: "matplotlib"
+mcp_std_chart_url: ""
+mcp_antv_url: ""
+
 # Circuit breaker — relaxed for dev
 cb_failure_threshold: 5
 cb_timeout: 60

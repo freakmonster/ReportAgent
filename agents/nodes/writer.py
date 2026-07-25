@@ -136,7 +136,7 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
                 ch_name,
                 len(body),
             )
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.3)
             try:
                 content = await _generate_chapter(
                     client,

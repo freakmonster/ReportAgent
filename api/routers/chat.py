@@ -172,6 +172,7 @@ async def chat_stream(request: Request, body: ChatRequest, user_id: str = Depend
                     query=query_text,
                     report_content=report_content,
                     citations=citations_list,
+                    charts=charts_data,
                 )
                 print(f"[chat] workflow_info recorded | {workflow_id}", file=sys.stderr, flush=True)
             except Exception as rec_err:

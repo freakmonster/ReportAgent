@@ -126,11 +126,11 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
       {/* 新建会话按钮 */}
       <button
         type="button"
-        className="w-full px-3 py-2 text-left text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium disabled:opacity-50"
+        className="w-full px-3 py-2 text-left text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={handleCreate}
-        disabled={creating}
+        disabled={disabled || creating}
       >
-        {creating ? '创建中...' : '+ 新建会话'}
+        {disabled ? '生成中...' : creating ? '创建中...' : '+ 新建会话'}
       </button>
 
       {/* 删除确认弹窗 */}

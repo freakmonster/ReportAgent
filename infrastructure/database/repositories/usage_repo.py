@@ -41,6 +41,7 @@ class UsageRepository:
         query: str = "",
         report_content: str = "",
         citations: list = None,
+        charts: list = None,
     ) -> None:
         """Insert / upsert a workflow execution record into ``workflow_info``."""
         from datetime import datetime as _dt
@@ -49,15 +50,16 @@ class UsageRepository:
         from sqlalchemy import text
 
         citations_json = _json.dumps(citations or [], ensure_ascii=False)
+        charts_json = _json.dumps(charts or [], ensure_ascii=False)
 
         async with self._session_factory() as session:
             await session.execute(
                 text(
                     """INSERT INTO workflow_info
                     (workflow_id, user_id, template_name, status,
-                     session_id, query, report_content, citations,
+                     session_id, query, report_content, citations, charts,
                      started_at, duration_seconds, created_at, updated_at)
-                    VALUES (:wid, :uid, :tmpl, :st, :sid, :q, :rc, :cit,
+                    VALUES (:wid, :uid, :tmpl, :st, :sid, :q, :rc, :cit, :cht,
                             :sat, :dur, :now, :now)
                     ON CONFLICT (workflow_id) DO UPDATE SET
                         status = EXCLUDED.status,
@@ -65,7 +67,8 @@ class UsageRepository:
                         updated_at = EXCLUDED.updated_at,
                         query = EXCLUDED.query,
                         report_content = EXCLUDED.report_content,
-                        citations = EXCLUDED.citations"""
+                        citations = EXCLUDED.citations,
+                        charts = EXCLUDED.charts"""
                 ),
                 {
                     "wid": workflow_id,
@@ -76,6 +79,7 @@ class UsageRepository:
                     "q": query,
                     "rc": report_content,
                     "cit": citations_json,
+                    "cht": charts_json,
                     "sat": _dt.fromtimestamp(started_at, tz=_tz.utc) if started_at else None,
                     "dur": duration_seconds,
                     "now": _dt.now(_tz.utc),

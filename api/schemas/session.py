@@ -46,6 +46,7 @@ class SessionReportItem(BaseModel):
     template_name: str
     report: str = ""
     citations: list = Field(default_factory=list)
+    charts: list = Field(default_factory=list)
     elapsed_seconds: float = 0.0
     created_at: str | None = None
 

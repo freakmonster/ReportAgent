@@ -111,6 +111,9 @@ ALTER TABLE workflow_info
 ALTER TABLE workflow_info
     ADD COLUMN IF NOT EXISTS citations JSONB DEFAULT '[]';
 
+ALTER TABLE workflow_info
+    ADD COLUMN IF NOT EXISTS charts JSONB DEFAULT '[]';
+
 CREATE INDEX IF NOT EXISTS idx_workflow_session ON workflow_info(session_id);
 """
 

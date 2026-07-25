@@ -46,7 +46,7 @@ export default function ReportDetailPage() {
       <main className="flex-1 max-w-4xl mx-auto w-full p-8">
         <ReportContent content={report.report} />
         <CitationList citations={report.citations} />
-        <OutputToolbar report={report.report} workflowId={report.id} />
+        <OutputToolbar report={report.report} workflowId={report.id} query={report.query || ''} />
 
         <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Link

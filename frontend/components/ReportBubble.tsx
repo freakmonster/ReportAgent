@@ -103,7 +103,7 @@ export function ReportBubble({ entry, index, defaultCollapsed = true }: Props) {
                   <img
                     src={`data:image/png;base64,${chart.image_base64}`}
                     alt={chart.title || `图表 ${i + 1}`}
-                    className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+                    className="max-w-[400px] w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mx-auto block"
                     loading="lazy"
                   />
                   {chart.title && (
@@ -120,7 +120,7 @@ export function ReportBubble({ entry, index, defaultCollapsed = true }: Props) {
 
       {/* 操作栏 */}
       <div className="px-4 pb-3">
-        <OutputToolbar report={entry.report} workflowId={entry.workflowId} />
+        <OutputToolbar report={entry.report} workflowId={entry.workflowId} query={entry.query} />
       </div>
     </div>
   );

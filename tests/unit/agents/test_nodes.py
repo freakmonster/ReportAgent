@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
@@ -335,6 +337,367 @@ class TestHumanReview:
         result = await entry(state)
         assert "review_feedback" in result["review"]
         assert result["review"]["human_review_status"] == "bypassed"
+
+
+class TestDataAnalystChartRegistry:
+    """Verify _generate_charts() uses registry.get_tool() instead of hardcoded httpx."""
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_via_registry(self) -> None:
+        """_generate_charts() calls mcp_generate_bar_chart via registry (LLM plan path)."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        mock_handler = AsyncMock(return_value={
+            "chart_type": "bar",
+            "image_base64": "base64encodedimage",
+        })
+        mock_plan = AsyncMock(return_value=[{
+            "type": "bar", "title": "Test", "x_label": "X", "y_label": "Y",
+            "data": {"A": 100, "B": 200},
+        }])
+
+        analysis: dict[str, Any] = {
+            "key_metrics": ["营收100亿", "利润50亿", "增长率12%"],
+            "doc_count": 5,
+        }
+
+        with patch("mcp_tools.registry.registry.get_tool", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_handler
+            with patch("agents.nodes.data_analyst._plan_charts", mock_plan):
+                result = await _generate_charts(analysis, compressed_summary="测试摘要")
+
+                assert len(result) == 1
+                assert result[0]["chart_type"] == "bar"
+                assert result[0]["image_base64"] == "base64encodedimage"
+                mock_get.assert_called_once_with("mcp_generate_bar_chart")
+                mock_handler.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_returns_empty_when_no_tool(self) -> None:
+        """Registry returns None → _generate_charts() returns [] (all plans fail)."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        mock_plan = AsyncMock(return_value=[{
+            "type": "bar", "title": "Test", "x_label": "X", "y_label": "Y",
+            "data": {"A": 100, "B": 200},
+        }])
+
+        analysis: dict[str, Any] = {
+            "key_metrics": ["营收100亿", "利润50亿"],
+            "doc_count": 5,
+        }
+
+        with patch("mcp_tools.registry.registry.get_tool", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = None
+            with patch("agents.nodes.data_analyst._plan_charts", mock_plan):
+                result = await _generate_charts(analysis, compressed_summary="测试摘要")
+                assert result == []
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_skips_when_too_few_metrics(self) -> None:
+        """Less than 2 metrics or docs → returns [] without calling registry."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        analysis: dict[str, Any] = {
+            "key_metrics": [],
+            "doc_count": 0,
+        }
+
+        result = await _generate_charts(analysis)
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_handles_error_result(self) -> None:
+        """Tool returns error dict → _generate_charts() returns []."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        mock_handler = AsyncMock(return_value={"error": "Bailian unavailable", "degraded": True})
+
+        with patch("mcp_tools.registry.registry.get_tool", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_handler
+
+            analysis: dict[str, Any] = {
+                "key_metrics": ["营收100亿", "利润50亿"],
+                "doc_count": 5,
+            }
+
+            result = await _generate_charts(analysis)
+            assert result == []
+
+
+
+class TestDataAnalystChartLLMPlan:
+    """LLM-driven chart planning (no regex fallback)."""
+
+    # ── _plan_charts() ─────────────────────────────────────────────────
+
+    @pytest.mark.asyncio
+    async def test_plan_charts_skips_when_no_summary(self) -> None:
+        """Empty compressed_summary → returns []."""
+        from agents.nodes.data_analyst import _plan_charts
+
+        analysis: dict[str, Any] = {
+            "doc_count": 3,
+            "key_metrics": ["营收100亿", "利润50亿"],
+            "data_quality": "fair",
+            "insights": [],
+        }
+        result = await _plan_charts(analysis, compressed_summary="", raw_docs_excerpt="", user_query="test", model="deepseek-flash")
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_plan_charts_skips_when_too_few_docs(self) -> None:
+        """doc_count < 2 → returns []."""
+        from agents.nodes.data_analyst import _plan_charts
+
+        analysis: dict[str, Any] = {
+            "doc_count": 1,
+            "key_metrics": [],
+            "data_quality": "poor",
+            "insights": [],
+        }
+        result = await _plan_charts(analysis, compressed_summary="some content", raw_docs_excerpt="", user_query="test", model="deepseek-flash")
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_plan_charts_llm_says_no_charts(self) -> None:
+        """LLM returns should_generate: false → returns []."""
+        from agents.nodes.data_analyst import _plan_charts
+
+        mock_llm = MagicMock()
+        mock_llm.chat = AsyncMock(return_value={
+            "choices": [{"message": {"content": '{"should_generate": false, "reason": "no data"}'}}],
+        })
+
+        analysis: dict[str, Any] = {
+            "doc_count": 5,
+            "key_metrics": ["营收100亿"],
+            "data_quality": "good",
+            "insights": [],
+        }
+
+        with patch(
+            "models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm
+        ):
+            result = await _plan_charts(
+                analysis, compressed_summary="文档摘要内容", raw_docs_excerpt="", user_query="分析营收", model="deepseek-flash"
+            )
+            assert result == []
+
+    @pytest.mark.asyncio
+    async def test_plan_charts_returns_valid_plan(self) -> None:
+        """LLM returns valid chart plan → parsed and validated."""
+        from agents.nodes.data_analyst import _plan_charts
+
+        mock_llm = MagicMock()
+        mock_llm.chat = AsyncMock(return_value={
+            "choices": [{"message": {"content": '''{
+                "should_generate": true,
+                "reason": "Found revenue breakdown",
+                "charts": [
+                    {
+                        "type": "bar",
+                        "title": "各业务营收",
+                        "x_label": "业务",
+                        "y_label": "亿元",
+                        "data": {"动力电池": 800, "储能": 300}
+                    },
+                    {
+                        "type": "pie",
+                        "title": "市场份额",
+                        "x_label": "",
+                        "y_label": "",
+                        "data": {"A": 37, "B": 16, "C": 47}
+                    }
+                ]
+            }'''}}],
+        })
+
+        analysis: dict[str, Any] = {
+            "doc_count": 5,
+            "key_metrics": ["营收100亿"],
+            "data_quality": "good",
+            "insights": ["营收增长"],
+        }
+
+        with patch(
+            "models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm
+        ):
+            result = await _plan_charts(
+                analysis, compressed_summary="文档摘要内容", raw_docs_excerpt="", user_query="分析营收", model="deepseek-flash"
+            )
+            assert len(result) == 1
+            assert result[0]["type"] in {"bar", "pie"}
+
+    @pytest.mark.asyncio
+    async def test_plan_charts_skips_invalid_types(self) -> None:
+        """Unknown chart types are filtered out, random picks from valid ones."""
+        from agents.nodes.data_analyst import _plan_charts
+
+        mock_llm = MagicMock()
+        mock_llm.chat = AsyncMock(return_value={
+            "choices": [{"message": {"content": json.dumps({
+                "should_generate": True,
+                "reason": "test",
+                "suitable_types": ["bar", "pie"],
+                "charts": [
+                    {"type": "bar", "title": "OK", "data": {"a": 1}},
+                    {"type": "unknown_type", "title": "BAD", "data": {"x": 1}},
+                    {"type": "pie", "title": "OK2", "data": {"b": 2}},
+                ],
+            })}}],
+        })
+
+        analysis: dict[str, Any] = {
+            "doc_count": 3,
+            "key_metrics": [],
+            "data_quality": "fair",
+            "insights": [],
+        }
+
+        with patch(
+            "models.llm_providers.resolver.resolve_llm_client", return_value=mock_llm
+        ):
+            result = await _plan_charts(
+                analysis, compressed_summary="docs", raw_docs_excerpt="", user_query="test", model="deepseek-flash"
+            )
+            assert len(result) == 1  # unknown_type filtered out, random picks from bar/pie
+            assert result[0]["type"] in {"bar", "pie"}
+
+    # ── _generate_charts() LLM path ───────────────────────────────────
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_uses_llm_plan(self) -> None:
+        """LLM plan is available → charts generated from plan data."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        mock_plan = [
+            {
+                "type": "bar",
+                "title": "LLM Planned Bar",
+                "x_label": "Category",
+                "y_label": "Value",
+                "data": {"A": 100, "B": 200},
+            },
+        ]
+
+        mock_bar = AsyncMock(return_value={
+            "chart_type": "bar", "image_base64": "barimg",
+        })
+
+        async def mock_get_tool(name: str):
+            if "bar" in name:
+                return mock_bar
+            return None
+
+        analysis: dict[str, Any] = {
+            "key_metrics": ["营收100亿"],
+            "doc_count": 5,
+        }
+
+        with patch(
+            "agents.nodes.data_analyst._plan_charts",
+            new_callable=AsyncMock,
+            return_value=mock_plan,
+        ):
+            with patch(
+                "mcp_tools.registry.registry.get_tool",
+                side_effect=mock_get_tool,
+            ):
+                result = await _generate_charts(
+                    analysis,
+                    compressed_summary="文档摘要",
+                    user_query="分析营收",
+                )
+
+                assert len(result) == 1
+                assert result[0]["title"] == "LLM Planned Bar"
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_falls_back_on_llm_failure(self) -> None:
+        """LLM plan fails → returns [] (no regex fallback)."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        analysis: dict[str, Any] = {
+            "key_metrics": ["营收100亿", "利润50亿", "增长率12%", "用户2亿", "成本80亿"],
+            "doc_count": 5,
+        }
+
+        with patch(
+            "agents.nodes.data_analyst._plan_charts",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("LLM timeout"),
+        ):
+            result = await _generate_charts(
+                analysis,
+                compressed_summary="文档摘要",
+                user_query="分析营收",
+            )
+            # No fallback — LLM error → no charts
+            assert result == []
+
+    @pytest.mark.asyncio
+    async def test_generate_charts_registry_fallback_without_summary(self) -> None:
+        """No compressed_summary → skips LLM → returns []."""
+        from agents.nodes.data_analyst import _generate_charts
+
+        analysis: dict[str, Any] = {
+            "key_metrics": ["营收100亿", "利润50亿"],
+            "doc_count": 3,
+        }
+
+        result = await _generate_charts(analysis)
+        # Without compressed_summary, no chart generation
+        assert result == []
+
+    # ── _build_chart_args_from_plan() ─────────────────────────────────
+
+    def test_build_bar_args_from_plan(self) -> None:
+        """Bar plan → correct tool args format."""
+        from agents.nodes.data_analyst import _build_chart_args_from_plan
+
+        plan: dict[str, Any] = {
+            "type": "bar",
+            "title": "测试图表",
+            "x_label": "类别",
+            "y_label": "数值",
+            "data": {"A": 100, "B": 200, "C": 300},
+        }
+        result = _build_chart_args_from_plan(plan)
+        assert result["title"] == "测试图表"
+        assert result["x_label"] == "类别"
+        assert result["y_label"] == "数值"
+        assert result["data"] == {"Metrics": [100, 200, 300]}
+        assert result["x_ticks"] == ["A", "B", "C"]
+
+    def test_build_pie_args_from_plan(self) -> None:
+        """Pie plan → correct tool args format (label:value dict)."""
+        from agents.nodes.data_analyst import _build_chart_args_from_plan
+
+        plan: dict[str, Any] = {
+            "type": "pie",
+            "title": "份额分布",
+            "data": {"宁德": 37, "比亚迪": 16},
+        }
+        result = _build_chart_args_from_plan(plan)
+        assert result["title"] == "份额分布"
+        assert result["data"] == {"宁德": 37, "比亚迪": 16}
+
+    def test_build_line_args_from_plan_with_xticks(self) -> None:
+        """Line plan with explicit x_ticks."""
+        from agents.nodes.data_analyst import _build_chart_args_from_plan
+
+        plan: dict[str, Any] = {
+            "type": "line",
+            "title": "营收趋势",
+            "x_label": "年份",
+            "y_label": "亿元",
+            "data": {"营收": [3286, 4009, 4835]},
+            "x_ticks": ["2023", "2024", "2025"],
+        }
+        result = _build_chart_args_from_plan(plan)
+        assert result["data"] == {"营收": [3286, 4009, 4835]}
+        assert result["x_ticks"] == ["2023", "2024", "2025"]
 
 
 class TestDataAnalyst:

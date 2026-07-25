@@ -1,7 +1,7 @@
 """Data Collector node — Tavily Search → Extract, with url_loader fallback."""
 
 from __future__ import annotations
-
+import hashlib
 import asyncio
 import sys
 from typing import Any
@@ -51,87 +51,37 @@ async def entry(state: dict[str, Any]) -> dict[str, Any]:
 
     rag_query = f"{memory_context} {user_input}".strip() if memory_context else user_input
 
-    # ── RAG retrieval (supplementary) ────────────────────────────────
-    supplementary_docs = []
-    if settings.rag_enabled:
-        try:
-            from retrieval.embedders.embedding_model import EmbeddingModel
-            from retrieval.retrievers.hybrid_retriever import HybridRetriever
-            from retrieval.vectorstores.qdrant_store import QdrantStore
-
-            qdrant_settings = settings
-            store = QdrantStore(
-                host=qdrant_settings.qdrant_host,
-                port=qdrant_settings.qdrant_port,
-                api_key=qdrant_settings.qdrant_api_key,
-            )
-            embedder = EmbeddingModel.get_instance(qdrant_settings.embedding_model)
-            retriever = HybridRetriever(store, embedder, collection="documents")
-
-            rag_results = await retriever.search(rag_query, top_k=5)
-            # Fetch source URLs from Qdrant payload for each RAG result
-            rag_source_map: dict[str, str] = {}
-            if rag_results:
-                rag_point_ids = [r["id"] for r in rag_results if r.get("id")]
-                if rag_point_ids:
-                    try:
-                        rag_payloads = await store.get_points("documents", rag_point_ids)
-                        rag_source_map = {
-                            p["id"]: p["payload"].get("source", "") for p in rag_payloads
-                        }
-                    except Exception:
-                        pass
-            for r in rag_results:
-                doc_id = r.get("id", "")[:8]
-                # Extract first sentence (up to 40 chars) for a meaningful label
-                text = r.get("text", "")
-                first_sentence = text.split("。")[0][:40] if "。" in text else text[:40]
-                source_url = rag_source_map.get(r.get("id", ""), "")
-                supplementary_docs.append(
-                    {
-                        "title": f"{first_sentence}... (chunk:{doc_id})",
-                        "content": text,
-                        "source": "rag",
-                        "url": source_url,
-                    }
-                )
-            print(
-                f"[data_collector] RAG retrieval succeeded | query={rag_query[:80]} | results={len(supplementary_docs)}",
-                file=sys.stderr,
-                flush=True,
-            )
-        except Exception as exc:
-            print(
-                f"[data_collector] RAG retrieval failed, falling back to Tavily only | {exc}",
-                file=sys.stderr,
-                flush=True,
-            )
-
-    # ── 1. Search ────────────────────────────────────────────────────
+    # ── Parallel: RAG retrieval + Tavily Search ───────────────────────
+    rag_enabled = settings.rag_enabled
     api_key = settings.tavily_api_key
-    if not api_key:
-        print("[data_collector] Tavily API key not configured", file=sys.stderr, flush=True)
-        return _noop_result(collection, base)
 
-    client = TavilyClient(api_key=api_key)
+    # Launch parallel tasks for RAG and Tavily Search (no dependency between them)
+    rag_task = _run_rag_retrieval(rag_query, rag_enabled)
+    search_task = _run_tavily_search(api_key, user_input, template_name)
 
-    try:
-        search_params = _search_params(template_name)
-        search_result = await asyncio.to_thread(client.search, query=user_input, **search_params)
-        url_count = len(search_result.get("results", []))
+    rag_result, search_result = await asyncio.gather(rag_task, search_task, return_exceptions=True)
+
+    # Unpack RAG result
+    if isinstance(rag_result, Exception):
         print(
-            f"[data_collector] Tavily search succeeded | results={url_count}",
-            file=sys.stderr,
-            flush=True,
+            f"[data_collector] RAG retrieval failed: {rag_result}", file=sys.stderr, flush=True
         )
-    except Exception as exc:
-        print(f"[data_collector] Tavily search failed: {exc}", file=sys.stderr, flush=True)
+        supplementary_docs: list[dict[str, str]] = []
+    else:
+        supplementary_docs = rag_result
+
+    # Unpack Tavily Search result
+    if isinstance(search_result, Exception):
+        print(
+            f"[data_collector] Tavily search failed: {search_result}", file=sys.stderr, flush=True
+        )
         return _noop_result(collection, base)
+    search_result_data, client = search_result
 
     # Build URL → title mapping from search results
     urls: list[str] = []
     url_title_map: dict[str, str] = {}
-    for r in search_result.get("results", []):
+    for r in search_result_data.get("results", []):
         url = r.get("url", "")
         if url:
             urls.append(url)
@@ -283,6 +233,7 @@ async def _index_tavily_docs_to_qdrant(
         embedder = EmbeddingModel.get_instance(_settings.embedding_model)
 
         all_chunks: list[str] = []
+        all_ids: list[str] = []       # 新增
         all_sources: list[str] = []
         doc_count = 0
 
@@ -295,12 +246,14 @@ async def _index_tavily_docs_to_qdrant(
             result = chunk_text(content, source=url)
             for chunk in result.chunks:
                 all_chunks.append(chunk.text)
+                all_ids.append(hashlib.md5(chunk.text.encode()).hexdigest())  # 新增
                 all_sources.append(url)
 
         if all_chunks:
             await store.upsert(
                 collection="documents",
                 texts=all_chunks,
+                ids=all_ids,          # 新增这一行
                 metas=[{"source": src, "chunk_index": i} for i, src in enumerate(all_sources)],
                 embedder=embedder,
             )
@@ -316,3 +269,84 @@ async def _index_tavily_docs_to_qdrant(
             file=sys.stderr,
             flush=True,
         )
+
+
+async def _run_rag_retrieval(rag_query: str, rag_enabled: bool) -> list[dict[str, str]]:
+    """Execute RAG retrieval independently (for parallel execution with Tavily Search)."""
+    if not rag_enabled:
+        return []
+
+    from retrieval.embedders.embedding_model import EmbeddingModel
+    from retrieval.retrievers.hybrid_retriever import HybridRetriever
+    from retrieval.vectorstores.qdrant_store import QdrantStore
+
+    from config.settings import settings
+
+    store = QdrantStore(
+        host=settings.qdrant_host,
+        port=settings.qdrant_port,
+        api_key=settings.qdrant_api_key,
+    )
+    embedder = EmbeddingModel.get_instance(settings.embedding_model)
+    retriever = HybridRetriever(store, embedder, collection="documents")
+
+    rag_results = await retriever.search(rag_query, top_k=3)
+    rag_source_map: dict[str, str] = {}
+    if rag_results:
+        rag_point_ids = [r["id"] for r in rag_results if r.get("id")]
+        if rag_point_ids:
+            try:
+                rag_payloads = await store.get_points("documents", rag_point_ids)
+                rag_source_map = {
+                    p["id"]: p["payload"].get("source", "") for p in rag_payloads
+                }
+            except Exception:
+                pass
+
+    supplementary_docs: list[dict[str, str]] = []
+    for r in rag_results:
+        doc_id = r.get("id", "")[:8]
+        text = r.get("text", "")
+        first_sentence = text.split("。")[0][:40] if "。" in text else text[:40]
+        source_url = rag_source_map.get(r.get("id", ""), "")
+        supplementary_docs.append(
+            {
+                "title": f"{first_sentence}... (chunk:{doc_id})",
+                "content": text,
+                "source": "rag",
+                "url": source_url,
+            }
+        )
+
+    print(
+        f"[data_collector] RAG retrieval succeeded | query={rag_query[:80]} | results={len(supplementary_docs)}",
+        file=sys.stderr,
+        flush=True,
+    )
+    return supplementary_docs
+
+
+async def _run_tavily_search(
+    api_key: str,
+    user_input: str,
+    template_name: str,
+) -> tuple[dict[str, Any], Any]:
+    """Execute Tavily Search independently (for parallel execution with RAG retrieval).
+
+    Returns:
+        Tuple of (search_result_dict, TavilyClient_instance).
+        Raises ValueError if no API key; raises original exception on search failure.
+    """
+    if not api_key:
+        raise ValueError("Tavily API key not configured")
+
+    client = TavilyClient(api_key=api_key)
+    search_params = _search_params(template_name)
+    search_result = await asyncio.to_thread(client.search, query=user_input, **search_params)
+    url_count = len(search_result.get("results", []))
+    print(
+        f"[data_collector] Tavily search succeeded | results={url_count}",
+        file=sys.stderr,
+        flush=True,
+    )
+    return search_result, client

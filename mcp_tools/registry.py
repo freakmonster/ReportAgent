@@ -439,7 +439,285 @@ def _make_mcp_proxy(
     return proxy
 
 
+# ── Register MCP std tools (Bailian / AntV / external standard MCP) ──
+
+# All chart types: core 3 (backward-compatible) + AntV-unique
+_CHART_TYPES_CORE: list[tuple[str, str]] = [
+    ("generate_bar_chart", "bar"),
+    ("generate_line_chart", "line"),
+    ("generate_pie_chart", "pie"),
+]
+
+_CHART_TYPES_ANTV: list[tuple[str, str]] = [
+    ("generate_area_chart", "area"),
+    ("generate_boxplot_chart", "boxplot"),
+    ("generate_column_chart", "column"),
+    ("generate_district_map", "district_map"),
+    ("generate_dual_axes_chart", "dual_axes"),
+    ("generate_fishbone_diagram", "fishbone"),
+    ("generate_flow_diagram", "flow"),
+    ("generate_funnel_chart", "funnel"),
+    ("generate_histogram_chart", "histogram"),
+    ("generate_liquid_chart", "liquid"),
+    ("generate_mind_map", "mind_map"),
+    ("generate_network_graph", "network"),
+    ("generate_organization_chart", "organization"),
+    ("generate_path_map", "path_map"),
+    ("generate_pin_map", "pin_map"),
+    ("generate_radar_chart", "radar"),
+    ("generate_sankey_chart", "sankey"),
+    ("generate_scatter_chart", "scatter"),
+    ("generate_treemap_chart", "treemap"),
+    ("generate_venn_chart", "venn"),
+    ("generate_violin_chart", "violin"),
+    ("generate_word_cloud_chart", "word_cloud"),
+]
+
+_ALL_CHART_TYPES: list[tuple[str, str]] = _CHART_TYPES_CORE + _CHART_TYPES_ANTV
+
+
+def _make_mcp_std_proxy(
+    client: object,
+    server_url: str,
+    tool_name: str,
+    server_name: str,
+) -> ToolHandler:
+    """Create an async proxy handler that calls a standard MCP tool via MCPStdClient.
+
+    Args:
+        client: MCPStdClient instance.
+        server_url: Standard MCP server base URL.
+        tool_name: Tool name on the MCP std server.
+        server_name: Human-readable server name.
+
+    Returns:
+        Async callable suitable for registry registration.
+    """
+
+    async def proxy(arguments: dict[str, Any]) -> dict[str, Any]:
+        result = await client.call(  # type: ignore[union-attr]
+            server_url=server_url,
+            tool_name=tool_name,
+            arguments=arguments,
+            server_name=server_name,
+        )
+        if result.success:
+            return result.data or {}
+        return {"error": result.error, "degraded": True}
+
+    return proxy
+
+
+def register_mcp_std_tools() -> None:
+    """Register standard MCP chart tools (Bailian / AntV).
+
+    Swaps ACTIVE/DEGRADED status based on the ``chart_backend`` configuration.
+
+    Supported backends:
+    - ``"matplotlib"`` (default): matplotlib ACTIVE, bailian + antv DEGRADED
+    - ``"bailian"``: bailian ACTIVE (core 3 tools), matplotlib + antv DEGRADED
+    - ``"antv"``: antv ACTIVE (core 3 + all antv-unique tools), matplotlib + bailian DEGRADED
+    """
+    try:
+        from config.settings import settings
+        from mcp_tools.mcp_std_client import mcp_std_client
+    except ImportError:
+        logger.warning("MCPStdClient or settings not available, skipping std MCP registration")
+        return
+
+    chart_backend = settings.chart_backend
+    mcp_std_chart_url = settings.mcp_std_chart_url
+    mcp_antv_url = settings.mcp_antv_url
+
+    # ── Helper: get matplotlib handler (REST MCPClient) ─────────────────
+    def _get_matplotlib_handler(tool_name: str) -> ToolHandler:
+        if settings.mcp_chart_url:
+            try:
+                from mcp_tools.mcp_client import mcp_client
+
+                return _make_mcp_proxy(mcp_client, settings.mcp_chart_url, tool_name, "mcp-chart")
+            except ImportError:
+                pass
+        return _noop_handler
+
+    # ── Helper: get bailian handler ─────────────────────────────────────
+    def _get_bailian_handler(tool_name: str) -> ToolHandler | None:
+        if not mcp_std_chart_url:
+            return None
+        return _make_mcp_std_proxy(mcp_std_client, mcp_std_chart_url, tool_name, "bailian-chart")
+
+    # ── Helper: get antv handler ────────────────────────────────────────
+    def _get_antv_handler(tool_name: str) -> ToolHandler | None:
+        if not mcp_antv_url:
+            return None
+        return _make_mcp_std_proxy(mcp_std_client, mcp_antv_url, tool_name, "antv-chart")
+
+    # ── Backend: matplotlib (default) ───────────────────────────────────
+    if chart_backend == "matplotlib":
+        # matplotlib is already ACTIVE from register_mcp_tools()
+        # Register bailian core tools as DEGRADED
+        if mcp_std_chart_url:
+            for tool_name, short in _CHART_TYPES_CORE:
+                registry.register(
+                    name=f"mcp_chart_{short}_bailian",
+                    handler=_get_bailian_handler(tool_name),  # type: ignore[arg-type]
+                    source=ToolSource.MCP,
+                    description=f"Bailian MCP {short} chart (fallback)",
+                    server_url=mcp_std_chart_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp_std", "bailian", "fallback"],
+                )
+                registry.mark_degraded(f"mcp_chart_{short}_bailian")
+
+        # Register antv tools as DEGRADED
+        if mcp_antv_url:
+            for tool_name, short in _ALL_CHART_TYPES:
+                handler = _get_antv_handler(tool_name)
+                if handler is None:
+                    continue
+                if short in ("bar", "line", "pie"):
+                    name = f"mcp_chart_{short}_antv"
+                else:
+                    name = f"mcp_generate_{tool_name}"
+                registry.register(
+                    name=name,
+                    handler=handler,
+                    source=ToolSource.MCP,
+                    description=f"AntV MCP {short} chart (fallback)",
+                    server_url=mcp_antv_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp_std", "antv", "fallback"],
+                )
+                registry.mark_degraded(name)
+
+    # ── Backend: bailian ────────────────────────────────────────────────
+    elif chart_backend == "bailian":
+        if mcp_std_chart_url:
+            # Bailian core tools ACTIVE
+            for tool_name, short in _CHART_TYPES_CORE:
+                registry.register(
+                    name=f"mcp_{tool_name}",
+                    handler=_get_bailian_handler(tool_name),  # type: ignore[arg-type]
+                    source=ToolSource.MCP,
+                    description=f"Bailian MCP {short} chart",
+                    server_url=mcp_std_chart_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp_std", "bailian"],
+                )
+
+            # matplotlib core tools DEGRADED
+            for tool_name, short in _CHART_TYPES_CORE:
+                registry.register(
+                    name=f"mcp_chart_{short}_matplotlib",
+                    handler=_get_matplotlib_handler(tool_name),
+                    source=ToolSource.MCP,
+                    description=f"Matplotlib {short} chart (fallback)",
+                    server_url=settings.mcp_chart_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp", "matplotlib", "fallback"],
+                )
+                registry.mark_degraded(f"mcp_chart_{short}_matplotlib")
+
+            # antv tools DEGRADED
+            if mcp_antv_url:
+                for tool_name, short in _ALL_CHART_TYPES:
+                    handler = _get_antv_handler(tool_name)
+                    if handler is None:
+                        continue
+                    if short in ("bar", "line", "pie"):
+                        name = f"mcp_chart_{short}_antv"
+                    else:
+                        name = f"mcp_generate_{tool_name}"
+                    registry.register(
+                        name=name,
+                        handler=handler,
+                        source=ToolSource.MCP,
+                        description=f"AntV MCP {short} chart (fallback)",
+                        server_url=mcp_antv_url,
+                        mcp_tool_name=tool_name,
+                        tags=["chart", "mcp_std", "antv", "fallback"],
+                    )
+                    registry.mark_degraded(name)
+
+            logger.info(
+                "MCP std tools: bailian ACTIVE (core 3, %s), matplotlib + antv DEGRADED",
+                mcp_std_chart_url,
+            )
+
+    # ── Backend: antv ───────────────────────────────────────────────────
+    elif chart_backend == "antv":
+        if mcp_antv_url:
+            # Antv core tools ACTIVE (overwrite matplotlib)
+            for tool_name, short in _CHART_TYPES_CORE:
+                registry.register(
+                    name=f"mcp_{tool_name}",
+                    handler=_get_antv_handler(tool_name),  # type: ignore[arg-type]
+                    source=ToolSource.MCP,
+                    description=f"AntV MCP {short} chart",
+                    server_url=mcp_antv_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp_std", "antv"],
+                )
+
+            # AntV-unique tools ACTIVE
+            for tool_name, short in _CHART_TYPES_ANTV:
+                handler = _get_antv_handler(tool_name)
+                if handler is None:
+                    continue
+                registry.register(
+                    name=f"mcp_{tool_name}",
+                    handler=handler,
+                    source=ToolSource.MCP,
+                    description=f"AntV MCP {short} chart",
+                    server_url=mcp_antv_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp_std", "antv"],
+                )
+
+            # matplotlib core tools DEGRADED
+            for tool_name, short in _CHART_TYPES_CORE:
+                registry.register(
+                    name=f"mcp_chart_{short}_matplotlib",
+                    handler=_get_matplotlib_handler(tool_name),
+                    source=ToolSource.MCP,
+                    description=f"Matplotlib {short} chart (fallback)",
+                    server_url=settings.mcp_chart_url,
+                    mcp_tool_name=tool_name,
+                    tags=["chart", "mcp", "matplotlib", "fallback"],
+                )
+                registry.mark_degraded(f"mcp_chart_{short}_matplotlib")
+
+            # bailian core tools DEGRADED
+            if mcp_std_chart_url:
+                for tool_name, short in _CHART_TYPES_CORE:
+                    handler = _get_bailian_handler(tool_name)
+                    if handler is None:
+                        continue
+                    registry.register(
+                        name=f"mcp_chart_{short}_bailian",
+                        handler=handler,
+                        source=ToolSource.MCP,
+                        description=f"Bailian MCP {short} chart (fallback)",
+                        server_url=mcp_std_chart_url,
+                        mcp_tool_name=tool_name,
+                        tags=["chart", "mcp_std", "bailian", "fallback"],
+                    )
+                    registry.mark_degraded(f"mcp_chart_{short}_bailian")
+
+            logger.info(
+                "MCP std tools: antv ACTIVE (%d tools, %s), matplotlib + bailian DEGRADED",
+                len(_ALL_CHART_TYPES),
+                mcp_antv_url,
+            )
+
+
+async def _noop_handler(_arguments: dict[str, Any]) -> dict[str, Any]:
+    """No-op handler for unavailable tools."""
+    return {"error": "Tool unavailable", "degraded": True}
+
+
 # ── Initialize on import ───────────────────────────────────────────────
 
 _register_internal_tools()
 register_mcp_tools()
+register_mcp_std_tools()

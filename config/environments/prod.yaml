@@ -48,6 +48,11 @@ mcp_database_url: "http://mcp-database:8002"
 mcp_chart_url: "http://mcp-chart:8003"
 mcp_email_url: "http://mcp-email:8004"
 
+# Chart backend — "matplotlib" (default, self-hosted MCP chart server) | "bailian" (Aliyun Bailian MCP std) | "antv" (AntV visualization MCP)
+chart_backend: "matplotlib"
+mcp_std_chart_url: ""
+mcp_antv_url: ""
+
 # Circuit breaker — strict limits for prod
 cb_failure_threshold: 3
 cb_timeout: 30

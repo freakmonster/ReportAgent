@@ -52,7 +52,7 @@ async def save_memory(user_id: str, session_id: str, entry: dict) -> None:
     logger.debug("Short-term memory saved: key=%s members=%d", key, await redis.zcard(key))
 
 
-async def load_memory(user_id: str, session_id: str, top_n: int = 10) -> list[dict]:
+async def load_memory(user_id: str, session_id: str, top_n: int = 4) -> list[dict]:
     """Load the most recent *top_n* memory entries (newest first)."""
     redis = get_redis()
     key = _build_key(user_id, session_id)
@@ -83,11 +83,13 @@ async def format_context(entries: list[dict]) -> str:
 
     Uses the first 30 characters of each entry's "query" field as a topic.
     """
+    seen: set[str] = set()
     topics: list[str] = []
     for entry in entries:
         query: str = entry.get("query", "") if isinstance(entry, dict) else ""
         topic = query[:30].strip()
-        if topic:
+        if topic and topic not in seen:
+            seen.add(topic)
             topics.append(topic)
     if not topics:
         return ""

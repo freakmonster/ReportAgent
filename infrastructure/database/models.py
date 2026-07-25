@@ -49,6 +49,7 @@ workflow_info = Table(
     Column("query", Text, nullable=True),
     Column("report_content", Text, nullable=True),
     Column("citations", JSONB, nullable=False, server_default="'[]'"),
+    Column("charts", JSONB, nullable=False, server_default="'[]'"),
     Column("started_at", DateTime(timezone=True), nullable=True),
     Column("duration_seconds", Float, default=0.0),
     Column("created_at", DateTime(timezone=True), server_default=func.now()),

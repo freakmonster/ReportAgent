@@ -1,9 +1,10 @@
 'use client';
 
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
 
 interface Props {
   content: string;
@@ -12,6 +13,17 @@ interface Props {
 export function ReportContent({ content }: Props) {
   if (!content) return null;
 
+  // 预处理：将正文中的 [N] 引用标注转为右上角小字，但引用来源列表保持不变
+  const citationHeader = '## 引用来源';
+  const idx = content.indexOf(citationHeader);
+  const body = idx !== -1 ? content.slice(0, idx) : content;
+  const citationSection = idx !== -1 ? content.slice(idx) : '';
+  const processed =
+    body.replace(
+      /\[(\d+)\]/g,
+      '<sup class="text-[0.70em] align-super text-blue-500 dark:text-blue-400">[$1]</sup>',
+    ) + citationSection;
+
   const components: Components = {
     img: ({ src, alt, ...props }) => (
       <div className="my-4">
@@ -19,7 +31,7 @@ export function ReportContent({ content }: Props) {
         <img
           src={src}
           alt={alt ?? '图表'}
-          className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm"
+          className="max-w-[400px] w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm mx-auto block"
           loading="lazy"
           {...props}
         />
@@ -36,10 +48,10 @@ export function ReportContent({ content }: Props) {
     <div className="prose prose-sm max-w-none dark:prose-invert">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={[rehypeHighlight, rehypeRaw]}
         components={components}
       >
-        {content}
+        {processed}
       </ReactMarkdown>
     </div>
   );

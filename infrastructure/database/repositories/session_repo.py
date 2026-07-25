@@ -187,7 +187,7 @@ class SessionRepository:
                 text(
                     """SELECT
                         workflow_id, query, template_name, report_content,
-                        citations, duration_seconds, created_at
+                        citations, charts, duration_seconds, created_at
                     FROM workflow_info
                     WHERE session_id = :sid
                       AND user_id = :uid
@@ -204,8 +204,9 @@ class SessionRepository:
                     "template_name": row[2],
                     "report": row[3] or "",
                     "citations": row[4] if isinstance(row[4], list) else [],
-                    "elapsed_seconds": round(float(row[5]), 1) if row[5] else 0.0,
-                    "created_at": row[6].isoformat() if row[6] else None,
+                    "charts": row[5] if isinstance(row[5], list) else [],
+                    "elapsed_seconds": round(float(row[6]), 1) if row[6] else 0.0,
+                    "created_at": row[7].isoformat() if row[7] else None,
                 }
                 for row in rows
             ]
