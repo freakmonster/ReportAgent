@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useReportStore } from '@/stores/reportStore';
-import { REPORT_TYPE_LABELS } from '@/types/api';
 import type { ReportType } from '@/types/api';
+import { REPORT_TYPE_LABELS } from '@/types/api';
+import Link from 'next/link';
 
 function typeLabel(reportType?: string): string {
   if (!reportType) return '—';
@@ -41,7 +41,7 @@ export default function HistoryPage() {
       {/* Body */}
       <main className="flex-1 max-w-4xl mx-auto w-full p-8">
         {!hasEntries && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-600">
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400 dark:text-gray-500">
             <div className="text-4xl mb-3">📭</div>
             <p className="text-sm">暂无历史报告</p>
             <p className="text-xs mt-1">生成研报后将自动保存在此处</p>
@@ -63,9 +63,9 @@ export default function HistoryPage() {
                 {entries.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition"
+                    className="transition"
                   >
-                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
+                    <td className="px-4 py-3 text-white dark:text-gray-200">
                       {truncate(entry.query, 60)}
                     </td>
                     <td className="px-4 py-3">
@@ -73,7 +73,7 @@ export default function HistoryPage() {
                         {typeLabel(entry.reportType)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">
+                    <td className="px-4 py-3 text-xs text-gray-200 dark:text-gray-500">
                       {new Date(entry.createdAt).toLocaleString('zh-CN')}
                     </td>
                     <td className="px-4 py-3">

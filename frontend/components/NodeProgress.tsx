@@ -13,8 +13,8 @@ export function NodeProgress() {
   const completedNodes = nodeOrder.filter(n => nodes[n]?.status === 'completed');
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm p-4">
-      <h3 className="text-sm font-semibold mb-3 text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+    <div className="rounded-lg border border-slate-600/40 bg-slate-800/60 shadow-sm p-4">
+      <h3 className="text-sm font-semibold mb-3 text-gray-200 dark:text-gray-400 uppercase tracking-wide">
         Agent 执行进度
       </h3>
 

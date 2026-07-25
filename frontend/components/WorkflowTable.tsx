@@ -12,6 +12,7 @@ interface WorkflowItem {
 interface WorkflowTableProps {
   items: WorkflowItem[];
   loading: boolean;
+  className?: string;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; badgeClass: string }> = {
@@ -83,9 +84,9 @@ function SkeletonRow() {
   );
 }
 
-export function WorkflowTable({ items, loading }: WorkflowTableProps) {
+export function WorkflowTable({ items, loading, className }: WorkflowTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className={`overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 ${className ?? ''}`}>
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-gray-50 dark:bg-gray-800/50 text-left text-gray-500 dark:text-gray-400">

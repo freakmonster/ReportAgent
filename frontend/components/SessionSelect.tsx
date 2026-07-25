@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // 模块级守卫：Strict Mode unmount+remount 时不会重置
 let _globalAutoCreated = false;
@@ -34,16 +34,10 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
       const emptyIds = sessions.filter((s) => s.report_count === 0).map((s) => s.session_id);
       emptyIds.forEach((id) => { deleteSession(id); });
 
-      // 2. 选中第一个非空会话
-      const nonEmptyFirst = sessions.find((s) => s.report_count > 0);
-      if (nonEmptyFirst) {
-        onChange(nonEmptyFirst.session_id);
-      } else {
-        // 全部为空 → 创建新的
-        createSession('anonymous').then((id) => {
-          if (id) onChange(id);
-        });
-      }
+      // 2. 直接创建新会话
+      createSession('anonymous').then((id) => {
+        if (id) onChange(id);
+      });
     }
   }, [loading, sessions, value, deleteSession, createSession, onChange]);
 
@@ -76,22 +70,22 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
   }, []);
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="space-y-1.5">
       {/* 会话列表 */}
-      <div className="max-h-[33vh] overflow-y-auto">
+      <div className="max-h-[33vh] overflow-y-auto space-y-1 scrollbar-hide">
         {loading ? (
-          <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500">加载中...</div>
+          <div className="px-3 py-3 text-sm text-slate-400">加载中...</div>
         ) : sessions.length === 0 ? (
-          <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500">暂无会话</div>
+          <div className="px-3 py-3 text-sm text-slate-400">暂无会话</div>
         ) : (
           sessions.map((s) => (
             <button
               key={s.session_id}
               type="button"
-              className={`w-full px-3 py-2 text-left text-sm flex items-center group transition ${
+              className={`w-full px-3 py-2 text-left text-sm flex items-center group transition-all duration-300 ease-out rounded-lg border-l-2 ${
                 value === s.session_id
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  ? 'bg-amber-500/8 border-l-amber-400 text-amber-200'
+                  : 'bg-slate-700/30 border-l-transparent text-slate-200 hover:bg-slate-700/50 hover:border-l-slate-500'
               } ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
               onClick={() => {
                 if (disabled) return;
@@ -105,11 +99,11 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
               disabled={disabled}
             >
               <span className="truncate flex-1">{s.title}</span>
-              <span className="ml-2 text-xs text-gray-400 dark:text-gray-500 shrink-0">
+              <span className="ml-2 text-xs text-slate-400 shrink-0">
                 ({s.report_count})
               </span>
               <span
-                className="ml-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition shrink-0 cursor-pointer"
+                className="ml-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition shrink-0 cursor-pointer"
                 onClick={(e) => handleDelete(e, s.session_id)}
                 title="删除会话"
               >
@@ -120,13 +114,12 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
         )}
       </div>
 
-      {/* 分隔线 */}
-      <div className="border-t border-gray-200 dark:border-gray-700" />
-
       {/* 新建会话按钮 */}
       <button
         type="button"
-        className="w-full px-3 py-2 text-left text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full px-3 py-2 text-left text-sm text-blue-400 hover:text-blue-300
+          bg-slate-700/20 hover:bg-slate-700/40 rounded-lg transition-all duration-300
+          font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-dashed border-slate-600/40"
         onClick={handleCreate}
         disabled={disabled || creating}
       >
@@ -135,25 +128,25 @@ export function SessionSelect({ value, onChange, disabled = false }: SessionSele
 
       {/* 删除确认弹窗 */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setDeleteTarget(null)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDeleteTarget(null)}>
           <div
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 mx-4 w-80"
+            className="bg-slate-700 border border-slate-600 rounded-xl shadow-xl p-6 mx-4 w-80"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-5 text-center">
+            <p className="text-sm text-slate-200 mb-5 text-center">
               删除后，该对话将不可恢复
             </p>
             <div className="flex gap-3">
               <button
                 type="button"
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                className="flex-1 px-4 py-2 rounded-lg border border-slate-500 text-sm text-slate-200 hover:bg-slate-600 transition"
                 onClick={() => setDeleteTarget(null)}
               >
                 取消
               </button>
               <button
                 type="button"
-                className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 transition"
+                className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-500 transition"
                 onClick={handleConfirmDelete}
               >
                 删除该对话

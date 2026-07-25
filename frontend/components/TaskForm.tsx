@@ -8,6 +8,14 @@ import { useCallback, useRef, useState } from 'react';
 
 const MODELS: ModelOption[] = ['deepseek-flash', 'deepseek-pro', 'qwen-8b', 'qwen-32b', 'qwen-max'];
 
+const MODEL_COLORS: Record<ModelOption, { ring: string; bg: string; text: string }> = {
+  'deepseek-flash': { ring: 'ring-blue-400/50', bg: 'bg-blue-500/15', text: 'text-blue-300' },
+  'deepseek-pro':   { ring: 'ring-purple-400/50', bg: 'bg-purple-500/15', text: 'text-purple-300' },
+  'qwen-8b':        { ring: 'ring-cyan-400/50', bg: 'bg-cyan-500/15', text: 'text-cyan-300' },
+  'qwen-32b':       { ring: 'ring-emerald-400/50', bg: 'bg-emerald-500/15', text: 'text-emerald-300' },
+  'qwen-max':       { ring: 'ring-amber-400/50', bg: 'bg-amber-500/15', text: 'text-amber-300' },
+};
+
 export function TaskForm() {
   const isRunning = useWorkflowStore((s) => s.isRunning);
   const error = useWorkflowStore((s) => s.error);
@@ -15,9 +23,9 @@ export function TaskForm() {
   const startWorkflow = useWorkflowStore((s) => s.startWorkflow);
 
   const [query, setQuery] = useState('');
-  const [selectFocused, setSelectFocused] = useState(false);
   const [model, setModel] = useState<ModelOption>('deepseek-flash');
   const [sessionId, setSessionId] = useState('');
+  const [hintOpen, setHintOpen] = useState(false);
 
   const handleSessionChange = useCallback((id: string) => {
     setSessionId(id);
@@ -56,7 +64,7 @@ export function TaskForm() {
       <div className="flex-1 overflow-y-auto p-6 pb-0 space-y-5">
         {/* 关联会话 */}
         <div>
-          <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+          <label className="block text-xs font-semibold mb-2 text-slate-300 uppercase tracking-wider">
             会话列表
           </label>
           <SessionSelect value={sessionId} onChange={handleSessionChange} disabled={isRunning} />
@@ -64,88 +72,109 @@ export function TaskForm() {
 
         {/* 错误提示 */}
         {error && (
-          <div className="px-3 py-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
+          <div className="px-3 py-2 bg-red-900/40 border border-red-700/40 rounded-xl text-sm text-red-300">
             {error}
           </div>
         )}
       </div>
 
       {/* ── 下半部分：固定输入栏 ── */}
-      <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 px-6 py-3 space-y-2">
-        {/* AI 模型 — 融入输入栏顶部 */}
-        <div className="relative">
-          <select
-            className="w-full px-3 py-1.5 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 text-gray-500 disabled:opacity-50 appearance-none pr-7"
-            value={model}
-            onClick={() => setSelectFocused((prev) => !prev)}
-            onChange={(e) => setModel(e.target.value as ModelOption)}
-            disabled={isRunning}
-          >
-            {MODELS.map((m) => (
-              <option key={m} value={m}>
-                {MODEL_LABELS[m]}
-              </option>
-            ))}
-          </select>
-          {/* 箭头：焦点时向上，失焦时向下 */}
-          <svg
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points={selectFocused ? '18 15 12 9 6 15' : '18 9 12 15 6 9'} />
-          </svg>
+      <div className="shrink-0 border-t border-slate-600/40 px-5 py-4 space-y-3">
+        {/* 模型选择 — 彩色标签按钮 */}
+        <div>
+          <div className="flex flex-wrap gap-1.5">
+            {MODELS.map((m) => {
+              const isSelected = model === m;
+              const c = MODEL_COLORS[m];
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={isRunning}
+                  onClick={() => setModel(m)}
+                  className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-all duration-300 ease-out
+                    border border-transparent
+                    ${isSelected
+                      ? `${c.bg} ${c.text} ${c.ring} ring-1 tag-glow-selected`
+                      : 'text-slate-400 bg-slate-700/40 hover:text-slate-200 hover:bg-slate-700'
+                    }
+                    ${isRunning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  {MODEL_LABELS[m]}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* textarea + 发送按钮 */}
         <div className="flex items-end gap-2">
-        <textarea
-          className="flex-1 h-17 px-3 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white disabled:opacity-50 text-sm"
-          placeholder="输入..."
-          value={query}
-          onChange={(e) => handleTextChange(e.target.value)}
-          onCompositionStart={() => { isComposing.current = true; }}
-          onCompositionEnd={handleCompositionEnd}
-          disabled={isRunning}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && canSubmit) {
-              e.preventDefault();
-              handleSubmit(e as unknown as React.FormEvent);
-            }
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="w-10 h-10 shrink-0 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          title="发送"
-        >
-          {isRunning ? (
-            <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          )}
-        </button>
+          <textarea
+            className="flex-1 h-17 px-4 py-2.5 border border-slate-600/60 rounded-2xl resize-none
+              bg-slate-700/60 text-slate-200 placeholder-slate-400 text-sm
+              focus:outline-none focus:border-blue-500/50 focus:ring-0
+              input-glow disabled:opacity-40 transition-all duration-300"
+            placeholder="输入研报主题..."
+            value={query}
+            onChange={(e) => handleTextChange(e.target.value)}
+            onCompositionStart={() => { isComposing.current = true; }}
+            onCompositionEnd={handleCompositionEnd}
+            disabled={isRunning}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && canSubmit) {
+                e.preventDefault();
+                handleSubmit(e as unknown as React.FormEvent);
+              }
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400
+              text-white flex items-center justify-center
+              hover:scale-110 active:scale-95 transition-all duration-300 ease-out
+              disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+              shadow-lg shadow-blue-500/25"
+            title="发送"
+          >
+            {isRunning ? (
+              <svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            )}
+          </button>
         </div>
 
-        {/* 输入提示 */}
-        <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-          试试这样说：<br />
-          一般提问："最近黄金为什么涨"、"什么是深度学习"<br />
-          深度研报："分析腾讯的未来增长点"、"新能源汽车产业链分析"<br />
-          市场快讯："今日AI行业快讯"<br />
-          财报分析："分析腾讯Q4财报"
-        </p>
+        {/* 输入提示 — 可折叠小卡片 */}
+        <div className={`border border-slate-600/30 rounded-xl overflow-hidden transition-all duration-300 ${hintOpen ? 'bg-slate-700/40' : 'bg-slate-700/20'}`}>
+          <button
+            type="button"
+            onClick={() => setHintOpen(!hintOpen)}
+            className="w-full flex items-center justify-between px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          >
+            <span>不知道怎么问？</span>
+            <svg
+              className={`w-3 h-3 transition-transform duration-300 ${hintOpen ? 'rotate-180' : ''}`}
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {hintOpen && (
+            <div className="px-3 pb-2.5 text-[11px] text-slate-400 leading-relaxed space-y-0.5 border-t border-slate-600/20 pt-2">
+              <p><span className="text-slate-400">一般提问：</span>"最近黄金为什么涨"、"什么是深度学习"</p>
+              <p><span className="text-blue-400">深度研报：</span>"分析腾讯的未来增长点"、"新能源汽车产业链分析"</p>
+              <p><span className="text-amber-400">市场快讯：</span>"今日AI行业快讯"</p>
+              <p><span className="text-emerald-400">财报分析：</span>"分析腾讯Q4财报"</p>
+            </div>
+          )}
+        </div>
       </div>
     </form>
   );

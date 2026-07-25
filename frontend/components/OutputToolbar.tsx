@@ -41,13 +41,13 @@ export function OutputToolbar({ report, workflowId, query }: Props) {
     <div className="flex gap-2 mt-4 items-center">
       <button
         onClick={handleExportMd}
-        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+        className="px-3 py-1.5 text-sm text-slate-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50  dark:hover:bg-gray-800 transition"
       >
         📥 导出 Markdown
       </button>
       <button
         onClick={handleCopy}
-        className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+        className="px-3 py-1.5 text-sm text-slate-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition"
       >
         📋 复制
       </button>

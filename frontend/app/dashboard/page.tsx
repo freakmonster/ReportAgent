@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import * as api from '@/lib/api';
 import { DashboardCards } from '@/components/DashboardCards';
 import { WorkflowTable } from '@/components/WorkflowTable';
+import * as api from '@/lib/api';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 
 interface TemplateItem {
   template: string;
@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const totalByTemplate = templateItems.reduce((sum, t) => sum + t.count, 0);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col ">
       {/* Header */}
       <header className="h-12 flex items-center px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shrink-0">
         <Link
@@ -92,7 +92,7 @@ export default function DashboardPage() {
       <main className="flex-1 max-w-5xl mx-auto w-full p-8 space-y-6">
         {/* Page title & time range toggle */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+          <h2 className="text-lg font-bold text-gray-100 dark:text-gray-200">
             运营面板
           </h2>
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
@@ -149,16 +149,16 @@ export default function DashboardPage() {
 
         {/* Recent workflows table */}
         <section>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <h3 className="text-sm font-semibold text-gray-100 dark:text-gray-300 mb-3">
             最近工作流
           </h3>
-          <WorkflowTable items={recent} loading={loading} />
+          <WorkflowTable items={recent} loading={loading} className="bg-white dark:bg-white" />
         </section>
 
         {/* By template distribution */}
         {templateItems.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            <h3 className="text-sm font-semibold text-gray-100 dark:text-gray-300 mb-3">
               按模板分布
             </h3>
             <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
