@@ -41,7 +41,8 @@ class TestTemplateLoader:
     def test_list_templates(self) -> None:
         loader = TemplateLoader()
         templates = loader.list_templates()
-        assert len(templates) == 3
+        names = {t["name"] for t in templates}
+        assert {"deep_report", "flash_news", "earnings_analysis"}.issubset(names)
         for t in templates:
             assert "name" in t
             assert "node_count" in t

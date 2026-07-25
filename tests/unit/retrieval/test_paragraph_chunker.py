@@ -1,5 +1,14 @@
 """Unit tests for paragraph_chunker — recursive split, precise overlap, heading respect."""
 
+import sys
+from pathlib import Path
+
+# Find project root (directory containing pyproject.toml)
+_project_root = Path(__file__).resolve().parent
+while not (_project_root / "pyproject.toml").exists() and _project_root != _project_root.parent:
+    _project_root = _project_root.parent
+sys.path.insert(0, str(_project_root))
+
 from retrieval.chunkers.paragraph_chunker import (
     Chunk,
     ChunkResult,

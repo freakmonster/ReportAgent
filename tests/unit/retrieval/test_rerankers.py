@@ -1,6 +1,15 @@
 """Unit tests for rerankers — NoOp, CrossEncoder, factory, and strategy pattern."""
 
+import sys
+from pathlib import Path
+
 import pytest
+
+# Find project root (directory containing pyproject.toml)
+_project_root = Path(__file__).resolve().parent
+while not (_project_root / "pyproject.toml").exists() and _project_root != _project_root.parent:
+    _project_root = _project_root.parent
+sys.path.insert(0, str(_project_root))
 
 from retrieval.retrievers.rerankers import get_reranker
 from retrieval.retrievers.rerankers.base import BaseReranker

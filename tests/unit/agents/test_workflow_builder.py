@@ -90,13 +90,13 @@ class TestWorkflowBuilderHarnessWrapping:
     async def test_build_wraps_deep_report(
         self, builder: WorkflowBuilder, mock_orchestrator: MagicMock
     ) -> None:
-        """Deep report (10 nodes) should also wrap correctly."""
+        """Deep report (9 nodes in approved path) should also wrap correctly."""
         graph = builder.build("deep_report", ReportState, harness_orchestrator=mock_orchestrator)
         state = create_initial_state("wf4", "test_user", "deep_report")
         state["base"]["user_input"] = "人工智能发展报告"
 
         _ = await graph.ainvoke(state)
 
-        # All 10 nodes should have been wrapped
-        assert mock_orchestrator.execute_pre.await_count >= 10
-        assert mock_orchestrator.execute_post.await_count >= 10
+        # approved path runs 9 nodes (human_review is conditional)
+        assert mock_orchestrator.execute_pre.await_count >= 9
+        assert mock_orchestrator.execute_post.await_count >= 9

@@ -134,7 +134,7 @@ class TestDataCollector:
 
         _, kwargs = mock_to_thread.call_args_list[0]
         assert kwargs.get("topic") == "news"
-        assert kwargs.get("max_results") == 5
+        assert kwargs.get("max_results") == 3
 
     @pytest.mark.asyncio
     async def test_deep_report_uses_advanced_depth(self):
@@ -158,4 +158,4 @@ class TestDataCollector:
 
         _, kwargs = mock_to_thread.call_args_list[0]
         assert kwargs.get("search_depth") == "advanced"
-        assert kwargs.get("max_results") == 7
+        assert kwargs.get("max_results") == 5

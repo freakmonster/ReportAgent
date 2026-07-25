@@ -1,6 +1,15 @@
 """Unit tests for pdf_loader — streaming parse, page limit, error guidance."""
 
+import sys
+from pathlib import Path
+
 import pytest
+
+# Find project root (directory containing pyproject.toml)
+_project_root = Path(__file__).resolve().parent
+while not (_project_root / "pyproject.toml").exists() and _project_root != _project_root.parent:
+    _project_root = _project_root.parent
+sys.path.insert(0, str(_project_root))
 
 from retrieval.loaders.pdf_loader import (
     MAX_PAGES,
